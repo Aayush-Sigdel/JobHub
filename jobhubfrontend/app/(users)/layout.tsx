@@ -3,5 +3,5 @@ export default function UsersLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="px-16 py-2">{children}</div>;
+  return <div>{children}</div>;
 }
