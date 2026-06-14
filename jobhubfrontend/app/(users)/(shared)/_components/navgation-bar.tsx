@@ -27,12 +27,15 @@ const NavigationBar = () => {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="flex h-20 items-center justify-between px-6 md:px-8 max-w-[1400px] mx-auto">
+      <div className="flex h-20 items-center justify-between px-6 md:px-8 max-w-350 mx-auto">
         <div className="flex items-center gap-8 flex-1">
           <Link href="/" className="flex items-center shrink-0">
-            <h1 className="text-3xl font-bold font-heading tracking-tighter">
-              Job<span className="text-amber-500">Hub</span>
-              <span className="inline-block w-2 h-2 ml-1 rounded-full bg-amber-500"></span>
+            <h1 className="text-3xl font-bold font-heading">
+              <span className=" bg-amber-500 py-1 rounded-md px-1 text-background">
+                Job
+              </span>
+              <span className="pl-1">Hub</span>
+              <span className="inline-block w-2 h-2 ml-1 rounded-full bg-amber-500 "></span>
             </h1>
           </Link>
 

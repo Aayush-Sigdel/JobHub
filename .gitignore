@@ -1,1 +1,6 @@
 jobhubfrontend/pnpm-lock.yaml
+machine_learning/text_embedding/checkpoints.zip
+/machine_learning/text_embedding/checkpoints
+machine_learning/text_embedding/__pycache__/dataset.cpython-314.pyc
+machine_learning/text_embedding/model/__pycache__/dual_encoder.cpython-314.pyc
+machine_learning/text_embedding/model/__pycache__/job_match.cpython-314.pyc

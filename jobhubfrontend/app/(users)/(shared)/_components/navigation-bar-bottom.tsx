@@ -6,6 +6,59 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import NavLink from "@/components/web/nav-link";
 import Image from "next/image";
 
+const categories = [
+  {
+    id: 1,
+    name: "Full Stack",
+    href: "#",
+  },
+  {
+    id: 2,
+    name: "Frontend Developer",
+    href: "#",
+  },
+  {
+    id: 3,
+    name: "Backend Developer",
+    href: "#",
+  },
+  {
+    id: 4,
+    name: "Data Scientist",
+    href: "#",
+  },
+  {
+    id: 5,
+    name: "DevOps Engineer",
+    href: "#",
+  },
+  {
+    id: 6,
+    name: "Mobile Developer",
+    href: "#",
+  },
+  {
+    id: 7,
+    name: "UI/UX Designer",
+    href: "#",
+  },
+  {
+    id: 8,
+    name: "Product Manager",
+    href: "#",
+  },
+  {
+    id: 9,
+    name: "QA Engineer",
+    href: "#",
+  },
+  {
+    id: 10,
+    name: "Cloud Engineer",
+    href: "#",
+  },
+];
+
 const NavigationBarBottom = () => {
   return (
     <div className="w-full bg-background border-b border-background-200">
@@ -23,16 +76,12 @@ const NavigationBarBottom = () => {
             </span>
           </div>
         </NavLink>
-        <NavLink href={"#"}>Full Stack</NavLink>
-        <NavLink href={"#"}>Frontend Developer</NavLink>
-        <NavLink href={"#"}>Backend Developer</NavLink>
-        <NavLink href={"#"}>Data Scientist</NavLink>
-        <NavLink href={"#"}>DevOps Engineer</NavLink>
-        <NavLink href={"#"}>Mobile Developer</NavLink>
-        <NavLink href={"#"}>UI/UX Designer</NavLink>
-        <NavLink href={"#"}>Product Manager</NavLink>
-        <NavLink href={"#"}>QA Engineer</NavLink>
-        <NavLink href={"#"}>Cloud Engineer</NavLink>
+
+        {categories.map((category) => (
+          <NavLink key={category.id} href={category.href}>
+            {category.name}
+          </NavLink>
+        ))}
         <NavLink href={"#"}>more</NavLink>
       </nav>
     </div>
