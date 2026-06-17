@@ -22,6 +22,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import Logo from "../../_components/logo";
 
 const NavigationBar = () => {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
@@ -30,13 +31,7 @@ const NavigationBar = () => {
       <div className="flex h-20 items-center justify-between px-6 md:px-8 max-w-350 mx-auto">
         <div className="flex items-center gap-8 flex-1">
           <Link href="/" className="flex items-center shrink-0">
-            <h1 className="text-3xl font-bold font-heading">
-              <span className=" bg-amber-500 py-1 rounded-md px-1 text-background">
-                Job
-              </span>
-              <span className="pl-1">Hub</span>
-              <span className="inline-block w-2 h-2 ml-1 rounded-full bg-amber-500 "></span>
-            </h1>
+            <Logo />
           </Link>
 
           <div className="hidden md:block w-full max-w-2xl">
