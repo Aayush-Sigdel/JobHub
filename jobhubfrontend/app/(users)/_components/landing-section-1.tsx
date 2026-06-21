@@ -3,6 +3,7 @@ import LandingPageNavbar from "./landing-page-navbar";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { ArrowRight, ArrowUp } from "lucide-react";
 
 const LandingSectionOne = () => {
   return (
@@ -14,29 +15,38 @@ const LandingSectionOne = () => {
     >
       <LandingPageNavbar />
 
-      <div className="flex flex-1 flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16 px-6 md:px-12 lg:px-24 mt-12 lg:mt-0">
-        <div className="w-full lg:w-1/2 flex flex-col gap-8 justify-center text-left">
-          <h1 className="text-6xl md:text-7xl lg:text-7xl font-black leading-[1.1] tracking-tight text-black">
-            <div className="inline-block bg-secondary text-black font-bold px-6 py-2 rounded-full mb-8 text-sm uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              The Future of Recruitment
-            </div>
-            <br />
+      <div className="flex flex-1 flex-col-reverse lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 md:px-12 lg:px-24 mt-12 lg:mt-0 max-w-7xl mx-auto">
+        <div className="w-full lg:w-1/2 flex flex-col gap-6 justify-center text-left">
+          <div className="inline-block bg-white text-slate-900 font-semibold px-4 py-1.5 rounded-full mb-2 text-sm shadow-sm self-start">
+            The Future of Recruitment
+          </div>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
             Hire fairly.
-            <br className="hidden lg:block" />
+            <br />
             Work brilliantly.
           </h1>
-          <p className="text-lg md:text-xl font-medium text-black max-w-md">
+          <p className="text-lg md:text-xl font-medium text-slate-900 max-w-lg leading-relaxed">
             JobHub merges powerful AI matching, deep profile enrichment, and
             strict anonymization to create a transparent, unbiased job market.
           </p>
 
-          <div className="flex justify-start pt-4">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button
               asChild
-              className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-7 rounded-none border-2 border-transparent transition-all"
+              className="bg-slate-900 text-white hover:bg-slate-800 font-semibold text-lg px-8 py-6 rounded-xl shadow-lg transition-all"
             >
-              <Link href="/jobs">Find jobs</Link>
+              <Link href="/home">
+                Get Started
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
             </Button>
+            {/*<Button
+              asChild
+              variant="outline"
+              className="bg-white/50 hover:bg-white text-slate-900 border-none font-semibold text-lg px-8 py-6 rounded-xl shadow-sm transition-all"
+            >
+              <Link href="/post-job">Post a Job</Link>
+            </Button>*/}
           </div>
         </div>
 
@@ -47,7 +57,7 @@ const LandingSectionOne = () => {
             width={600}
             height={600}
             priority
-            className="object-contain w-[80%] max-w-100 lg:max-w-full h-auto drop-shadow-xl"
+            className="object-contain w-[90%] lg:max-w-full h-auto drop-shadow-2xl"
           />
         </div>
       </div>

@@ -1,44 +1,184 @@
+"use client";
+
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, Star } from "lucide-react";
 
 const LandingSectionFive = () => {
+  const cities = [
+    "AMSTERDAM",
+    "BARCELONA",
+    "BERLIN",
+    "DUBLIN",
+    "PARIS",
+    "REMOTE",
+    "AND MORE",
+  ];
+
+  const testimonials = [
+    {
+      quote: "Anyway, as I was saying — best-in-class.",
+      stars: 5,
+      author: "Anonymous",
+      title: "Tech Lead",
+    },
+    {
+      quote: "AHHHHHHHHHHHHHHHHHHHHHHHHHHHHH",
+      stars: 0,
+      author: "Polyphemus",
+      title: "Cyclops, Cave Solutions (on leave)",
+      isJoke: true,
+    },
+    {
+      quote: "I'm a real person. This is a real testimonial. By a real woman.",
+      stars: 5,
+      author: "Definitely A. Human",
+      title: "Totally Real Developer",
+    },
+  ];
+
+  const renderStars = (count: number) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <Star
+        key={i}
+        className={`w-5 h-5 ${
+          i < count ? "fill-[#FFCC00] text-black" : "text-gray-300"
+        } ${count > 0 ? "stroke-2" : "stroke-1"}`}
+      />
+    ));
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
+  };
+
   return (
-    <section className="w-full bg-[#F5F5F3] py-32 px-6 flex flex-col items-center text-center">
-      <span className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">
-        Fairness First
-      </span>
-      <h2 className="text-5xl md:text-6xl font-black tracking-tight text-black mb-8 leading-[1.1]">
-        hired for your skills,
-        <br /> not your background
-      </h2>
-      <p className="text-lg font-medium text-gray-700 max-w-2xl mb-12">
-        We actively implement bias-prevention measures in the hiring process.
-        Our anonymization system hides surnames, profile pictures, and
-        identifying information during the early shortlisting process.
-      </p>
+    <div className="w-full flex flex-col">
+      {/* --- PART 1: LOCATIONS MARQUEE --- */}
+      <section className="w-full bg-white py-24 md:py-32 flex flex-col items-center border-b-2 border-black overflow-hidden relative">
+        <div className="max-w-5xl mx-auto px-6 text-center z-10 flex flex-col items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col gap-2 mb-8"
+          >
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-black uppercase">
+              Work how you want.
+            </h2>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent [-webkit-text-stroke:2px_black] uppercase">
+              Work where you want.
+            </h2>
+          </motion.div>
 
-      <div className="bg-white border-2 border-black p-8 max-w-xl w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-12">
-        <div className="flex items-center gap-4 mb-4 opacity-50 blur-sm select-none">
-          <div className="w-16 h-16 rounded-full bg-gray-300"></div>
-          <div className="flex flex-col items-start gap-2">
-            <div className="h-4 w-32 bg-gray-300 rounded"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-lg md:text-xl font-bold text-gray-700 max-w-2xl mb-12 leading-relaxed"
+          >
+            Find roles in the most exciting cities for tech jobs, plus thousands
+            of remote and flexible opportunities tailored to your lifestyle.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Button className="bg-[#FFCC00] text-black hover:bg-black hover:text-[#FFCC00] border-2 border-black font-black uppercase tracking-widest text-lg px-10 py-7 rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-3">
+              Let's Go <ArrowRight className="w-6 h-6" />
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* Infinite Scrolling Marquee */}
+        <div className="w-full mt-20 border-y-2 border-black bg-[#FFCC00] py-4 flex overflow-hidden whitespace-nowrap">
+          <motion.div
+            animate={{ x: [0, -1035] }}
+            transition={{ repeat: Infinity, ease: "linear", duration: 20 }}
+            className="flex items-center gap-12 font-black text-xl md:text-2xl tracking-widest uppercase"
+          >
+            {[...cities, ...cities, ...cities].map((city, idx) => (
+              <div key={idx} className="flex items-center gap-12">
+                <span className="text-black">{city}</span>
+                <span className="text-black text-2xl">●</span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* --- PART 2: JOKE TESTIMONIALS --- */}
+      <section className="w-full bg-[#F5F5F3] py-24 md:py-32 px-6 flex flex-col items-center">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="text-center mb-16 flex flex-col items-center">
+            <span className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 mb-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]">
+              What Our Users Say
+            </span>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-black leading-[1.1] uppercase">
+              We are here to help you <br className="hidden md:block" /> find
+              your people.
+            </h2>
           </div>
-        </div>
-        <div className="border-t-2 border-dashed border-gray-200 my-4"></div>
-        <div className="flex flex-col gap-2 text-left">
-          <h4 className="font-black text-black text-xl">
-            Top 1% React Developer
-          </h4>
-          <p className="text-gray-600 font-medium text-sm">
-            Matching Score: 98% based on recent GitHub commits.
-          </p>
-        </div>
-      </div>
 
-      <Button className="bg-[#FFCC00] text-black hover:bg-[#E6B800] font-black uppercase tracking-wider text-lg px-12 py-8 rounded-none transition-colors">
-        Learn about anonymization
-      </Button>
-    </section>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
+            {testimonials.map((test, idx) => (
+              <motion.div
+                key={idx}
+                variants={cardVariants}
+                whileHover={{ y: -4, shadow: "4px 8px 0px 0px rgba(0,0,0,1)" }}
+                className={`flex flex-col justify-between p-8 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white transition-all ${
+                  test.isJoke ? "rotate-1" : "even:-rotate-1"
+                }`}
+              >
+                <div>
+                  <div className="flex gap-1 mb-6">
+                    {renderStars(test.stars)}
+                  </div>
+                  <p
+                    className={`text-lg font-bold text-black mb-8 leading-snug ${test.isJoke ? "text-red-600 font-black text-xl break-words" : ""}`}
+                  >
+                    "{test.quote}"
+                  </p>
+                </div>
+
+                <div className="pt-6 border-t-2 border-dashed border-gray-300">
+                  <p className="font-black text-black uppercase">
+                    {test.author}
+                  </p>
+                  <p className="text-sm font-bold text-gray-500">
+                    {test.title}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+    </div>
   );
 };
 

@@ -1,55 +1,97 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "motion/react";
 
 const LandingSectionSix = () => {
   return (
     <footer className="w-full flex flex-col">
-      {/* Final CTA Area */}
-      <section className="w-full bg-[#F5F5F3] py-24 flex flex-col items-center text-center px-6">
-        <Image
-          src={"/landing-illustrate-two.png"}
-          alt="landing illustration 2"
-          width={660}
-          height={660}
-          className="object-contain "
-        />
-        <h2 className="text-5xl md:text-6xl font-black tracking-tight text-black mb-8 leading-[1.1]">
-          We're obsessed <br /> with your potential
-        </h2>
-        <Button className="bg-[#FFCC00] text-black hover:bg-[#E6B800] font-black uppercase text-lg px-12 py-8 rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-          Join JobHub Today
-        </Button>
+      {/* CTA Section with Image */}
+      <section className="py-24 md:py-32 px-6 flex justify-center bg-[#FFCC00] border-b-2 border-black overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20 w-full">
+          {/* Text Content */}
+          <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left z-10">
+            <motion.h2
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 text-black uppercase leading-[1.05]"
+            >
+              Ready to revolutionize hiring?
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-xl font-bold text-gray-800 max-w-xl mb-12 leading-relaxed"
+            >
+              Join the platform that puts skills first. Transparent, unbiased,
+              and powered by intelligent data.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Button className="bg-black text-[#FFCC00] hover:bg-white hover:text-black border-2 border-black font-black uppercase tracking-widest text-lg px-12 py-8 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
+                Get Started Now
+              </Button>
+            </motion.div>
+          </div>
+
+          <div className="flex w-1/2 justify-center lg:justify-end">
+            <Image
+              src="/landing-illustrate-two.png"
+              alt="JobHub Platform Preview"
+              width={1000}
+              height={800}
+              className="object-cover z-10 transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+        </div>
       </section>
 
-      {/* Actual Footer */}
-      <section className="w-full bg-[#FFCC00] py-12 px-6 lg:px-24 border-t-4 border-black flex flex-col items-center">
-        <div className="text-2xl font-black text-black mb-8">JOBHUB.</div>
+      {/* Footer Details */}
+      <section className="w-full bg-white py-16 px-6 lg:px-24 flex flex-col items-center">
+        <div className="text-4xl font-black text-black mb-10 tracking-tighter uppercase">
+          JobHub.
+        </div>
 
-        <div className="flex gap-6 mb-12 font-bold text-sm uppercase tracking-wider text-black">
+        <div className="flex flex-wrap justify-center gap-x-10 gap-y-6 mb-12 font-bold text-sm uppercase tracking-widest text-gray-500">
           <Link
             href="#"
-            className="hover:underline decoration-2 underline-offset-4"
+            className="hover:text-black transition-colors hover:underline underline-offset-4"
           >
             Candidates
           </Link>
           <Link
             href="#"
-            className="hover:underline decoration-2 underline-offset-4"
+            className="hover:text-black transition-colors hover:underline underline-offset-4"
           >
-            Recruiters
+            Employers
           </Link>
           <Link
             href="#"
-            className="hover:underline decoration-2 underline-offset-4"
+            className="hover:text-black transition-colors hover:underline underline-offset-4"
           >
-            AI Specs
+            AI Specifications
+          </Link>
+          <Link
+            href="#"
+            className="hover:text-black transition-colors hover:underline underline-offset-4"
+          >
+            Privacy Policy
           </Link>
         </div>
 
-        <p className="text-black font-medium text-sm text-center">
-          © 2026 JobHub. A Project by Aayush Sigdel, Sugham Kharel, and Kamal
-          Subedi.
+        <p className="text-gray-400 text-xs font-bold text-center uppercase tracking-widest max-w-2xl leading-relaxed">
+          © {new Date().getFullYear()} JobHub. A Project by Aayush Sigdel,
+          Sugham Kharel, and Kamal Subedi. All rights reserved.
         </p>
       </section>
     </footer>
