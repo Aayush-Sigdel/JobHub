@@ -1,12 +1,13 @@
 "use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
 import { SearchBar } from "@/components/web/search";
 import { ThemeToggle } from "../../../../components/layout/theme-toggle";
-import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BellIcon } from "@/components/ui/bell";
-import { MessageSquareMoreIcon } from "@/components/ui/message-square-more";
-import { BookmarkIcon } from "@/components/ui/bookmark";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,31 +17,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import Logo from "../../_components/logo";
+import { DropdownMenuProfileIcons } from "../../_components/dropdown-profile";
+import NotificationCenter from "../../_components/dropdown-notification";
+import MessageCenter from "../../_components/dropdown-message";
+import JobTracker from "../../_components/dropdown-job-tracker";
 
 const NavigationBar = () => {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="flex h-20 items-center justify-between px-6 md:px-8 max-w-350 mx-auto">
-        <div className="flex items-center gap-8 flex-1">
-          <Link href="/" className="flex items-center shrink-0">
+      <div className="mx-auto flex h-20 max-w-350 items-center justify-between px-6 md:px-8">
+        <div className="flex flex-1 items-center gap-8">
+          <Link href="/" className="flex shrink-0 items-center">
             <Logo />
           </Link>
 
-          <div className="hidden md:block w-full max-w-2xl">
+          <div className="hidden w-full max-w-2xl md:block">
             <SearchBar />
           </div>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="hidden lg:flex items-center gap-6 mr-2 text-sm font-semibold text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-4">
+          <div className="hidden items-center gap-6 text-sm font-semibold text-muted-foreground lg:flex">
             <Link href="#" className="transition-colors hover:text-foreground">
               Dashboard
             </Link>
@@ -50,47 +55,24 @@ const NavigationBar = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <HoverCard>
-              <HoverCardTrigger>
-                <BellIcon size={22} />
-              </HoverCardTrigger>
-              <HoverCardContent>
-                No new Notification
-                <BellIcon size={64} />
-              </HoverCardContent>
-            </HoverCard>
-            <HoverCard>
-              <HoverCardTrigger>
-                <MessageSquareMoreIcon size={22} />
-              </HoverCardTrigger>
-              <HoverCardContent>
-                No new Message
-                <MessageSquareMoreIcon size={64} />
-              </HoverCardContent>
-            </HoverCard>
-            <HoverCard>
-              <HoverCardTrigger>
-                <BookmarkIcon size={22} />
-              </HoverCardTrigger>
-              <HoverCardContent>
-                No Bookmark
-                <BookmarkIcon size={64} />
-              </HoverCardContent>
-            </HoverCard>
+            <NotificationCenter />
+            <MessageCenter />
+            <JobTracker />
+            <DropdownMenuProfileIcons />
           </div>
 
-          <div className="flex items-center gap-4 pl-4 border-l">
+          <div className="flex items-center gap-4 border-l pl-4">
             <ThemeToggle />
             {isUserLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger>
-                  <Avatar className="w-9 h-9 border cursor-pointer transition-all hover:ring-2 hover:ring-amber-500 hover:ring-offset-2 hover:ring-offset-background">
+                  <Avatar className="h-9 w-9 cursor-pointer border transition-all hover:ring-2 hover:ring-amber-500 hover:ring-offset-2 hover:ring-offset-background">
                     <AvatarImage
                       src="/placeholder-user.jpg"
                       alt="user profile"
                       className="object-cover"
                     />
-                    <AvatarFallback className="font-medium text-amber-700 bg-amber-100">
+                    <AvatarFallback className="bg-amber-100 font-medium text-amber-700">
                       PP
                     </AvatarFallback>
                   </Avatar>
@@ -109,7 +91,7 @@ const NavigationBar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex justify-center gap-2 items-center">
+              <div className="flex items-center justify-center gap-2">
                 <Link
                   href="/sign-in"
                   className={buttonVariants({ variant: "ghost" })}
