@@ -29,7 +29,7 @@ import MessageCenter from "../../_components/dropdown-message";
 import JobTracker from "../../_components/dropdown-job-tracker";
 
 const NavigationBar = () => {
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(true);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background">
@@ -57,39 +57,16 @@ const NavigationBar = () => {
           <div className="flex items-center gap-4">
             <NotificationCenter />
             <MessageCenter />
-            <JobTracker />
-            <DropdownMenuProfileIcons />
+
+            <Link href={"/save-job"}>
+              <JobTracker />
+            </Link>
           </div>
 
           <div className="flex items-center gap-4 border-l pl-4">
             <ThemeToggle />
             {isUserLoggedIn ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <Avatar className="h-9 w-9 cursor-pointer border transition-all hover:ring-2 hover:ring-amber-500 hover:ring-offset-2 hover:ring-offset-background">
-                    <AvatarImage
-                      src="/placeholder-user.jpg"
-                      alt="user profile"
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="bg-amber-100 font-medium text-amber-700">
-                      PP
-                    </AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
-                    <DropdownMenuItem>Billing</DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem>Team</DropdownMenuItem>
-                    <DropdownMenuItem>Subscription</DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DropdownMenuProfileIcons />
             ) : (
               <div className="flex items-center justify-center gap-2">
                 <Link
