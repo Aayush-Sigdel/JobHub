@@ -35,10 +35,7 @@ const LandingSectionOne = () => {
               asChild
               className="bg-slate-900 text-white hover:bg-slate-800 font-semibold text-lg px-8 py-6 rounded-xl shadow-lg transition-all"
             >
-              <Link href="/home">
-                Get Started
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
+              <Link href="/find-job">Find jobs</Link>
             </Button>
             {/*<Button
               asChild
