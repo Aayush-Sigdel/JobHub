@@ -12,16 +12,17 @@ const LandingSectionFour = () => {
     offset: ["start start", "end end"],
   });
 
+
   const backgroundColor = useTransform(
     scrollYProgress,
     [0, 0.2, 0.4, 0.6, 0.8, 1],
     [
-      "#FFCC00", // 1. Yellow (Start)
-      "#93C5FD", // 2. Soft Blue
-      "#FCA5A5", // 3. Soft Red
-      "#6EE7B7", // 4. Emerald Green
-      "#C084FC", // 5. Soft Purple
-      "#818CF8", // 6. Indigo (End)
+      "#38bdf8", // Pacific Blue 400
+      "#facc15", // Tuscan Sun 400
+      "#f87171", // Tomato 400
+      "#fb7185", // Amaranth 400
+      "#38bdf8", // Pacific Blue 400
+      "#1f2937", // Onyx 800
     ],
   );
 
@@ -29,7 +30,7 @@ const LandingSectionFour = () => {
     <motion.section
       ref={sectionRef}
       style={{ backgroundColor }}
-      className="w-full py-32 px-6 flex flex-col items-center transition-colors duration-300"
+      className="w-full py-32 px-6 flex flex-col items-center"
     >
       {/* Block 1 (Yellow) */}
       <motion.div
@@ -39,9 +40,7 @@ const LandingSectionFour = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-6 h-[80vh] justify-center text-center"
       >
-        <span className="text-sm font-bold uppercase tracking-widest text-black">
-          Data Aggregation
-        </span>
+        <span className="text-sm font-bold uppercase tracking-widest text-tomato-500">Salary Insights</span>
         <h2 className="text-5xl md:text-6xl font-black tracking-tight text-black leading-[1.1]">
           no endless duplicates
         </h2>
@@ -50,7 +49,7 @@ const LandingSectionFour = () => {
           deduplication cleans up job postings from multiple sources so you only
           see what's fresh.
         </p>
-        <Button className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-6 rounded-none mt-4">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-none mt-4">
           See how it works
         </Button>
       </motion.div>
@@ -63,9 +62,7 @@ const LandingSectionFour = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-6 h-[80vh] justify-center text-center"
       >
-        <span className="text-sm font-bold uppercase tracking-widest text-black">
-          AI Transparency
-        </span>
+        <span className="text-sm font-bold uppercase tracking-widest text-tomato-500">Smart Analytics</span>
         <h2 className="text-5xl md:text-6xl font-black tracking-tight text-black leading-[1.1]">
           open algorithms
         </h2>
@@ -73,7 +70,7 @@ const LandingSectionFour = () => {
           No hidden black-box models. The specifications of our personalized job
           recommendation system are publicly disclosed and fully accessible.
         </p>
-        <Button className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-6 rounded-none mt-4">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-none mt-4">
           Read the specs
         </Button>
       </motion.div>
@@ -96,7 +93,7 @@ const LandingSectionFour = () => {
           We analyze more than just platform data. By extracting insights from
           your GitHub and portfolio websites, we capture your true capabilities.
         </p>
-        <Button className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-6 rounded-none mt-4">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-none mt-4">
           Connect your GitHub
         </Button>
       </motion.div>
@@ -109,8 +106,8 @@ const LandingSectionFour = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-6 h-[80vh] justify-center text-center"
       >
-        <span className="text-sm font-bold uppercase tracking-widest text-black">
-          Smart Matching
+        <span className="text-sm font-bold uppercase tracking-widest text-tuscan-sun-500">
+          Skill Badges
         </span>
         <h2 className="text-5xl md:text-6xl font-black tracking-tight text-black leading-[1.1]">
           Instant Top-K Alerts
@@ -119,7 +116,7 @@ const LandingSectionFour = () => {
           Recruiters automatically view candidate match scores. The platform
           instantly fires notifications to the top K matching job seekers.
         </p>
-        <Button className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-6 rounded-none mt-4">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-none mt-4">
           View matching system
         </Button>
       </motion.div>
@@ -132,8 +129,8 @@ const LandingSectionFour = () => {
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center gap-6 h-[80vh] justify-center text-center"
       >
-        <span className="text-sm font-bold uppercase tracking-widest text-black">
-          Censorship Controls
+        <span className="text-sm font-bold uppercase tracking-widest text-tomato-500">
+          Anonymous Resumes
         </span>
         <h2 className="text-5xl md:text-6xl font-black tracking-tight text-black leading-[1.1]">
           Blind Shortlisting
@@ -142,7 +139,7 @@ const LandingSectionFour = () => {
           Eliminate unconscious bias. Toggle our data-masking system to secure
           your early review stages with objective verification markers.
         </p>
-        <Button className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-6 rounded-none mt-4">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-none mt-4">
           See Anonymization Tools
         </Button>
       </motion.div>
@@ -165,7 +162,7 @@ const LandingSectionFour = () => {
           Never waste time applying to expired openings again. JobHub handles
           constant maintenance sweeps to assure dynamic data fidelity.
         </p>
-        <Button className="bg-white text-black hover:bg-gray-100 font-bold text-lg px-8 py-6 rounded-none mt-4">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-none mt-4">
           Browse Live Vacancies
         </Button>
       </motion.div>

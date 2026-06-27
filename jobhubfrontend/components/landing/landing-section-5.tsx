@@ -2,7 +2,8 @@
 
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { StarIcon as Star } from "@animateicons/react/lucide";;
 
 const LandingSectionFive = () => {
   const cities = [
@@ -42,7 +43,7 @@ const LandingSectionFive = () => {
       <Star
         key={i}
         className={`w-5 h-5 ${
-          i < count ? "fill-[#FFCC00] text-black" : "text-gray-300"
+          i < count ? "fill-tuscan-sun-500 text-foreground" : "text-gray-300"
         } ${count > 0 ? "stroke-2" : "stroke-1"}`}
       />
     ));
@@ -68,7 +69,7 @@ const LandingSectionFive = () => {
   return (
     <div className="w-full flex flex-col">
       {/* --- PART 1: LOCATIONS MARQUEE --- */}
-      <section className="w-full bg-white py-24 md:py-32 flex flex-col items-center border-b-2 border-black overflow-hidden relative">
+      <section className="w-full bg-background py-24 md:py-32 flex flex-col items-center border-b-2 border-border overflow-hidden relative">
         <div className="max-w-5xl mx-auto px-6 text-center z-10 flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -77,10 +78,10 @@ const LandingSectionFive = () => {
             transition={{ duration: 0.5 }}
             className="flex flex-col gap-2 mb-8"
           >
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-black uppercase">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-foreground uppercase">
               Work how you want.
             </h2>
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent [-webkit-text-stroke:2px_black] uppercase">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent [-webkit-text-stroke:2px_currentColor] uppercase">
               Work where you want.
             </h2>
           </motion.div>
@@ -102,14 +103,14 @@ const LandingSectionFive = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Button className="bg-[#FFCC00] text-black hover:bg-black hover:text-[#FFCC00] border-2 border-black font-black uppercase tracking-widest text-lg px-10 py-7 rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-3">
+            <Button className="bg-tomato-500 text-white hover:bg-tomato-500 border-2 border-transparent font-black uppercase tracking-widest text-lg px-10 py-7 rounded-none transition-all flex items-center gap-3">
               Let's Go <ArrowRight className="w-6 h-6" />
             </Button>
           </motion.div>
         </div>
 
         {/* Infinite Scrolling Marquee */}
-        <div className="w-full mt-20 border-y-2 border-black bg-[#FFCC00] py-4 flex overflow-hidden whitespace-nowrap">
+        <div className="w-full mt-20 border-y-2 border-border bg-onyx-900 text-white py-4 flex overflow-hidden whitespace-nowrap">
           <motion.div
             animate={{ x: [0, -1035] }}
             transition={{ repeat: Infinity, ease: "linear", duration: 20 }}
@@ -117,8 +118,8 @@ const LandingSectionFive = () => {
           >
             {[...cities, ...cities, ...cities].map((city, idx) => (
               <div key={idx} className="flex items-center gap-12">
-                <span className="text-black">{city}</span>
-                <span className="text-black text-2xl">●</span>
+                <span className="text-white">{city}</span>
+                <span className="text-tomato-500 text-2xl">●</span>
               </div>
             ))}
           </motion.div>
@@ -126,13 +127,13 @@ const LandingSectionFive = () => {
       </section>
 
       {/* --- PART 2: JOKE TESTIMONIALS --- */}
-      <section className="w-full bg-[#F5F5F3] py-24 md:py-32 px-6 flex flex-col items-center">
+      <section className="w-full bg-muted py-24 md:py-32 px-6 flex flex-col items-center">
         <div className="max-w-6xl mx-auto w-full">
           <div className="text-center mb-16 flex flex-col items-center">
-            <span className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 mb-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]">
+            <span className="text-xs font-black uppercase tracking-widest bg-black text-white px-3 py-1 mb-4 border-2 border-border">
               What Our Users Say
             </span>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-black leading-[1.1] uppercase">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-[1.1] uppercase">
               We are here to help you <br className="hidden md:block" /> find
               your people.
             </h2>
@@ -149,8 +150,8 @@ const LandingSectionFive = () => {
               <motion.div
                 key={idx}
                 variants={cardVariants}
-                whileHover={{ y: -4, shadow: "4px 8px 0px 0px rgba(0,0,0,1)" }}
-                className={`flex flex-col justify-between p-8 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white transition-all ${
+                whileHover={{ y: -4 }}
+                className={`flex flex-col justify-between p-8 border-2 border-border bg-background transition-all ${
                   test.isJoke ? "rotate-1" : "even:-rotate-1"
                 }`}
               >
@@ -159,14 +160,14 @@ const LandingSectionFive = () => {
                     {renderStars(test.stars)}
                   </div>
                   <p
-                    className={`text-lg font-bold text-black mb-8 leading-snug ${test.isJoke ? "text-red-600 font-black text-xl break-words" : ""}`}
+                    className={`text-lg font-bold text-foreground mb-8 leading-snug ${test.isJoke ? "text-red-600 font-black text-xl break-words" : ""}`}
                   >
                     "{test.quote}"
                   </p>
                 </div>
 
                 <div className="pt-6 border-t-2 border-dashed border-gray-300">
-                  <p className="font-black text-black uppercase">
+                  <p className="font-black text-foreground uppercase">
                     {test.author}
                   </p>
                   <p className="text-sm font-bold text-gray-500">

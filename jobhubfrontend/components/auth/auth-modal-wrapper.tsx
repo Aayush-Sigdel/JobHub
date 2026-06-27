@@ -1,19 +1,17 @@
-"use client";
-
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { useRouter } from "next/navigation";
+import React from "react";
 
-export function RouteModal({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      router.back();
-    }
-  };
-
+export function AuthModalWrapper({ 
+  isOpen, 
+  setIsOpen, 
+  children 
+}: { 
+  isOpen: boolean; 
+  setIsOpen: (open: boolean) => void; 
+  children: React.ReactNode;
+}) {
   return (
-    <Dialog open={true} onOpenChange={handleOpenChange} >
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[fit-content] w-full p-0 border-0 bg-transparent shadow-none overflow-hidden sm:rounded-[32px]">
         <DialogTitle className="sr-only">Authentication Modal</DialogTitle>
         {children}

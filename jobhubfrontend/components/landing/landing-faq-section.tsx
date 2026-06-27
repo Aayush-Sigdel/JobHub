@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Minus } from "lucide-react";
+import { PlusIcon as Plus, MinusIcon as Minus } from "@animateicons/react/lucide";;
 
 const faqs = [
   {
@@ -45,26 +45,26 @@ const FAQItem = ({
 }) => {
   return (
     <div
-      className={`border-2 border-black bg-white transition-all duration-300 ${
+      className={`border-2 border-foreground bg-background transition-all duration-300 ${
         isOpen
-          ? "shadow-[6px_6px_0px_0px_rgba(255,204,0,1)] -translate-y-1"
-          : "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          ? "border-tomato-500 -translate-y-1"
+          : ""
       } mb-6`}
     >
       <button
         onClick={onClick}
         className="w-full flex items-center justify-between p-6 md:p-8 text-left focus:outline-none"
       >
-        <span className="font-black text-lg md:text-xl text-black pr-8 uppercase tracking-wide">
+        <span className="font-black text-lg md:text-xl text-foreground pr-8 uppercase tracking-wide">
           {question}
         </span>
         <div
-          className={`shrink-0 p-2 border-2 border-black transition-colors ${isOpen ? "bg-[#FFCC00]" : "bg-slate-100"}`}
+          className={`shrink-0 p-2 border-2 border-foreground transition-colors ${isOpen ? "bg-tomato-500" : "bg-muted"}`}
         >
           {isOpen ? (
-            <Minus className="w-6 h-6 text-black" />
+            <Minus className="w-6 h-6 text-foreground" />
           ) : (
-            <Plus className="w-6 h-6 text-black" />
+            <Plus className="w-6 h-6 text-foreground" />
           )}
         </div>
       </button>
@@ -92,13 +92,13 @@ const LandingSectionFAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0); // First item open by default
 
   return (
-    <section className="w-full bg-[#F5F5F3] py-24 md:py-32 px-6 flex flex-col items-center border-b-2 border-black">
+    <section className="w-full bg-muted py-24 md:py-32 px-6 flex flex-col items-center border-b-2 border-foreground">
       <div className="max-w-4xl mx-auto w-full">
         <div className="text-center mb-16 flex flex-col items-center">
-          <span className="text-xs font-black uppercase tracking-widest bg-black text-[#FFCC00] px-3 py-1 mb-4 border-2 border-black">
+          <span className="text-xs font-black uppercase tracking-widest bg-foreground text-tomato-500 px-3 py-1 mb-4 border-2 border-foreground">
             Got Questions?
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-black leading-[1.1] uppercase">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-[1.1] uppercase">
             Frequently Asked <br className="hidden md:block" /> Questions.
           </h2>
         </div>

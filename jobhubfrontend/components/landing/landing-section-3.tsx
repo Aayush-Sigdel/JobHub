@@ -21,9 +21,9 @@ const LandingSectionThree = () => {
   ];
 
   return (
-    <section className="w-full bg-slate-50 py-24 px-6 flex flex-col items-center text-center">
+    <section className="w-full bg-muted py-24 px-6 flex flex-col items-center text-center">
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-12">
+        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground mb-12">
           Aggregated Opportunities
         </h2>
 
@@ -31,9 +31,9 @@ const LandingSectionThree = () => {
           {companyList.map((company, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl border border-slate-100 flex items-center justify-center py-5 px-3 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer"
+              className="bg-card rounded-xl border border-border hover:border-primary/50 flex items-center justify-center py-5 px-3 hover:-translate-y-0.5 hover:shadow-sm transition-all cursor-pointer"
             >
-              <span className="font-semibold text-slate-700 text-sm md:text-base truncate">
+              <span className="font-semibold text-muted-foreground text-sm md:text-base truncate">
                 {company}
               </span>
             </div>
