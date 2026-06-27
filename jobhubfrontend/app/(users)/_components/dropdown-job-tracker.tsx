@@ -8,7 +8,7 @@ const jobtracker = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors cursor-pointer">
           <BookmarkIcon size={20} />
         </button>
       </DropdownMenuTrigger>

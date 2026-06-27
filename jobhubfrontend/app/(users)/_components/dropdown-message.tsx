@@ -56,7 +56,7 @@ function MessageCard({
       <div className="flex-1">
         <div className="flex justify-between items-center">
           <h3 className="font-medium text-sm text-foreground">
-            <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mr-2" />
+            <span className="inline-block w-2 h-2 bg-tomato-500 rounded-full mr-2" />
             {title}
           </h3>
 
@@ -73,7 +73,7 @@ export default function MessageCenter() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors cursor-pointer">
           <MessageSquareMoreIcon size={20} />
         </button>
       </DropdownMenuTrigger>

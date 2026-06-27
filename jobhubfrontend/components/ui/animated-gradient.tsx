@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export function AnimatedGradient({ className, children }: { className?: string, children?: React.ReactNode }) {
   return (
-    <div className={cn("relative overflow-hidden w-full h-full bg-[#FFCC00]", className)}>
+    <div className={cn("relative overflow-hidden w-full h-full bg-tuscan-sun-400", className)}>
       <motion.div
         animate={{
           scale: [1, 1.2, 1],

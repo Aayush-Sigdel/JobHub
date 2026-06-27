@@ -55,7 +55,7 @@ export default function ForgetPasswordPage() {
               <Button 
                 disabled={!email}
                 onClick={() => setIsSubmitted(true)}
-                className="w-full h-12 rounded-xl text-base font-bold transition-all disabled:opacity-100 disabled:bg-slate-100 disabled:text-slate-400 enabled:bg-slate-900 enabled:text-white enabled:hover:bg-slate-800"
+                className="w-full h-12 rounded-xl text-base font-bold transition-all disabled:opacity-100 disabled:bg-muted disabled:text-slate-400 enabled:bg-slate-900 enabled:text-white enabled:hover:bg-slate-800"
               >
                 Send Reset Link
               </Button>

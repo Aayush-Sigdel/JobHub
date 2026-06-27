@@ -12,13 +12,13 @@ export function SearchBar() {
     <motion.div 
       initial={false}
       animate={{ 
-        borderColor: isFocused ? "#0f172a" : "#e2e8f0" 
+        borderColor: isFocused ? "var(--color-foreground)" : "var(--color-border)" 
       }}
-      className="flex items-center w-full max-w-xl bg-white border-2 border-slate-200 rounded-xl overflow-hidden transition-colors"
+      className="flex items-center w-full max-w-xl bg-background border-2 border-border rounded-xl overflow-hidden transition-colors"
     >
       <div className="pl-4 pr-2 flex items-center justify-center">
         <motion.div
-          animate={isFocused ? { scale: 1.15, rotate: -10, color: "#f59e0b" } : { scale: 1, rotate: 0, color: "#94a3b8" }}
+          animate={isFocused ? { scale: 1.15, rotate: -10, color: "var(--color-tomato-500)" } : { scale: 1, rotate: 0, color: "var(--color-muted-foreground)" }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <SearchIcon className="w-5 h-5" strokeWidth={3} />
@@ -31,7 +31,7 @@ export function SearchBar() {
         onChange={(e) => setSearchQuery(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="flex-1 py-3 px-2 bg-transparent outline-none text-slate-900 font-bold placeholder:text-slate-400 placeholder:font-semibold"
+        className="flex-1 py-3 px-2 bg-transparent outline-none text-foreground font-bold placeholder:text-muted-foreground placeholder:font-semibold"
       />
       <AnimatePresence>
         {searchQuery && (
@@ -43,14 +43,14 @@ export function SearchBar() {
           >
             <button
               onClick={() => setSearchQuery("")}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+              className="bg-muted hover:bg-muted/80 text-muted-foreground px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
             >
               Clear
             </button>
           </motion.div>
         )}
       </AnimatePresence>
-      <button className="bg-[#FFCC00] hover:bg-amber-400 text-slate-900 font-black px-6 py-3 transition-colors border-l-2 border-slate-900 h-full">
+      <button className="bg-tomato-500 hover:bg-tomato-500 text-white font-black px-6 py-3 transition-colors border-l-2 border-border focus-visible:border-foreground h-full">
         Find
       </button>
     </motion.div>

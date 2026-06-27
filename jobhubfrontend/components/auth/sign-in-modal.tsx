@@ -38,7 +38,7 @@ export const SignInModal = () => {
           className="object-cover object-bottom" 
           priority
         />
-        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0 bg-foreground/10"></div>
         <div className="relative z-10 p-12 flex flex-col pt-16">
           <h1 className="text-4xl font-bold text-white mb-8 tracking-tight">
             Success starts here
@@ -74,9 +74,9 @@ export const SignInModal = () => {
             >
               <div className="text-center mb-10">
                 <h1 className="font-black text-3xl tracking-tight text-foreground mb-2">Welcome back</h1>
-                <p className="text-slate-600 font-medium">
+                <p className="text-muted-foreground font-medium">
                   Don’t have an account?{" "}
-                  <Link href="/sign-up" className="text-foreground hover:text-amber-500 transition-colors underline decoration-2 underline-offset-4 font-bold">
+                  <Link href="/sign-up" className="text-foreground hover:text-tuscan-sun-500 transition-colors underline decoration-2 underline-offset-4 font-bold">
                     Join here
                   </Link>
                 </p>
@@ -102,7 +102,7 @@ export const SignInModal = () => {
                   <Separator className="flex-1 bg-slate-200 h-0.5" />
                 </div>
 
-                <Button onClick={() => setShowEmailForm(true)} className="w-full h-12 rounded-xl text-base font-bold bg-slate-900 hover:bg-slate-800 text-white transition-all group border-2 border-slate-900">
+                <Button onClick={() => setShowEmailForm(true)} className="w-full h-12 rounded-xl text-base font-bold bg-tomato-500 hover:bg-tomato-600 text-white transition-all group border-2 border-tomato-500">
                   <Mail className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" /> 
                   Continue with email
                 </Button>
@@ -111,11 +111,11 @@ export const SignInModal = () => {
               <div className="mt-8 text-center text-xs font-medium text-muted-foreground leading-relaxed">
                 <p>
                   By joining, you agree to JobHub's{" "}
-                  <Link href="/terms-of-service" className="text-foreground underline decoration-1 underline-offset-2 font-bold hover:text-amber-500">
+                  <Link href="/terms-of-service" className="text-foreground underline decoration-1 underline-offset-2 font-bold hover:text-tuscan-sun-500">
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy-policy" className="text-foreground underline decoration-1 underline-offset-2 font-bold hover:text-amber-500">
+                  <Link href="/privacy-policy" className="text-foreground underline decoration-1 underline-offset-2 font-bold hover:text-tuscan-sun-500">
                     Privacy Policy
                   </Link>.
                 </p>
@@ -175,7 +175,7 @@ export const SignInModal = () => {
 
               <Button 
                 disabled={!email || !password} 
-                className="w-full h-12 rounded-xl text-base font-bold mt-8 transition-all disabled:opacity-100 disabled:bg-slate-100 disabled:text-slate-400 enabled:bg-slate-900 enabled:text-white enabled:hover:bg-slate-800"
+                className="w-full h-12 rounded-xl text-base font-bold mt-8 transition-all disabled:opacity-100 disabled:bg-muted disabled:text-slate-400 enabled:bg-tomato-500 enabled:text-white enabled:hover:bg-tomato-600"
               >
                 Sign in
               </Button>

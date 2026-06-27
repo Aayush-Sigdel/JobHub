@@ -88,14 +88,14 @@ export default function VerificationPage() {
               <Button 
                 disabled={!isComplete}
                 onClick={() => setIsVerified(true)}
-                className="w-full h-12 rounded-xl text-base font-bold transition-all disabled:opacity-100 disabled:bg-slate-100 disabled:text-slate-400 enabled:bg-slate-900 enabled:text-white enabled:hover:bg-slate-800"
+                className="w-full h-12 rounded-xl text-base font-bold transition-all disabled:opacity-100 disabled:bg-muted disabled:text-slate-400 enabled:bg-slate-900 enabled:text-white enabled:hover:bg-slate-800"
               >
                 Verify Account
               </Button>
               
               <div className="mt-8 text-center text-sm font-medium text-muted-foreground">
                 Didn't receive the code?{" "}
-                <button className="text-foreground font-bold hover:text-amber-500 transition-colors underline decoration-2 underline-offset-4">
+                <button className="text-foreground font-bold hover:text-tomato-500 transition-colors underline decoration-2 underline-offset-4">
                   Resend
                 </button>
               </div>

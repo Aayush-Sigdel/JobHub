@@ -53,7 +53,7 @@ const LandingSectionTwo = () => {
           {/* Feature 1 */}
           <motion.div variants={itemVariants} className="flex flex-col items-center gap-4 text-center group cursor-pointer">
             <div className="p-6 bg-card rounded-3xl border border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
-              <Database className="w-10 h-10 text-slate-800 group-hover:text-[#FFCC00] transition-colors" />
+              <Database className="w-10 h-10 text-slate-800 group-hover:text-tomato-500 transition-colors" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mt-2">Clean Data</h3>
             <p className="text-slate-600 font-medium max-w-[250px]">
@@ -65,7 +65,7 @@ const LandingSectionTwo = () => {
           {/* Feature 2 */}
           <motion.div variants={itemVariants} className="flex flex-col items-center gap-4 text-center group cursor-pointer">
             <div className="p-6 bg-card rounded-3xl border border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
-              <Code2 className="w-10 h-10 text-slate-800 group-hover:text-[#FFCC00] transition-colors" />
+              <Code2 className="w-10 h-10 text-slate-800 group-hover:text-tomato-500 transition-colors" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mt-2">Deep Profiling</h3>
             <p className="text-slate-600 font-medium max-w-[250px]">
@@ -77,7 +77,7 @@ const LandingSectionTwo = () => {
           {/* Feature 3 */}
           <motion.div variants={itemVariants} className="flex flex-col items-center gap-4 text-center group cursor-pointer">
             <div className="p-6 bg-card rounded-3xl border border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
-              <ShieldClose className="w-10 h-10 text-slate-800 group-hover:text-[#FFCC00] transition-colors" />
+              <ShieldClose className="w-10 h-10 text-slate-800 group-hover:text-tomato-500 transition-colors" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mt-2">Unbiased Hiring</h3>
             <p className="text-slate-600 font-medium max-w-[250px]">
@@ -89,7 +89,7 @@ const LandingSectionTwo = () => {
           {/* Feature 4 */}
           <motion.div variants={itemVariants} className="flex flex-col items-center gap-4 text-center group cursor-pointer">
             <div className="p-6 bg-card rounded-3xl border border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
-              <BellRing className="w-10 h-10 text-slate-800 group-hover:text-[#FFCC00] transition-colors" />
+              <BellRing className="w-10 h-10 text-slate-800 group-hover:text-tomato-500 transition-colors" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mt-2">Smart Matching</h3>
             <p className="text-slate-600 font-medium max-w-[250px]">

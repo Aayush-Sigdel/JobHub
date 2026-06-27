@@ -10,7 +10,7 @@ import LandingSectionSix from "./_components/landing-section-6";
 
 const LandingPage = () => {
   return (
-    <main className="w-full flex flex-col font-sans bg-white text-slate-900 overflow-hidden selection:bg-[#FFCC00] selection:text-slate-900">
+    <main className="w-full flex flex-col font-sans bg-background text-foreground overflow-hidden selection:bg-tuscan-sun-400 selection:text-background">
       <LandingSectionOne />
       <LandingSectionTwo />
       <LandingSectionThree />

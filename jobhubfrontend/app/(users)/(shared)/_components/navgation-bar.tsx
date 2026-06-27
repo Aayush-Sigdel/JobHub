@@ -30,7 +30,7 @@ const NavigationBar = () => {
   const [isJobPoster, setIsJobPoster] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-background/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b border-border dark:border-slate-800 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
         <div className="flex flex-1 items-center gap-6">
           <Link href="/" className="flex shrink-0 items-center hover:scale-105 transition-transform">
@@ -57,7 +57,7 @@ const NavigationBar = () => {
                     {hoveredIndex === idx && (
                       <motion.div
                         layoutId="navbar-hover-pill"
-                        className="absolute inset-0 bg-[#FFCC00] rounded-full -z-10"
+                        className="absolute inset-0 bg-tomato-500 rounded-full -z-10"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
@@ -65,7 +65,7 @@ const NavigationBar = () => {
                       />
                     )}
                   </AnimatePresence>
-                  <span className={cn("relative z-10", hoveredIndex === idx ? "text-slate-900" : "")}>{link.name}</span>
+                  <span className={cn("relative z-10", hoveredIndex === idx ? "text-foreground" : "")}>{link.name}</span>
                 </Link>
               ))}
             </div>
@@ -74,12 +74,12 @@ const NavigationBar = () => {
           <div className="flex items-center gap-3">
             <NotificationCenter />
             <MessageCenter />
-            <Link href={"/save-job"} className="hover:text-[#FFCC00] transition-colors">
+            <Link href={"/save-job"} className="hover:text-tomato-500 transition-colors">
               <JobTracker />
             </Link>
           </div>
 
-          <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-4">
+          <div className="flex items-center gap-3 border-l border-border dark:border-slate-800 pl-4">
             <ThemeToggle variant="circle" />
             {isUserLoggedIn ? (
               <DropdownMenuProfileIcons />
@@ -89,7 +89,7 @@ const NavigationBar = () => {
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-1.5 rounded-xl font-bold text-sm text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+                    className="px-4 py-1.5 rounded-xl font-bold text-sm text-foreground hover:bg-muted dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
                   >
                     Sign In
                   </motion.div>
@@ -99,7 +99,7 @@ const NavigationBar = () => {
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold text-sm flex items-center justify-center cursor-pointer border border-slate-900 dark:border-white hover:bg-transparent hover:text-slate-900 dark:hover:bg-transparent dark:hover:text-white transition-colors"
+                    className="px-4 py-1.5 bg-tomato-500 text-white rounded-xl font-bold text-sm flex items-center justify-center cursor-pointer border border-tomato-500 hover:bg-transparent hover:text-foreground transition-colors"
                   >
                     Sign Up
                   </motion.div>

@@ -11,7 +11,7 @@ const LandingSectionOne = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
-      className="min-h-screen w-full bg-[#FFCC00] flex flex-col pb-16"
+      className="min-h-screen w-full bg-background flex flex-col pb-16"
     >
       <LandingPageNavbar />
 
@@ -20,12 +20,12 @@ const LandingSectionOne = () => {
           <div className="inline-block bg-primary/10 text-primary font-medium px-4 py-1.5 rounded-full mb-2 text-sm border border-primary/20 self-start">
             The Future of Recruitment
           </div>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-foreground">
             Hire fairly.
             <br />
             Work brilliantly.
           </h1>
-          <p className="text-lg md:text-xl font-medium text-slate-900 max-w-lg leading-relaxed">
+          <p className="text-lg md:text-xl font-medium text-foreground max-w-lg leading-relaxed">
             JobHub merges powerful AI matching, deep profile enrichment, and
             strict anonymization to create a transparent, unbiased job market.
           </p>
@@ -40,7 +40,7 @@ const LandingSectionOne = () => {
             {/*<Button
               asChild
               variant="outline"
-              className="bg-white/50 hover:bg-white text-slate-900 border-none font-semibold text-lg px-8 py-6 rounded-xl shadow-sm transition-all"
+              className="bg-white/50 hover:bg-white text-foreground border-none font-semibold text-lg px-8 py-6 rounded-xl shadow-sm transition-all"
             >
               <Link href="/post-job">Post a Job</Link>
             </Button>*/}
