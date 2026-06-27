@@ -1,5 +1,5 @@
-import NavigationBar from "./_components/navgation-bar";
-import NavigationBarBottom from "./_components/navigation-bar-bottom";
+import NavigationBar from "@/components/navigation/navigation-bar";
+import NavigationBarBottom from "@/components/navigation/navigation-bar-bottom";
 
 const layout = ({
   children,
