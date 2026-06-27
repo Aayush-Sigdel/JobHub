@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Minus } from "lucide-react";
+import { PlusIcon as Plus, MinusIcon as Minus } from "@animateicons/react/lucide";;
 
 const faqs = [
   {
@@ -47,8 +47,8 @@ const FAQItem = ({
     <div
       className={`border-2 border-black bg-white transition-all duration-300 ${
         isOpen
-          ? "shadow-[6px_6px_0px_0px_rgba(255,204,0,1)] -translate-y-1"
-          : "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          ? "border-[#FFCC00] -translate-y-1"
+          : ""
       } mb-6`}
     >
       <button

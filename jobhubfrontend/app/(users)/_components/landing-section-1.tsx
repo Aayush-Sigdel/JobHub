@@ -17,7 +17,7 @@ const LandingSectionOne = () => {
 
       <div className="flex flex-1 flex-col-reverse lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 md:px-12 lg:px-24 mt-12 lg:mt-0 max-w-7xl mx-auto">
         <div className="w-full lg:w-1/2 flex flex-col gap-6 justify-center text-left">
-          <div className="inline-block bg-white text-slate-900 font-semibold px-4 py-1.5 rounded-full mb-2 text-sm shadow-sm self-start">
+          <div className="inline-block bg-primary/10 text-primary font-medium px-4 py-1.5 rounded-full mb-2 text-sm border border-primary/20 self-start">
             The Future of Recruitment
           </div>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
@@ -33,7 +33,7 @@ const LandingSectionOne = () => {
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button
               asChild
-              className="bg-slate-900 text-white hover:bg-slate-800 font-semibold text-lg px-8 py-6 rounded-xl shadow-lg transition-all"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-lg px-8 py-6 rounded-xl border border-transparent shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Link href="/find-job">Find jobs</Link>
             </Button>
@@ -54,7 +54,7 @@ const LandingSectionOne = () => {
             width={600}
             height={600}
             priority
-            className="object-contain w-[90%] lg:max-w-full h-auto drop-shadow-2xl"
+            className="object-contain w-[90%] lg:max-w-full h-auto"
           />
         </div>
       </div>

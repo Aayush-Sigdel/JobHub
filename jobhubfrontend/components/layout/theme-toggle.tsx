@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Moon, Sun } from "lucide-react";
+import { MoonIcon as Moon, SunIcon as Sun } from "@animateicons/react/lucide";;
 import { useTheme } from "@/components/providers/theme-provider";
 
 import { Button } from "@/components/ui/button";

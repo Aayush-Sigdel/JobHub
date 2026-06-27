@@ -7,13 +7,11 @@ import {
 const jobtracker = () => {
   return (
     <DropdownMenu>
-      <div className="flex items-center gap-2.5">
-        <DropdownMenuTrigger asChild>
-          <div className="flex items-center gap-2.5">
-            <BookmarkIcon size={20} />
-          </div>
-        </DropdownMenuTrigger>
-      </div>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+          <BookmarkIcon size={20} />
+        </button>
+      </DropdownMenuTrigger>
     </DropdownMenu>
   );
 };

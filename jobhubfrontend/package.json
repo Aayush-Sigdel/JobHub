@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@animateicons/react": "^0.3.4",
     "@hookform/resolvers": "^5.4.0",
     "@lottiefiles/dotlottie-react": "^0.19.4",
     "@tabler/icons-react": "^3.44.0",

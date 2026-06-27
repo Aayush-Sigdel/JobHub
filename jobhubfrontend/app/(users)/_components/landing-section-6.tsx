@@ -38,7 +38,7 @@ const LandingSectionSix = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <Button className="bg-black text-[#FFCC00] hover:bg-white hover:text-black border-2 border-black font-black uppercase tracking-widest text-lg px-12 py-8 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
+              <Button className="bg-black text-[#FFCC00] hover:bg-white hover:text-black border-2 border-black font-black uppercase tracking-widest text-lg px-12 py-8 rounded-none transition-all">
                 Get Started Now
               </Button>
             </motion.div>

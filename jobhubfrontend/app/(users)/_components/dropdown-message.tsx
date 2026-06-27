@@ -1,20 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "motion/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  Bell,
-  Lightbulb,
-  ChartColumn,
-  Wrench,
-  MessageCircleIcon,
-  MessageSquareMoreIcon,
-} from "lucide-react";
+import { Lightbulb, Wrench } from "lucide-react";
+import { MessageSquareMoreIcon } from "@/components/ui/message-square-more";
+import { BellIcon as Bell, ChartColumnIcon as ChartColumn } from "@animateicons/react/lucide";;
 
 const messages = [
   {
@@ -52,22 +48,22 @@ function MessageCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-3 py-4 border-b border-gray-200 last:border-none">
-      <div className="w-10 h-10 rounded-full border flex items-center justify-center text-gray-600">
+    <div className="flex gap-3 py-4 border-b border-border last:border-none">
+      <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground">
         {icon}
       </div>
 
       <div className="flex-1">
         <div className="flex justify-between items-center">
-          <h3 className="font-medium text-sm text-gray-900">
+          <h3 className="font-medium text-sm text-foreground">
             <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mr-2" />
             {title}
           </h3>
 
-          <span className="text-xs text-gray-400">{time}</span>
+          <span className="text-xs text-muted-foreground">{time}</span>
         </div>
 
-        <p className="text-sm text-gray-500 mt-1">{description}</p>
+        <p className="text-sm text-muted-foreground mt-1">{description}</p>
       </div>
     </div>
   );
@@ -77,39 +73,45 @@ export default function MessageCenter() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="cursor-pointer">
+        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
           <MessageSquareMoreIcon size={20} />
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="end"
-        className="w-120 rounded-2xl border  p-1.5 shadow-2xl shadow-black/40 text-gray-900 bg-white"
+        asChild
+        className="w-120 rounded-2xl border border-border p-0 shadow-lg text-foreground bg-background outline-none"
       >
-        <div className=" rounded-3xl shadow-xl p-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", bounce: 0.35, duration: 0.5 }}
+        >
+          <div className="rounded-xl p-6 bg-background">
           {/* Header */}
-          <div className="flex justify-between items-center mb-5 text-gray-900 text-md font-semibold">
+          <div className="flex justify-between items-center mb-5 text-foreground text-md font-semibold">
             <h2 className="text-lg font-semibold">Message Center</h2>
 
-            {/* <button className="px-3 py-1 text-sm bg-gray-100 rounded-lg hover:bg-gray-200">
+            {/* <button className="px-3 py-1 text-sm bg-muted rounded-lg hover:bg-muted/80">
               See All
             </button> */}
           </div>
 
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-5 text-gray-900 text-md font-semibold">
-            <button className="flex-1 bg-white rounded-lg py-2 text-sm font-medium shadow-sm">
+          <div className="flex bg-muted rounded-xl p-1 mb-5 text-foreground text-md font-medium border border-border">
+            <button className="flex-1 bg-background rounded-lg py-2 text-sm font-medium border border-border">
               All
             </button>
 
-            <button className="flex-1 py-2 text-sm text-gray-500">
+            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               Unread
             </button>
 
-            <button className="flex-1 py-2 text-sm text-gray-500">
+            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               Groups
             </button>
 
-            <button className="flex-1 py-2 text-sm text-gray-500">
+            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               Communities
             </button>
           </div>
@@ -126,6 +128,7 @@ export default function MessageCenter() {
             ))}
           </div>
         </div>
+        </motion.div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

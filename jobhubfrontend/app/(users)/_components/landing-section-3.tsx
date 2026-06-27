@@ -31,7 +31,7 @@ const LandingSectionThree = () => {
           {companyList.map((company, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl border border-slate-100 flex items-center justify-center py-5 px-3 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer"
+              className="bg-card rounded-xl border border-border hover:border-primary/50 flex items-center justify-center py-5 px-3 hover:-translate-y-0.5 hover:shadow-sm transition-all cursor-pointer"
             >
               <span className="font-semibold text-slate-700 text-sm md:text-base truncate">
                 {company}
