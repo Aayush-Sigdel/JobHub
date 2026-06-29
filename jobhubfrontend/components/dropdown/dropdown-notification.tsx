@@ -92,42 +92,42 @@ export default function NotificationCenter() {
           transition={{ type: "spring", bounce: 0.35, duration: 0.5 }}
         >
           <div className="rounded-xl p-6 bg-background">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-5 text-foreground text-md font-semibold">
-            <h2 className="text-lg font-semibold">Notification Center</h2>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-5 text-foreground text-md font-semibold">
+              <h2 className="text-lg font-semibold">Notification Center</h2>
 
-            <button className="px-3 py-1 text-sm bg-muted rounded-lg hover:bg-muted/80">
+              {/* <button className="px-3 py-1 text-sm bg-muted rounded-lg hover:bg-muted/80">
               See All
-            </button>
+            </button> */}
+            </div>
+
+            {/* <div className="flex bg-muted rounded-xl p-1 mb-5 text-foreground text-md font-medium border border-border">
+              <button className="flex-1 bg-background rounded-lg py-2 text-sm font-medium border border-border">
+                Today
+              </button>
+
+              <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                This Week
+              </button>
+
+              <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Earlier
+              </button>
+            </div> */}
+
+            {/* Notifications */}
+            <div>
+              {notifications.map((item) => (
+                <NotificationCard
+                  key={item.id}
+                  title={item.title}
+                  description={item.description}
+                  time={item.time}
+                  icon={item.icon}
+                />
+              ))}
+            </div>
           </div>
-
-          <div className="flex bg-muted rounded-xl p-1 mb-5 text-foreground text-md font-medium border border-border">
-            <button className="flex-1 bg-background rounded-lg py-2 text-sm font-medium border border-border">
-              Today
-            </button>
-
-            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              This Week
-            </button>
-
-            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Earlier
-            </button>
-          </div>
-
-          {/* Notifications */}
-          <div>
-            {notifications.map((item) => (
-              <NotificationCard
-                key={item.id}
-                title={item.title}
-                description={item.description}
-                time={item.time}
-                icon={item.icon}
-              />
-            ))}
-          </div>
-        </div>
         </motion.div>
       </DropdownMenuContent>
     </DropdownMenu>
