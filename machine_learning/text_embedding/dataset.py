@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 
 class JobMatchDataset(Dataset):
-    def __init__(self, data, tokenizer, max_len=512):
+    def __init__(self, data, tokenizer, max_len=1024):
         self.data = data
         self.tokenizer = tokenizer
         self.max_len = max_len
@@ -27,8 +27,9 @@ class JobMatchDataset(Dataset):
 
     def __getitem__(self, idx):
         item = self.data[idx]
-        resume = self.encode(item["resume_text"])
-        job = self.encode(item["job_text"])
+
+        resume = self.encode(item["resume"])
+        job = self.encode(item["jd"])
         label = torch.tensor(self.label_map[item["label"]], dtype=torch.float)
         return {
             "resume_input_ids": resume["input_ids"].squeeze(0),

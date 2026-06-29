@@ -10,21 +10,8 @@ from transformers import AutoModel, AutoTokenizer
 
 os.makedirs("checkpoints", exist_ok=True)
 
-
 def loss_fn(pred, target):
     return F.mse_loss(pred, target)
-
-
-def encode_text(model, tokenizer, text, device):
-    tokens = tokenizer(
-        text, return_tensors="pt", padding=True, truncation=True, max_length=64
-    ).to(device)
-
-    with torch.no_grad():
-        emb = model.encoder(tokens["input_ids"], tokens["attention_mask"])
-
-    return emb.cpu()
-
 
 def train(model, loader, optimizer, device):
     model.train()
@@ -45,28 +32,18 @@ def train(model, loader, optimizer, device):
         optimizer.step()
 
         total_loss += loss.item()
-        if step % 10 == 0:
-            print(f"Step {step}/{len(loader)} | Loss: {loss.item():.4f}")
+        print(f"Step {step}/{len(loader)} | Loss: {loss.item():.4f}")
 
     return total_loss / len(loader)
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-ds = load_dataset("cnamuangtoun/resume-job-description-fit")
+ds = load_dataset("votanthanh32004/resume-job-fit-cleaned")
 train_data = ds["train"]
 
-data = [
-    {
-        "resume_text": item["resume_text"],
-        "job_text": item["job_description_text"],
-        "label": item["label"],
-    }
-    for item in train_data
-]
-
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-dataset = JobMatchDataset(data, tokenizer)
-loader = DataLoader(dataset, batch_size=4, shuffle=True)
+tokenizer = AutoTokenizer.from_pretrained("allenai/longformer-base-4096")
+dataset = JobMatchDataset(train_data, tokenizer)
+loader = DataLoader(dataset, batch_size=8, shuffle=True)
 
 model = JobMatchModel().to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
