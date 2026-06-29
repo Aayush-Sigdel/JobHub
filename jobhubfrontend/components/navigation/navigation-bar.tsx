@@ -33,7 +33,10 @@ const NavigationBar = () => {
     <nav className="sticky top-0 z-50 w-full border-b border-border dark:border-slate-800 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
         <div className="flex flex-1 items-center gap-6">
-          <Link href="/" className="flex shrink-0 items-center hover:scale-105 transition-transform">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center hover:scale-105 transition-transform"
+          >
             <Logo />
           </Link>
 
@@ -61,11 +64,22 @@ const NavigationBar = () => {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.5,
+                        }}
                       />
                     )}
                   </AnimatePresence>
-                  <span className={cn("relative z-10", hoveredIndex === idx ? "text-foreground" : "")}>{link.name}</span>
+                  <span
+                    className={cn(
+                      "relative z-10",
+                      hoveredIndex === idx ? "text-foreground" : "",
+                    )}
+                  >
+                    {link.name}
+                  </span>
                 </Link>
               ))}
             </div>
@@ -74,7 +88,10 @@ const NavigationBar = () => {
           <div className="flex items-center gap-3">
             <NotificationCenter />
             <MessageCenter />
-            <Link href={"/save-job"} className="hover:text-tomato-500 transition-colors">
+            <Link
+              href={"/job-tracker"}
+              className="hover:text-tomato-500 transition-colors"
+            >
               <JobTracker />
             </Link>
           </div>
