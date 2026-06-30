@@ -22,7 +22,6 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@lucide-animated": "https://lucide-animated.com/r/{name}.json",
-    "@beui": "https://beui.dev/r/{name}.json"
+    "@lucide-animated": "https://lucide-animated.com/r/{name}.json"
   }
 }

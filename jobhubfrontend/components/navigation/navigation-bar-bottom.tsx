@@ -25,9 +25,9 @@ const NavigationBarBottom = () => {
   return (
     <div className="w-full bg-background/80 backdrop-blur-md border-b border-border dark:border-slate-800 relative z-40">
       <nav className="flex max-w-7xl mx-auto py-1.5 px-4 md:px-6 items-center overflow-x-auto no-scrollbar gap-1">
-        <Link
+        <Link 
           href="#"
-          className="shrink-0 flex items-center justify-center gap-1.5 mr-2 bg-tomato-500/10 hover:bg-tomato-500/20 px-3 py-1.5 rounded-full transition-colors border border-tomato-500/30"
+          className="flex-shrink-0 flex items-center justify-center gap-1.5 mr-2 bg-tomato-500/10 hover:bg-tomato-500/20 px-3 py-1.5 rounded-full transition-colors border border-tomato-500/30"
         >
           <Image
             src="/icons/Fire.gif"
@@ -47,7 +47,7 @@ const NavigationBarBottom = () => {
             href={category.href}
             onMouseEnter={() => setHoveredIndex(idx)}
             onMouseLeave={() => setHoveredIndex(null)}
-            className="relative shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors dark:text-slate-300"
+            className="relative px-3 py-1.5 text-xs font-semibold text-muted-foreground dark:text-slate-300 transition-colors rounded-full flex-shrink-0"
           >
             <AnimatePresence>
               {hoveredIndex === idx && (
@@ -57,28 +57,19 @@ const NavigationBarBottom = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{
-                    type: "tween",
-                    duration: 0.15,
-                    ease: "easeOut",
-                  }}
+                  transition={{ type: "tween", duration: 0.15, ease: "easeOut" }}
                 />
               )}
             </AnimatePresence>
-            <span
-              className={cn(
-                "relative z-10 transition-colors",
-                hoveredIndex === idx ? "text-foreground" : "",
-              )}
-            >
+            <span className={cn("relative z-10 transition-colors", hoveredIndex === idx ? "text-foreground" : "")}>
               {category.name}
             </span>
           </Link>
         ))}
-
-        <Link
+        
+        <Link 
           href="#"
-          className="shrink-0 px-3 py-1.5 text-xs font-bold text-muted-foreground underline decoration-2 decoration-tomato-500 underline-offset-4 transition-colors hover:text-foreground"
+          className="flex-shrink-0 px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors underline decoration-2 underline-offset-4 decoration-tomato-500"
         >
           more
         </Link>
