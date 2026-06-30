@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Logo from "@/components/navigation/logo";
+import Logo from "@/app/(applier)/_components/navigation/logo";
 
 const LandingPageNavbar = () => {
   return (
