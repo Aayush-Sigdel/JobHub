@@ -50,7 +50,7 @@ const NavigationBar = () => {
               <NotificationCenter />
               <MessageCenter />
               <Link
-                href={"/save-job"}
+                href={"/job-tracker"}
                 className="hover:text-tomato-500 transition-colors"
               >
                 <JobTracker />
