@@ -16,8 +16,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function DropdownMenuIcons() {
+  const router = useRouter();
+
   return (
     <DropdownMenu>
       <div className="flex items-center gap-2.5">
@@ -81,7 +84,15 @@ export function DropdownMenuIcons() {
               <span className="flex-1">Subscription</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
+            {/* <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
+              <SettingsIcon size={16} strokeWidth={2} />
+              <span className="flex-1">Settings</span>
+            </DropdownMenuItem> */}
+
+            <DropdownMenuItem
+              onClick={() => router.push("/setting")}
+              className="flex items-center gap-2.5"
+            >
               <SettingsIcon size={16} strokeWidth={2} />
               <span className="flex-1">Settings</span>
             </DropdownMenuItem>
