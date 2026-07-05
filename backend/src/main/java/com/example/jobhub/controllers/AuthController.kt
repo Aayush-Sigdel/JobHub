@@ -1,10 +1,11 @@
 package com.example.jobhub.controllers
 
 import com.example.jobhub.dto.LoginRequest
+import com.example.jobhub.dto.LoginResponse
 import com.example.jobhub.dto.LogoutRequest
 import com.example.jobhub.dto.RefreshRequest
 import com.example.jobhub.dto.RegisterRequest
-import com.example.jobhub.dto.TokenResponse
+import com.example.jobhub.dto.RefreshResponse
 import com.example.jobhub.dto.VerifyOtpRequest
 import com.example.jobhub.security.UserPrincipal
 import com.example.jobhub.service.AuthService
@@ -34,13 +35,13 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody request: LoginRequest): ResponseEntity<TokenResponse> {
-        val token = authService.login(request)
-        return ResponseEntity.ok(token)
+    fun login(@RequestBody request: LoginRequest): ResponseEntity<LoginResponse> {
+        val loginResponse = authService.login(request)
+        return ResponseEntity.ok(loginResponse)
     }
 
     @PostMapping("/refresh")
-    fun refresh(@RequestBody request: RefreshRequest): ResponseEntity<TokenResponse> {
+    fun refresh(@RequestBody request: RefreshRequest): ResponseEntity<RefreshResponse> {
         val token = authService.refresh(request)
         return ResponseEntity.ok(token)
     }

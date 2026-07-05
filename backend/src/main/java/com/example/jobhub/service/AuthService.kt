@@ -1,10 +1,12 @@
 package com.example.jobhub.service
 
+import com.example.jobhub.config.AppConfig
 import com.example.jobhub.dto.LoginRequest
+import com.example.jobhub.dto.LoginResponse
 import com.example.jobhub.dto.LogoutRequest
 import com.example.jobhub.dto.RefreshRequest
 import com.example.jobhub.dto.RegisterRequest
-import com.example.jobhub.dto.TokenResponse
+import com.example.jobhub.dto.RefreshResponse
 import com.example.jobhub.dto.VerifyOtpRequest
 import com.example.jobhub.exception.ApiException
 import com.example.jobhub.model.User
@@ -21,7 +23,8 @@ class AuthService(
     private val otpService: OtpService,
     private val authUtil: AuthUtil,
     private val jwtUtil: JwtUtil,
-    private val refreshTokenService: RefreshTokenService
+    private val refreshTokenService: RefreshTokenService,
+    private val appConfig: AppConfig
 ){
 
     fun registerUser(registerRequest: RegisterRequest) {
@@ -31,7 +34,7 @@ class AuthService(
         if (!authUtil.isPasswordValid(registerRequest.password)) throw RuntimeException("Password format is invalid")
         val passwordHash = authUtil.hashPassword(registerRequest.password)
             ?: throw ApiException("Error while processing password")
-        val user = User(registerRequest.email, registerRequest.name, passwordHash, registerRequest.employer)
+        val user = User(registerRequest.email, registerRequest.name, passwordHash, registerRequest.employer, appConfig.defaultImageUrl)
         userRepository.save(user)
         createAndSendOtp(registerRequest.email);
     }
@@ -59,7 +62,7 @@ class AuthService(
         userRepository.save(user)
     }
 
-    fun login(request: LoginRequest): TokenResponse {
+    fun login(request: LoginRequest): LoginResponse {
         val user = userRepository.findByEmail(request.email)
             ?: throw ApiException("Invalid email or password", HttpStatus.UNAUTHORIZED)
 
@@ -72,10 +75,10 @@ class AuthService(
         val accessToken = jwtUtil.generateAccessToken(user.id.toString())
         val refreshToken = jwtUtil.generateRefreshToken(user.id.toString())
         refreshTokenService.save(user.id.toString(), refreshToken)
-        return TokenResponse(accessToken, refreshToken)
+        return LoginResponse(accessToken, refreshToken, user.id, user.email, user.name, user.isVerified, user.imageUrl)
     }
 
-    fun refresh(request: RefreshRequest): TokenResponse {
+    fun refresh(request: RefreshRequest): RefreshResponse {
         val userId = jwtUtil.extractUserId(request.refreshToken)
         if (!refreshTokenService.isValid(userId, request.refreshToken)) {
             throw ApiException("Invalid or expired refresh token", HttpStatus.UNAUTHORIZED)
@@ -83,7 +86,7 @@ class AuthService(
         val newAccessToken = jwtUtil.generateAccessToken(userId)
         val newRefreshToken = jwtUtil.generateRefreshToken(userId)
         refreshTokenService.save(userId, newRefreshToken)
-        return TokenResponse(newAccessToken, newRefreshToken)
+        return RefreshResponse(newAccessToken, newRefreshToken)
     }
 
     fun logout(userId: String, request: LogoutRequest) {

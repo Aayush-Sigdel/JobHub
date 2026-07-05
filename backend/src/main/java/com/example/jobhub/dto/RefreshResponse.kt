@@ -1,6 +1,6 @@
 package com.example.jobhub.dto
 
-data class TokenResponse(
+data class RefreshResponse(
     val accessToken: String,
     val refreshToken: String
 )
