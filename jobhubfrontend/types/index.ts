@@ -1,51 +1,22 @@
-export interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  description: string;
-  requirements: string[];
-  salary?: string;
-  source: string; // e.g., 'LinkedIn', 'Indeed', 'Platform UI'
-  createdAt: string;
-  expiresAt?: string;
+import { Job } from "./jobs";
+import { JobApplication, User } from "./user";
+
+interface BaseProfile {
+  user: User;
 }
 
-export interface Candidate {
-  id: string;
-  name: string; // May be anonymized during early stages
-  email: string;
-  skills: string[];
-  projects: string[];
-  experiences: Experience[];
-  socialLinks: SocialLink[];
+export interface CandidateProfile extends BaseProfile {
+  user: User & { role: "candidate" };
+  jobsApplied: JobApplication[];
 }
 
-export interface Experience {
-  id: string;
-  company: string;
-  role: string;
-  startDate: string;
-  endDate?: string;
-  description: string;
+export interface EmployerProfile extends BaseProfile {
+  user: User & { role: "employer" };
+  jobsPosted: Job[];
 }
 
-export interface SocialLink {
-  platform: 'GitHub' | 'LinkedIn' | 'Portfolio' | 'Other';
-  url: string;
+export interface AdminProfile extends BaseProfile {
+  user: User & { role: "admin" };
 }
 
-export interface JobMatch {
-  jobId: string;
-  candidateId: string;
-  matchScore: number;
-  matchDetails?: Record<string, any>;
-}
-
-export interface Application {
-  id: string;
-  jobId: string;
-  candidateId: string;
-  status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected' | 'hired';
-  appliedAt: string;
-}
+export type UserProfile = CandidateProfile | EmployerProfile | AdminProfile;

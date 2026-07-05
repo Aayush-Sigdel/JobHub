@@ -9,13 +9,24 @@ import { ProfileCertifications } from "./_components/profile-certifications";
 import { ProfileStrength } from "./_components/profile-strength";
 import { ProfileContact } from "./_components/profile-contact";
 import { ProfileLookingForRole } from "./_components/profile-looking-for-role";
+import { CandidateProfile } from "@/types";
 
-export default function CandidateProfilePage() {
+export default function CandidateProfilePage({
+  user,
+}: {
+  user: CandidateProfile;
+}) {
+  console.log(user.user.followingCount);
+  console.log(user.jobsApplied);
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12 font-sans text-foreground">
       <div className="max-w-275 mx-auto flex flex-col lg:flex-row gap-8">
         <div className="flex-1 flex flex-col gap-6">
-          <ProfileHeader name="Aayush Sigdel" username="aayushsigdel" isVerified={true} />
+          <ProfileHeader
+            name="Aayush Sigdel"
+            username="aayushsigdel"
+            isVerified={true}
+          />
           <ProfileLookingForRole />
           <ProfileAbout />
           <ProfilePortfolio />
