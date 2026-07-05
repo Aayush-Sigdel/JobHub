@@ -1,48 +1,6 @@
+import { Salary } from "./common";
+
 export type UserRole = "admin" | "candidate" | "employer";
-
-export interface User {
-  id: string;
-  role: UserRole;
-  name: string;
-  username: string;
-  title?: string;
-  email: string[];
-  bio?: string;
-  location?: Location;
-  languages?: Language[];
-  skills?: Skill[];
-  experiences?: Experience[];
-  socialLinks?: SocialLink[];
-  videoUrl?: string;
-  imageUrl?: string;
-  projects?: Project[];
-  educations?: Education[];
-  lookingForRole?: LookingForRole[];
-  certifications?: Certification[];
-  contactNumber?: string[];
-  isVerified?: boolean;
-  verified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-interface LookingForRole {
-  id: string;
-  name: string;
-  roleLevel:
-    | "Internship"
-    | "Entry-level"
-    | "Mid-level"
-    | "Senior-level"
-    | "Director"
-    | "Executive";
-  workType: "ReRemote" | "On-site" | "Hybrid";
-}
-
-export interface Location {
-  city: string;
-  state?: string;
-  country: string;
-}
 
 export interface Language {
   name: string;
@@ -80,7 +38,7 @@ export interface Project {
   title: string;
   description: string;
   link?: string;
-  imageUrl?: string[];
+  imageUrls?: string[];
   technologies?: string[];
 }
 
@@ -97,4 +55,82 @@ export interface Experience {
   endDate?: string;
   isCurrentRole?: boolean;
   description: string;
+}
+
+export interface LookingForRole {
+  id: string;
+  name: string;
+  roleLevel:
+    | "Internship"
+    | "Entry-level"
+    | "Mid-level"
+    | "Senior-level"
+    | "Director"
+    | "Executive";
+  workType: "Remote" | "On-site" | "Hybrid";
+  expectedSalary?: Salary;
+}
+
+export interface JobApplication {
+  id: string;
+  jobId: string;
+  userId: string;
+  resumeUrl?: string;
+  coverLetter?: string;
+  status: "Applied" | "Interviewing" | "Offered" | "Rejected";
+  appliedDate: string;
+  updatedDate?: string;
+}
+
+export interface Connection {
+  id: string;
+  userId: string;
+  connectedUserId: string;
+  status: "Pending" | "Accepted" | "Rejected";
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface User {
+  id: string;
+  role: UserRole;
+
+  name: string;
+  username: string;
+  title?: string;
+  bio?: string;
+  location?: Location;
+
+  email: string;
+  secondaryEmails?: string[];
+  phone?: string;
+  isVerified: boolean;
+
+  imageUrl?: string;
+  videoUrl?: string;
+  resumeUrls?: string[];
+
+  experiences?: Experience[];
+  educations?: Education[];
+  skills?: Skill[];
+  languages?: Language[];
+  certifications?: Certification[];
+  projects?: Project[];
+  socialLinks?: SocialLink[];
+
+  isLookingForWork?: boolean;
+  lookingForRole?: LookingForRole[];
+
+  companyId?: string;
+
+  connections?: Connection[];
+  connectionCount: number;
+  followerCount: number;
+  followingCount: number;
+  profileViewCount: number;
+  searchAppearanceCount?: number;
+
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
 }

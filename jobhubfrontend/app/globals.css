@@ -155,6 +155,20 @@
   --success-foreground: #f8f8f8;
 }
 
+.employer-theme {
+  --brand: #1dbf73;
+  --brand-foreground: #ffffff;
+  --primary: #1dbf73;
+  --primary-foreground: #ffffff;
+  --ring: #1dbf73;
+  --foreground: #404145;
+  --muted-foreground: #74767e;
+  --border: #e4e5e7;
+  --background: #f7f7f7;
+  --card: #ffffff;
+  --secondary: #f5f5f5;
+}
+
 .dark {
   --background: #1a1a1a;
   --foreground: #f8f8f8;
@@ -193,6 +207,20 @@
   --info-foreground: #f8f8f8;
   --success: #16a34a;
   --success-foreground: #f8f8f8;
+}
+
+.dark .employer-theme, .employer-theme.dark {
+  --brand: #1dbf73;
+  --brand-foreground: #ffffff;
+  --primary: #1dbf73;
+  --primary-foreground: #ffffff;
+  --ring: #1dbf73;
+  --foreground: #f7f7f7;
+  --muted-foreground: #9ca3af;
+  --border: #374151;
+  --background: #111827;
+  --card: #1f2937;
+  --secondary: #374151;
 }
 
 @layer base {

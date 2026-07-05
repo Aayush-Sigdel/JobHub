@@ -4,6 +4,8 @@ import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
+import SessionProviderWrapper from "@/components/providers/SessionProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 const jetBrainMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -36,16 +38,19 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </QueryProvider>
+        <SessionProviderWrapper>
+          <QueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster position="bottom-right" richColors />
+            </ThemeProvider>
+          </QueryProvider>
+        </SessionProviderWrapper>
       </body>
     </html>
   );

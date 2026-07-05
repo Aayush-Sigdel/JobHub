@@ -1,19 +1,27 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { Loader } from "@/components/motion/loader";
 
-export default function VerificationPage() {
+function VerificationForm() {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isVerified, setIsVerified] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email");
 
   const handleChange = (index: number, value: string) => {
     if (!/^[0-9]*$/.test(value)) return;
-    
+
     const newCode = [...code];
     // Handle pasting
     if (value.length > 1) {
@@ -36,13 +44,53 @@ export default function VerificationPage() {
     }
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Backspace" && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
-  const isComplete = code.every(digit => digit !== "");
+  const isComplete = code.every((digit) => digit !== "");
+
+  const handleVerify = async () => {
+    if (!email) {
+      toast.error("Email not found. Please sign up or sign in again.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const otp = code.join("");
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const text = await res.text();
+      let responseData;
+      try {
+        responseData = JSON.parse(text);
+      } catch {
+        responseData = { message: text };
+      }
+
+      if (!res.ok) {
+        throw new Error(responseData.message || "Invalid OTP code.");
+      }
+
+      setIsVerified(true);
+      toast.success("Account verified successfully!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex h-[calc(100vh-80px)] w-full items-center justify-center p-4">
@@ -63,9 +111,12 @@ export default function VerificationPage() {
               className="flex flex-col h-full"
             >
               <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight leading-tight">Verify Email</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight leading-tight">
+                  Verify Email
+                </h1>
                 <p className="text-muted-foreground text-sm font-medium leading-relaxed">
-                  We sent a 6-digit verification code to your email. Enter it below to verify your account.
+                  We sent a 6-digit verification code to your email. Enter it
+                  below to verify your account.
                 </p>
               </div>
 
@@ -73,7 +124,9 @@ export default function VerificationPage() {
                 {code.map((digit, idx) => (
                   <input
                     key={idx}
-                    ref={(el) => { inputRefs.current[idx] = el; }}
+                    ref={(el) => {
+                      inputRefs.current[idx] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={6} // allow paste
@@ -85,14 +138,21 @@ export default function VerificationPage() {
                 ))}
               </div>
 
-              <Button 
-                disabled={!isComplete}
-                onClick={() => setIsVerified(true)}
+              <Button
+                disabled={!isComplete || isSubmitting}
+                onClick={handleVerify}
                 className="w-full h-12 rounded-xl text-base font-bold transition-all disabled:opacity-100 disabled:bg-muted disabled:text-slate-400 enabled:bg-slate-900 enabled:text-white enabled:hover:bg-slate-800"
               >
-                Verify Account
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader variant="scramble" className="w-5 h-5" />
+                    Verifying...
+                  </span>
+                ) : (
+                  "Verify Account"
+                )}
               </Button>
-              
+
               <div className="mt-8 text-center text-sm font-medium text-muted-foreground">
                 Didn't receive the code?{" "}
                 <button className="text-foreground font-bold hover:text-tomato-500 transition-colors underline decoration-2 underline-offset-4">
@@ -109,7 +169,7 @@ export default function VerificationPage() {
               transition={{ duration: 0.2 }}
               className="flex flex-col items-center text-center h-full py-4"
             >
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
@@ -117,14 +177,15 @@ export default function VerificationPage() {
               >
                 <CheckCircle2 className="w-8 h-8" />
               </motion.div>
-              <h1 className="text-2xl font-bold text-foreground mb-3 tracking-tight">Email Verified!</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-3 tracking-tight">
+                Email Verified!
+              </h1>
               <p className="text-muted-foreground text-sm font-medium leading-relaxed mb-8">
-                Your account has been successfully verified. You can now access all features.
+                Your account has been successfully verified. You can now access
+                all features.
               </p>
-              <Link href="/" className="w-full">
-                <Button 
-                  className="w-full h-12 rounded-xl text-base font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors group border-2 border-slate-900"
-                >
+              <Link href="/home" className="w-full">
+                <Button className="w-full h-12 rounded-xl text-base font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors group border-2 border-slate-900">
                   Go to Dashboard
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -134,5 +195,19 @@ export default function VerificationPage() {
         </AnimatePresence>
       </motion.div>
     </div>
+  );
+}
+
+export default function VerificationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[calc(100vh-80px)] w-full items-center justify-center bg-muted/20">
+          <Loader variant="scramble" />
+        </div>
+      }
+    >
+      <VerificationForm />
+    </Suspense>
   );
 }
