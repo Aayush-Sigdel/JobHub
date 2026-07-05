@@ -86,10 +86,11 @@ public class User {
     @UpdateTimestamp
     private Instant updatedAt;
 
-    public User(String email, String name, String password, boolean employer){
+    public User(String email, String name, String password, boolean employer, String imageUrl){
         this.email = email;
         this.name = name;
         this.password = password;
         this.employer = employer;
+        this.imageUrl = imageUrl;
     }
 }
