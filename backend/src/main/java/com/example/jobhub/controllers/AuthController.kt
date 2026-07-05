@@ -6,9 +6,11 @@ import com.example.jobhub.dto.RefreshRequest
 import com.example.jobhub.dto.RegisterRequest
 import com.example.jobhub.dto.TokenResponse
 import com.example.jobhub.dto.VerifyOtpRequest
+import com.example.jobhub.security.UserPrincipal
 import com.example.jobhub.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -25,7 +27,7 @@ class AuthController(
         return ResponseEntity.status(HttpStatus.CREATED).body("Registration successful. Please verify your email.");
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/verify-otp")
     fun verifyOtp(@RequestBody request: VerifyOtpRequest): ResponseEntity<String> {
         authService.verifyOtp(request)
         return ResponseEntity.ok("Email verified successfully.")
@@ -44,8 +46,12 @@ class AuthController(
     }
 
     @PostMapping("/logout")
-    fun logout(@RequestBody request: LogoutRequest): ResponseEntity<String> {
-        authService.logout(request)
+    fun logout(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @RequestBody request: LogoutRequest
+    ): ResponseEntity<String> {
+
+        authService.logout(userDetails.username, request)
         return ResponseEntity.ok("Logged out successfully.")
     }
 }

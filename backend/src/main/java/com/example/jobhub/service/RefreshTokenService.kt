@@ -1,17 +1,19 @@
 package com.example.jobhub.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Service
 import java.time.Duration
 
 @Service
 class RefreshTokenService(
+    @param:Value("\${jwt.refresh-token-expiry-ms}") private val refreshTokenExpiryMs: Long,
     private val redisTemplate: StringRedisTemplate
 ) {
     private fun key(userId: String) = "refresh_token:$userId"
 
-    fun save(userId: String, token: String, expiryMs: Long) {
-        redisTemplate.opsForValue().set(key(userId), token, Duration.ofMillis(expiryMs))
+    fun save(userId: String, token: String) {
+        redisTemplate.opsForValue().set(key(userId), token, Duration.ofMillis(refreshTokenExpiryMs))
     }
 
     fun isValid(userId: String, token: String): Boolean {

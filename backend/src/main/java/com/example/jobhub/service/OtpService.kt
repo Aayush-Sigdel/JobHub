@@ -28,5 +28,4 @@ class OtpService(
     fun canRequestOtp(email: String): Boolean {
         return redisTemplate.opsForValue().get(cooldownKey(email)) == null
     }
-
 }

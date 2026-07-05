@@ -71,7 +71,7 @@ class AuthService(
         }
         val accessToken = jwtUtil.generateAccessToken(user.id.toString())
         val refreshToken = jwtUtil.generateRefreshToken(user.id.toString())
-        refreshTokenService.save(user.id.toString(), refreshToken, jwtUtil.getRefreshTokenExpiryMs())
+        refreshTokenService.save(user.id.toString(), refreshToken)
         return TokenResponse(accessToken, refreshToken)
     }
 
@@ -82,13 +82,14 @@ class AuthService(
         }
         val newAccessToken = jwtUtil.generateAccessToken(userId)
         val newRefreshToken = jwtUtil.generateRefreshToken(userId)
-        refreshTokenService.save(userId, newRefreshToken, jwtUtil.getRefreshTokenExpiryMs())
-
+        refreshTokenService.save(userId, newRefreshToken)
         return TokenResponse(newAccessToken, newRefreshToken)
     }
 
-    fun logout(request: LogoutRequest) {
-        val userId = jwtUtil.extractUserId(request.refreshToken)
+    fun logout(userId: String, request: LogoutRequest) {
+        if (!refreshTokenService.isValid(userId, request.refreshToken)){
+            throw ApiException("Invalid or expired refresh token", HttpStatus.FORBIDDEN)
+        }
         refreshTokenService.revoke(userId)
     }
 }
