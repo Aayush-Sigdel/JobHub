@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Gradle build output
+build/
+
+# Gradle cache
+.gradle/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Test reports
+reports/
