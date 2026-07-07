@@ -75,7 +75,7 @@ class AuthService(
         val accessToken = jwtUtil.generateAccessToken(user.id.toString())
         val refreshToken = jwtUtil.generateRefreshToken(user.id.toString())
         refreshTokenService.save(user.id.toString(), refreshToken)
-        return LoginResponse(accessToken, refreshToken, user.id, user.email, user.name, user.isVerified, user.imageUrl)
+        return LoginResponse(accessToken, refreshToken, user.id, user.name, user.imageUrl)
     }
 
     fun refresh(request: RefreshRequest): RefreshResponse {
