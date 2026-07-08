@@ -5,5 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface ExperienceRepository : JpaRepository<Experience, UUID> {
-    fun findByUserId(userId: UUID): List<Experience>
+
+    fun findByIdAndUserId(id: UUID, userId: UUID): Experience?
 }

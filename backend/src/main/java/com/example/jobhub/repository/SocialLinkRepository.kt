@@ -5,5 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface SocialLinkRepository : JpaRepository<SocialLink, UUID> {
-    fun findByUserId(userId: UUID): List<SocialLink>
+
+    fun findByIdAndUserId(id: UUID, userId: UUID): SocialLink?
 }

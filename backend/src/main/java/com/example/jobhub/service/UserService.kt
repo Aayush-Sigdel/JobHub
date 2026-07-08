@@ -36,7 +36,7 @@ class UserService(
     private val userMapper: UserMapper
 ) {
 
-    fun getUserProfileById(userId: UUID): UserProfileResponse {
+    fun getUserProfile(userId: UUID): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         return userMapper.toUserProfileResponse(user)
@@ -143,10 +143,8 @@ class UserService(
     }
 
     fun updateSkill(userId: UUID, skillId: UUID, updateSkillRequest: UpdateSkillRequest): SkillDto {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val skill = skillRepository.findById(skillId)
-            .orElseThrow { ApiException("Skill not found", HttpStatus.NOT_FOUND) }
+        val skill = skillRepository.findByIdAndUserId(skillId, userId)
+            ?: throw ApiException("Skill not found", HttpStatus.NOT_FOUND)
         updateSkillRequest.name?.let { skill.name = it }
         updateSkillRequest.level?.let { skill.level = it }
         val updatedSkill = skillRepository.save(skill)
@@ -154,10 +152,8 @@ class UserService(
     }
 
     fun deleteSkill(userId: UUID, skillId: UUID) {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val skill = skillRepository.findById(skillId)
-            .orElseThrow { ApiException("Skill not found", HttpStatus.NOT_FOUND) }
+        val skill = skillRepository.findByIdAndUserId(skillId, userId)
+            ?: throw ApiException("Skill not found", HttpStatus.NOT_FOUND)
         skillRepository.delete(skill)
     }
 
@@ -170,10 +166,8 @@ class UserService(
     }
 
     fun updateExperience(userId: UUID, experienceId: UUID, updateExperienceRequest: UpdateExperienceRequest): ExperienceDto {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val experience = experienceRepository.findById(experienceId)
-            .orElseThrow { ApiException("Experience not found", HttpStatus.NOT_FOUND) }
+        val experience = experienceRepository.findByIdAndUserId(experienceId, userId)
+            ?: throw ApiException("Experience not found", HttpStatus.NOT_FOUND)
         updateExperienceRequest.title?.let { experience.title = it }
         updateExperienceRequest.company?.let { experience.company = it }
         updateExperienceRequest.startDate?.let { experience.startDate = it }
@@ -185,10 +179,8 @@ class UserService(
     }
 
     fun deleteExperience(userId: UUID, experienceId: UUID) {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val experience = experienceRepository.findById(experienceId)
-            .orElseThrow { ApiException("Experience not found", HttpStatus.NOT_FOUND) }
+        val experience = experienceRepository.findByIdAndUserId(experienceId, userId)
+            ?: throw ApiException("Experience not found", HttpStatus.NOT_FOUND)
         experienceRepository.delete(experience)
     }
 
@@ -201,10 +193,8 @@ class UserService(
     }
 
     fun updateEducation(userId: UUID, educationId: UUID, updateEducationRequest: UpdateEducationRequest): EducationDto {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val education = educationRepository.findById(educationId)
-            .orElseThrow { ApiException("Education not found", HttpStatus.NOT_FOUND) }
+        val education = educationRepository.findByIdAndUserId(educationId, userId)
+            ?: throw ApiException("Education not found", HttpStatus.NOT_FOUND)
         updateEducationRequest.institution?.let { education.institution = it }
         updateEducationRequest.degree?.let { education.degree = it }
         updateEducationRequest.fieldOfStudy?.let { education.fieldOfStudy = it }
@@ -216,10 +206,8 @@ class UserService(
     }
 
     fun deleteEducation(userId: UUID, educationId: UUID) {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val education = educationRepository.findById(educationId)
-            .orElseThrow { ApiException("Education not found", HttpStatus.NOT_FOUND) }
+        val education = educationRepository.findByIdAndUserId(educationId, userId)
+            ?: throw ApiException("Education not found", HttpStatus.NOT_FOUND)
         educationRepository.delete(education)
     }
 
@@ -232,10 +220,8 @@ class UserService(
     }
 
     fun updateSocialLink(userId: UUID, socialLinkId: UUID, updateSocialLinkRequest: UpdateSocialLinkRequest): SocialLinkDto {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val socialLink = socialLinkRepository.findById(socialLinkId)
-            .orElseThrow { ApiException("Social link not found", HttpStatus.NOT_FOUND) }
+        val socialLink = socialLinkRepository.findByIdAndUserId(socialLinkId, userId)
+            ?: throw ApiException("Social link not found", HttpStatus.NOT_FOUND)
         updateSocialLinkRequest.platform?.let { socialLink.platform = it }
         updateSocialLinkRequest.url?.let { socialLink.url = it }
         val updatedSocialLink = socialLinkRepository.save(socialLink)
@@ -243,10 +229,8 @@ class UserService(
     }
 
     fun deleteSocialLink(userId: UUID, socialLinkId: UUID) {
-        userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val socialLink = socialLinkRepository.findById(socialLinkId)
-            .orElseThrow { ApiException("Social link not found", HttpStatus.NOT_FOUND) }
+        val socialLink = socialLinkRepository.findByIdAndUserId(socialLinkId, userId)
+            ?: throw ApiException("Social link not found", HttpStatus.NOT_FOUND)
         socialLinkRepository.delete(socialLink)
     }
 }

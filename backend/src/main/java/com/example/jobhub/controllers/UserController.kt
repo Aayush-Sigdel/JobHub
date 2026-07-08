@@ -38,13 +38,13 @@ class UserController(
 
     @GetMapping("/profile")
     fun getCurrentUserProfile(@AuthenticationPrincipal userDetails: UserPrincipal): ResponseEntity<UserProfileResponse> {
-        val profile = userService.getUserProfileById(userDetails.id)
+        val profile = userService.getUserProfile(userDetails.id)
         return ResponseEntity.ok(profile)
     }
 
     @GetMapping("/profile/{userId}")
     fun getUserProfileById(@PathVariable userId: UUID): ResponseEntity<UserProfileResponse> {
-        val profile = userService.getUserProfileById(userId)
+        val profile = userService.getUserProfile(userId)
         return ResponseEntity.ok(profile)
     }
 
