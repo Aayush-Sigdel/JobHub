@@ -39,7 +39,7 @@ public class User {
 
     private String title;
 
-    private boolean isVerified = false;
+    private boolean verified = false;
 
     private String bio;
 
