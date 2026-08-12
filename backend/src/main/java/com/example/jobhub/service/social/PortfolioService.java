@@ -1,6 +1,6 @@
 package com.example.jobhub.service.social;
 
-import com.example.jobhub.dto.PortfolioDto;
+import com.example.jobhub.dto.Portfolio;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +11,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 @Service
-public class PortfolioScraperService {
+public class PortfolioService implements SocialService<Portfolio> {
 
-    public PortfolioDto extract(String url) {
+    @Override
+    public Portfolio fetch(String url) {
 
         try {
             Document doc = Jsoup.connect(url)
@@ -56,7 +57,7 @@ public class PortfolioScraperService {
                     .limit(3)
                     .toList();
 
-            return new PortfolioDto(
+            return new Portfolio(
                     url,
                     title,
                     description,
@@ -67,8 +68,13 @@ public class PortfolioScraperService {
             );
 
         } catch (Exception e) {
-            return new PortfolioDto(url, null, null,
+            return new Portfolio(url, null, null,
                     List.of(), List.of(), List.of(), List.of());
         }
+    }
+
+    @Override
+    public SocialType getType() {
+        return SocialType.PORTFOLIO;
     }
 }

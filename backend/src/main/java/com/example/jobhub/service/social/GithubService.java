@@ -1,5 +1,6 @@
 package com.example.jobhub.service.social;
 
+import com.example.jobhub.dto.GithubProfile;
 import com.example.jobhub.dto.GithubRepoDto;
 import com.example.jobhub.dto.GithubUserDto;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Service
-public class GithubService {
+public class GithubService implements SocialService<GithubProfile> {
 
     private final RestClient restClient;
 
@@ -23,6 +24,16 @@ public class GithubService {
             builder.defaultHeader("Authorization", "Bearer " + token);
         }
         this.restClient = builder.build();
+    }
+
+    @Override
+    public GithubProfile fetch(String username) {
+        return null;
+    }
+
+    @Override
+    public SocialType getType() {
+        return SocialType.ORCID;
     }
 
     public GithubUserDto getUser(String username) {
