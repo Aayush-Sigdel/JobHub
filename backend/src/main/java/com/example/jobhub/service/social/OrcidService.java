@@ -2,12 +2,13 @@ package com.example.jobhub.service.social;
 
 import com.example.jobhub.dto.OrcidEmploymentDto;
 import com.example.jobhub.dto.OrcidPersonDto;
+import com.example.jobhub.dto.OrcidProfile;
 import com.example.jobhub.dto.OrcidWorkDto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 @Service
-public class OrcidService {
+public class OrcidService implements SocialService<OrcidProfile> {
 
     private final RestClient restClient;
 
@@ -18,21 +19,32 @@ public class OrcidService {
                 .build();
     }
 
-    public OrcidPersonDto getPerson(String orcidId) {
+    @Override
+    public OrcidProfile fetch(String id) {
+        return null;
+    }
+
+    @Override
+    public SocialType getType() {
+        return SocialType.ORCID;
+    }
+
+    private OrcidPersonDto getPerson(String orcidId) {
         return restClient.get()
                 .uri("/{orcid}/person", orcidId)
                 .retrieve()
                 .body(OrcidPersonDto.class);
     }
 
-    public OrcidEmploymentDto getEmployments(String orcidId) {
+
+    private OrcidEmploymentDto getEmployments(String orcidId) {
         return restClient.get()
                 .uri("/{orcid}/employments", orcidId)
                 .retrieve()
                 .body(OrcidEmploymentDto.class);
     }
 
-    public OrcidWorkDto getWorks(String orcidId) {
+    private OrcidWorkDto getWorks(String orcidId) {
         return restClient.get()
                 .uri("/{orcid}/works", orcidId)
                 .retrieve()
