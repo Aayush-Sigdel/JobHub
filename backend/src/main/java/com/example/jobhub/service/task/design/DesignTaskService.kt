@@ -85,7 +85,7 @@ class DesignTaskService(
     }
 
     fun getTasks(userId: UUID): List<DesignTaskDto> {
-        return mapper.toDesignTaskDto(taskRepository.findAllByCreatedById(userId));
+        return mapper.toDesignTaskDto(taskRepository.findAllByCreatedById(userId))
     }
 
     // Returns design task submitted by that user + all design tasks with scope PUBLIC
