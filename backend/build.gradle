@@ -49,6 +49,13 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
+
+    implementation("com.microsoft.playwright:playwright:1.62.0")
+}
+
+tasks.register('playwright', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
 }
 
 tasks.named('test') {
