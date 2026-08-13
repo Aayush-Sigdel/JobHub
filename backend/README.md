@@ -26,7 +26,8 @@ SPRING_MAIL_PORT=<smtp-port>
 SPRING_MAIL_USERNAME=<smtp-user>
 SPRING_MAIL_PASSWORD=<smtp-pass>
 JWT_SECRET=<jwt-secret>
-SERVER_PORT=8080
+REDIS_HOST=redis
+REDIS_PORT=6379
 ```
 ## Running
 
@@ -40,17 +41,27 @@ Confirm it's running by visiting `http://localhost:8080` (or your configured `SE
 
 ## Running in Docker
 
-
-1. Build the image:
+1. Setup network
 
     ```bash
-    docker build -t jobhub-backend:latest .
+    docker network create jobhub-network
     ```
 
-2. Run the container using the same `.env` file:
+2. Run redis container
 
     ```bash
-    docker run -d --name jobhub-backend --env-file .env -p 8080:8080 jobhub-backend:latest
+    docker run -d --name redis --network jobhub-network redis:latest
+    ```
+
+3. Build the image:
+    ```bash
+    docker build -t jobhub .
+    ```
+
+4. Run the container using the same `.env` file:
+
+    ```bash
+    docker run -d --name jobhub --network jobhub-network --env-file .env -p 8080:8080 jobhub
     ```
 
 ## Viewing Logs
@@ -59,5 +70,5 @@ Confirm it's running by visiting `http://localhost:8080` (or your configured `SE
 - **Docker:**
 
     ```bash
-    docker logs -f jobhub-backend
+    docker logs -f jobhub
     ```
