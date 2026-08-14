@@ -5,8 +5,8 @@ import com.example.jobhub.dto.DesignTaskDto
 import com.example.jobhub.dto.SubmitTask
 import com.example.jobhub.dto.TaskSubmissionResponse
 import com.example.jobhub.exception.ApiException
-import com.example.jobhub.mapper.task.DesignTaskMapper
-import com.example.jobhub.mapper.task.TaskSubmissionMapper
+import com.example.jobhub.mapper.TaskMapper
+import com.example.jobhub.mapper.TaskSubmissionMapper
 import com.example.jobhub.model.task.TaskScope
 import com.example.jobhub.model.task.DesignTask
 import com.example.jobhub.model.task.TaskSubmission
@@ -25,7 +25,7 @@ class DesignTaskService(
     val taskRepository: DesignTaskRepository,
     val taskSubmissionRepository: TaskSubmissionRepository,
     val taskSubmissionMapper: TaskSubmissionMapper,
-    val mapper: DesignTaskMapper,
+    val mapper: TaskMapper,
     val renderingService: RenderingService,
     val scoringService: ScoringService,
     val userRepository: UserRepository,

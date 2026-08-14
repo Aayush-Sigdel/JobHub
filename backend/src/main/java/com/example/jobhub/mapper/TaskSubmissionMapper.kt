@@ -1,4 +1,4 @@
-package com.example.jobhub.mapper.task
+package com.example.jobhub.mapper
 
 import com.example.jobhub.dto.TaskSubmissionResponse
 import com.example.jobhub.model.task.TaskSubmission
