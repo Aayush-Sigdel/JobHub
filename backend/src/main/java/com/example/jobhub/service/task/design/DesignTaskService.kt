@@ -5,8 +5,8 @@ import com.example.jobhub.dto.DesignTaskDto
 import com.example.jobhub.dto.SubmitTask
 import com.example.jobhub.dto.TaskSubmissionResponse
 import com.example.jobhub.exception.ApiException
-import com.example.jobhub.mapper.task.DesignTaskMapper
-import com.example.jobhub.mapper.task.TaskSubmissionMapper
+import com.example.jobhub.mapper.TaskMapper
+import com.example.jobhub.mapper.TaskSubmissionMapper
 import com.example.jobhub.model.task.TaskScope
 import com.example.jobhub.model.task.DesignTask
 import com.example.jobhub.model.task.TaskSubmission
@@ -24,8 +24,8 @@ import javax.imageio.ImageIO
 class DesignTaskService(
     val taskRepository: DesignTaskRepository,
     val taskSubmissionRepository: TaskSubmissionRepository,
+    val taskMapper: TaskMapper,
     val taskSubmissionMapper: TaskSubmissionMapper,
-    val mapper: DesignTaskMapper,
     val renderingService: RenderingService,
     val scoringService: ScoringService,
     val userRepository: UserRepository,
@@ -39,10 +39,9 @@ class DesignTaskService(
     val marginOfError = 3.0
 
     fun createTask(userId: UUID, createTask: CreateDesignTask): DesignTaskDto {
-        val userOptional = userRepository.findById(userId)
-        if(userOptional.isEmpty){
-            throw ApiException("User not found", HttpStatus.NOT_FOUND)
-        }
+        val user = userRepository.findById(userId)
+            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
+
         if(createTask.minimumMatchingScore > 100){
             throw ApiException("Minimum matching score can't be more than 100 percent", HttpStatus.BAD_REQUEST)
         }
@@ -58,9 +57,9 @@ class DesignTaskService(
             createTask.instructions,
             createTask.skillLevel,
             createTask.scope,
-            userOptional.get()
+            user
         )
-        return mapper.toDesignTaskDto(
+        return taskMapper.toDesignTaskDto(
             taskRepository.save(task)
         )
     }
@@ -70,27 +69,29 @@ class DesignTaskService(
         if(taskOptional.isEmpty){
             throw ApiException("Task not found", HttpStatus.NOT_FOUND)
         }
-        val solvedUserOptional = userRepository.findById(userId)
-        if(solvedUserOptional.isEmpty){
-            throw ApiException("User not found", HttpStatus.NOT_FOUND)
+        val user = userRepository.findById(userId)
+            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
+
+        if(submitTask.code == null) {
+            throw ApiException("The 'code' field should be present while submitting this task", HttpStatus.BAD_REQUEST)
         }
         val task = taskOptional.get()
         val renderedBytes = renderingService.renderAndScreenshot(submitTask.code, requiredImageWidth, requiredImageHeight)
         val score = scoringService.compareImages(renderedBytes, task.imageBytes)
         val passed = score >= task.minimumMatchingScore - marginOfError
-        val taskSubmission = TaskSubmission(task.id, TaskType.DESIGN, submitTask.code, passed, solvedUserOptional.get())
+        val taskSubmission = TaskSubmission(task.id, TaskType.DESIGN, submitTask.code, passed, score, task.minimumMatchingScore, user)
         return taskSubmissionMapper.toTaskSubmissionResponse(
             taskSubmissionRepository.save(taskSubmission)
         )
     }
 
     fun getTasks(userId: UUID): List<DesignTaskDto> {
-        return mapper.toDesignTaskDto(taskRepository.findAllByCreatedById(userId))
+        return taskMapper.toDesignTaskDto(taskRepository.findAllByCreatedById(userId))
     }
 
     // Returns design task submitted by that user + all design tasks with scope PUBLIC
     fun getAllTasks(userId: UUID): List<DesignTaskDto> {
-        return mapper.toDesignTaskDto(
+        return taskMapper.toDesignTaskDto(
             taskRepository.findAllByCreatedByIdOrScope(userId, TaskScope.PUBLIC)
         )
     }

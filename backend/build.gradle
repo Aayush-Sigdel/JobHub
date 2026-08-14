@@ -51,6 +51,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
 
     implementation("com.microsoft.playwright:playwright:1.62.0")
+    implementation("com.h2database:h2:2.4.240")
+
 }
 
 tasks.register('playwright', JavaExec) {

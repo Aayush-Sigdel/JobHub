@@ -1,12 +1,15 @@
 package com.example.jobhub.controllers
 
 import com.example.jobhub.dto.CreateDesignTask
+import com.example.jobhub.dto.CreateSQLTask
 import com.example.jobhub.dto.DesignTaskDto
+import com.example.jobhub.dto.SQLTaskDto
 import com.example.jobhub.dto.SubmitTask
 import com.example.jobhub.dto.TaskSubmissionResponse
 import com.example.jobhub.security.UserPrincipal
 import com.example.jobhub.service.task.TaskExecutionResolver
 import com.example.jobhub.service.task.design.DesignTaskService
+import com.example.jobhub.service.task.sql.SQLTaskService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody
 @RequestMapping("/api/task")
 class TaskController(
     private val designTaskService: DesignTaskService,
+    private val sqlTaskService: SQLTaskService,
     private val taskExecutionResolver: TaskExecutionResolver
 ) {
 
@@ -44,7 +48,7 @@ class TaskController(
         "/design/create",
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
-    fun createDesign(
+    fun createDesignTask(
         @AuthenticationPrincipal userDetails: UserPrincipal,
         @ModelAttribute createAssignment: CreateDesignTask
     ): ResponseEntity<DesignTaskDto> {
@@ -61,6 +65,27 @@ class TaskController(
     @GetMapping("/design/getAll")
     fun getAllDesignTasks(@AuthenticationPrincipal userDetails: UserPrincipal): ResponseEntity<List<DesignTaskDto>> {
         val tasks = designTaskService.getAllTasks(userDetails.id)
+        return ResponseEntity.ok(tasks)
+    }
+
+    @PostMapping("/sql/create")
+    fun createSQLTask(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @RequestBody createTask: CreateSQLTask
+    ): ResponseEntity<SQLTaskDto> {
+        val task = sqlTaskService.createTask(userDetails.id, createTask)
+        return ResponseEntity.status(HttpStatus.CREATED).body(task)
+    }
+
+    @GetMapping("/sql/get")
+    fun getSQLTasks(@AuthenticationPrincipal userDetails: UserPrincipal): ResponseEntity<List<SQLTaskDto>> {
+        val tasks = sqlTaskService.getTasks(userDetails.id)
+        return ResponseEntity.ok(tasks)
+    }
+
+    @GetMapping("/sql/getAll")
+    fun getAllSQLTasks(@AuthenticationPrincipal userDetails: UserPrincipal): ResponseEntity<List<SQLTaskDto>> {
+        val tasks = sqlTaskService.getAllTasks(userDetails.id)
         return ResponseEntity.ok(tasks)
     }
 }
