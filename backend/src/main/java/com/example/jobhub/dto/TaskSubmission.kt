@@ -5,12 +5,16 @@ import java.util.UUID
 
 data class SubmitTask(
     val taskId: UUID,
-    val code: String,
+    val code: String? = null,
+    val codes: List<String>? = null,
     val taskType: TaskType
 )
 
 data class TaskSubmissionResponse(
-    val taskId: UUID? = null,
-    val taskType: TaskType? = null,
-    val passed: Boolean = false
+    val taskId: UUID,
+    val taskType: TaskType,
+    val passed: Boolean,
+    val achievedScore: Double,
+    val requiredScore: Double,
+    val message: String? = null
 )

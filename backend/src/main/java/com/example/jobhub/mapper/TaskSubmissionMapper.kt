@@ -11,7 +11,10 @@ class TaskSubmissionMapper {
         return TaskSubmissionResponse(
             taskId = taskSubmission.taskId,
             taskType = taskSubmission.taskType,
-            passed = taskSubmission.isPassed
+            passed = taskSubmission.isPassed,
+            achievedScore = taskSubmission.achievedScore,
+            requiredScore = taskSubmission.requiredScore,
+            message = taskSubmission.message
         )
     }
 }
