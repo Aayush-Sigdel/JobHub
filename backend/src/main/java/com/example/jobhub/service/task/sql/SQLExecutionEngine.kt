@@ -20,7 +20,7 @@ class SQLExecutionEngine {
         solutionQueries: List<String>,
         assertions: List<String>
     ): List<AssertionResult> {
-        val url = "jdbc:h2:mem:task_${UUID.randomUUID()};DB_CLOSE_DELAY=-1"
+        val url = "jdbc:h2:mem:task_${UUID.randomUUID()}"
         DriverManager.getConnection(url, "sa", "").use { connection ->
             // Execute initial queries to setup the environment
             connection.createStatement().use { stmt ->

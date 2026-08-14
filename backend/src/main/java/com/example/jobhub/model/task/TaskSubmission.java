@@ -26,7 +26,7 @@ public class TaskSubmission {
     @Enumerated(EnumType.STRING)
     private TaskType taskType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String code;
 
     @Column(nullable = false)
