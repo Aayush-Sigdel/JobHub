@@ -141,16 +141,24 @@ is still 92, not the tolerance-adjusted score.
 
 ```json
 {
-  "title": "Find active users",
+  "title": "Find High Earning Employees",
   "setupQueries": [
-    "CREATE TABLE users (id INT, name VARCHAR(100), active BOOLEAN)",
-    "INSERT INTO users VALUES (1, 'Ada', TRUE), (2, 'Lin', FALSE)"
+    "CREATE TABLE employees (id INT PRIMARY KEY, name VARCHAR(100), department VARCHAR(50), salary DECIMAL(10,2));",
+    "INSERT INTO employees VALUES (1, 'Alice Johnson', 'Sales', 50000.00);",
+    "INSERT INTO employees VALUES (2, 'Bob Smith', 'Sales', 55000.00);",
+    "INSERT INTO employees VALUES (3, 'Carol White', 'Engineering', 70000.00);",
+    "INSERT INTO employees VALUES (4, 'David Lee', 'Engineering', 72000.00);",
+    "INSERT INTO employees VALUES (5, 'Eve Davis', 'Marketing', 48000.00);",
+    "INSERT INTO employees VALUES (6, 'Frank Miller', 'Engineering', 65000.00);"
   ],
   "assertions": [
-    "(SELECT COUNT(*) FROM candidate_result) = 1",
-    "(SELECT name FROM candidate_result LIMIT 1) = 'Ada'"
+    "(SELECT COUNT(*) FROM candidate_result) = 3;",
+    "(SELECT COUNT(*) FROM candidate_result WHERE salary <= 60000.00) = 0;",
+    "(SELECT COUNT(*) FROM candidate_result WHERE name='Carol White' AND salary=70000.00) = 1;",
+    "(SELECT COUNT(*) FROM candidate_result WHERE name='David Lee' AND salary=72000.00) = 1;",
+    "(SELECT COUNT(*) FROM candidate_result WHERE name='Frank Miller' AND salary=65000.00) = 1;"
   ],
-  "instructions": "Return the names of active users.",
+  "instructions": "Write a SQL query to find all employees whose salary is greater than 60000. Return their name and salary.\n\nTable: employees\n- id (INT, primary key)\n- name (VARCHAR)\n- department (VARCHAR)\n- salary (DECIMAL)",
   "skillLevel": "BEGINNER",
   "scope": "PUBLIC"
 }
@@ -168,12 +176,12 @@ Success: `201 Created`.
 
 ```json
 {
-  "id": "a6db053d-0336-4cc1-8063-2eb2e0889592",
-  "title": "Find active users",
-  "instructions": "Return the names of active users.",
-  "skillLevel": "BEGINNER",
-  "scope": "PUBLIC",
-  "createdBy": "c2e14375-e235-4e1d-9a5a-7427202b7de4"
+    "id": "44b80e2f-2f6e-4909-8bcf-2010d4d01cc7",
+    "title": "Find High Earning Employees",
+    "instructions": "Write a SQL query to find all employees whose salary is greater than 60000. Return their name and salary.\n\nTable: employees\n- id (INT, primary key)\n- name (VARCHAR)\n- department (VARCHAR)\n- salary (DECIMAL)",
+    "skillLevel": "BEGINNER",
+    "scope": "PUBLIC",
+    "createdBy": "c3de09b5-a653-47f2-904b-e8624c064899"
 }
 ```
 
@@ -197,9 +205,11 @@ setup/tests from this API.
 
 ```json
 {
-  "taskId": "a6db053d-0336-4cc1-8063-2eb2e0889592",
+  "taskId": "44b80e2f-2f6e-4909-8bcf-2010d4d01cc7",
   "taskType": "SQL",
-  "codes": ["SELECT name FROM users WHERE active = TRUE"]
+  "codes": [
+    "SELECT name, salary FROM employees WHERE salary > 60000;"
+  ]
 }
 ```
 
@@ -223,11 +233,11 @@ Both implemented submissions return `200 OK` when grading is reached:
 
 ```json
 {
-  "taskId": "a6db053d-0336-4cc1-8063-2eb2e0889592",
+  "taskId": "44b80e2f-2f6e-4909-8bcf-2010d4d01cc7",
   "taskType": "SQL",
-  "passed": false,
-  "achievedScore": 1.0,
-  "requiredScore": 2.0,
+  "passed": true,
+  "achievedScore": 5.0,
+  "requiredScore": 5.0,
   "message": null
 }
 ```
