@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 
 import { SearchBar } from "@/components/web/search";
+// import { CommandPalette } from "@/components/web/command-palette";
 import { ThemeToggle } from "@/components/motion/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { DropdownMenuProfileIcons } from "@/app/(applier)/_components/dropdown/dropdown-profile";
@@ -16,6 +17,7 @@ import { SignUpModal } from "@/components/auth/sign-up-modal";
 import Logo from "./logo";
 import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
+import { CommandPalette } from "../jobSearchUI";
 
 const links = [
   { name: "Dashboard", href: "#" },
@@ -27,6 +29,19 @@ const NavigationBar = () => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+
+  // ⌘K / Ctrl+K to open
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border dark:border-slate-800 bg-background/80 backdrop-blur-md">
@@ -39,8 +54,25 @@ const NavigationBar = () => {
             <Logo />
           </Link>
 
-          <div className="hidden w-full max-w-xl md:block">
+          {/* <div className="hidden w-full max-w-xl md:block">
             <SearchBar />
+          </div> */}
+          <div className="hidden w-full max-w-xl md:block relative">
+            <div
+              onClick={() => setIsPaletteOpen(true)}
+              onFocus={(e) => {
+                e.target.blur();
+                setIsPaletteOpen(true);
+              }}
+            >
+              <SearchBar disabled />
+            </div>
+
+            <AnimatePresence>
+              {isPaletteOpen && (
+                <CommandPalette onClose={() => setIsPaletteOpen(false)} />
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -88,6 +120,13 @@ const NavigationBar = () => {
           </div>
         </div>
       </div>
+
+      {/* Command palette */}
+      <AnimatePresence>
+        {isPaletteOpen && (
+          <CommandPalette onClose={() => setIsPaletteOpen(false)} />
+        )}
+      </AnimatePresence>
 
       {/* State-driven Modals */}
       <AuthModalWrapper isOpen={isSignInOpen} setIsOpen={setIsSignInOpen}>
