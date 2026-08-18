@@ -6,16 +6,20 @@ import com.example.jobhub.model.task.ProgrammingTask
 import com.example.jobhub.service.task.programming.SandboxRunner
 import com.example.jobhub.service.task.programming.driver.java.JavaDriverTemplateGenerator
 import com.example.jobhub.service.task.programming.executor.CodeExecutor
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
 import java.nio.file.Files
+
 @Component
 class JavaCodeExecutor(
     private val driverGenerator: JavaDriverTemplateGenerator,
     private val sandboxRunner: SandboxRunner,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    @param:Value("\${sandbox.image-java}")
+    private val javaSandboxImageName: String
 ) : CodeExecutor {
 
     override val language = Language.JAVA
@@ -27,6 +31,7 @@ class JavaCodeExecutor(
         candidateCode: String,
         testCaseInputs: List<List<JsonNode>>
     ): List<String> {
+
         val workDir = Files.createTempDirectory("prog_exec_")
         try {
             Files.writeString(workDir.resolve("Solution.java"), candidateCode)
@@ -35,6 +40,7 @@ class JavaCodeExecutor(
 
             val compileResult = sandboxRunner.run(
                 workDir,
+                javaSandboxImageName,
                 listOf("javac", "-cp", libsClasspath, "Solution.java", "Driver.java"),
                 timeoutSeconds = 10
             )
@@ -44,9 +50,9 @@ class JavaCodeExecutor(
             if (compileResult.exitCode != 0) {
                 throw ApiException("Compilation failed: ${compileResult.stderr}", HttpStatus.BAD_REQUEST)
             }
-
             val runResult = sandboxRunner.run(
                 workDir,
+                javaSandboxImageName,
                 listOf("java", "-cp", ".:$libsClasspath", "Driver", "testcases.json"),
                 timeoutSeconds = 10
             )

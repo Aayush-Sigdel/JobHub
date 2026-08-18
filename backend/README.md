@@ -35,7 +35,8 @@ REDIS_PORT=6379
 Programming-task submissions are judged inside isolated Docker containers, built from images defined in `application.properties`:
 
 ```properties
-sandbox.images[0].image-name=coderunner-java
+sandbox.image-java=coderunner-java
+sandbox.images[0].image-name=${sandbox.image-java}
 sandbox.images[0].dockerfile-dir=docker/coderunner-java
 ```
 

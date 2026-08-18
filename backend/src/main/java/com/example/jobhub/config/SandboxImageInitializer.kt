@@ -28,20 +28,18 @@ class SandboxImageInitializer(
             println("[SandboxImageInitializer] '${spec.imageName}' already exists, skipping build.")
             return
         }
-
-        println("[SandboxImageInitializer] '${spec.imageName}' not found — building now...")
+        val dockerfileDir = java.nio.file.Paths.get(spec.dockerfileDir).toAbsolutePath().normalize().toString()
+        println("[SandboxImageInitializer] '${spec.imageName}' not found — building now from $dockerfileDir...")
         val build = ProcessBuilder(
-            "docker", "build", "-t", spec.imageName, spec.dockerfileDir
+            "docker", "build", "-t", spec.imageName, dockerfileDir
         ).redirectErrorStream(true).start()
 
         build.inputStream.bufferedReader().forEachLine { println("[docker build:${spec.imageName}] $it") }
         val exitCode = build.waitFor()
-
         if (exitCode != 0) {
-            System.err.println("[SandboxImageInitializer] Failed to build '${spec.imageName}' (exit code $exitCode).")
-        } else {
-            println("[SandboxImageInitializer] '${spec.imageName}' built successfully.")
+            throw IllegalStateException("Failed to build sandbox image '${spec.imageName}' (exit code $exitCode).")
         }
+        println("[SandboxImageInitializer] '${spec.imageName}' built successfully.")
     }
 
     private fun imageExists(imageName: String): Boolean {
