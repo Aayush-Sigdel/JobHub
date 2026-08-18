@@ -25,18 +25,18 @@ import java.util.UUID
 
 @Service
 class ProgrammingTaskService(
-    val taskRepository: ProgrammingTaskRepository,
-    val taskSubmissionRepository: TaskSubmissionRepository,
-    val judgeService: ProgrammingJudgeService,
-    val taskMapper: TaskMapper,
-    val taskSubmissionMapper: TaskSubmissionMapper,
-    val userRepository: UserRepository,
-    val objectMapper: ObjectMapper
+    private val taskRepository: ProgrammingTaskRepository,
+    private val taskSubmissionRepository: TaskSubmissionRepository,
+    private val judgeService: ProgrammingJudgeService,
+    private val taskMapper: TaskMapper,
+    private val taskSubmissionMapper: TaskSubmissionMapper,
+    private val userRepository: UserRepository,
+    private val objectMapper: ObjectMapper
 ): TaskExecutionService {
 
     override val taskType = TaskType.PROGRAMMING
-    val minimumTaskCasesRequired = 5
-    val maximumExampleTestCases = 3
+    private val minimumTaskCasesRequired = 5
+    private val maximumExampleTestCases = 3
 
     fun createTask(userId: UUID, createTask: CreateProgrammingTask): ProgrammingTaskDto{
         validateIdentifier(createTask.methodName, "methodName")
