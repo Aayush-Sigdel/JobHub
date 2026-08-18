@@ -15,9 +15,9 @@ JSON endpoints use `Content-Type: application/json`. All IDs are UUID strings.
 | `skillLevel` | `BEGINNER`, `INTERMEDIATE`, `EXPERT` |
 | `scope` | `PUBLIC`, `PRIVATE` |
 | `taskType` | `DESIGN`, `SQL`, `PROGRAMMING` |
+| `language` | `JAVA`, `PYTHON` |
 
-Enum strings are uppercase and case-sensitive. Only `DESIGN` and `SQL` can be
-submitted. `PROGRAMMING` currently produces `403 Forbidden` with an empty body.
+Enum strings are uppercase and case-sensitive.
 
 Application exceptions have this shape:
 
@@ -229,7 +229,7 @@ statements execute in order.
 
 ## Submission response and errors
 
-Both implemented submissions return `200 OK` when grading is reached:
+All implemented submissions return `200 OK` when grading is reached:
 
 ```json
 {
@@ -242,19 +242,23 @@ Both implemented submissions return `200 OK` when grading is reached:
 }
 ```
 
-Every attempt that reaches grading is saved. The response has no submission ID,
-timestamp, individual assertion results, or history endpoint.
+The response has no submission ID, timestamp, individual assertion/test results,
+or history endpoint.
 
 SQL setup/candidate-query execution errors are converted to a normal saved,
 failed `200` submission with `achievedScore: 0.0` and the database error text in
 `message`. Display `message` as plain text. Assertion errors only count as
 failures; their individual messages are not returned.
 
+Programming compile/runtime/judge errors are also returned as `200` with
+`passed: false`, `achievedScore: 0.0`, and `message` populated, but these error
+responses are currently returned directly and are **not saved** as submissions.
+
 | Status | Message/body | Condition |
 | --- | --- | --- |
 | `400` | `The 'code' field should be present while submitting this task` | `DESIGN` submission has null or omitted `code`. Empty string is accepted. |
 | `400` | `The 'codes' must not be null or empty and must contain at least one item` | SQL omits `codes`, sends null, or sends `[]`. |
-| `403` | Empty body | `taskType: PROGRAMMING`; no executor exists. |
+| `400` | `The 'language' field should be present while submitting this task` | `PROGRAMMING` submission omits or nulls `language`. |
 | `404` | `Task not found` | ID does not exist for the selected task type. |
 | `404` | `User not found` | Token user no longer exists after task lookup. |
 
@@ -266,3 +270,161 @@ failures; their individual messages are not returned.
   endpoint, submission history endpoint, or per-test feedback endpoint.
 - A frontend should treat a failed SQL query as a successful HTTP grading
   response (`200`, `passed: false`), not necessarily as a network/API failure.
+
+## Programming tasks
+
+### Create
+
+`POST /programming/create`
+
+```json
+{
+  "title": "Square a Number",
+  "instruction": "Write a method that takes an integer n and returns its square (n * n).",
+  "skillLevel": "BEGINNER",
+  "scope": "PUBLIC",
+  "methodName": "square",
+  "parameters": [
+    { "name": "n", "type": "INT" }
+  ],
+  "returnType": "INT",
+  "orderInsensitiveOutput": false,
+  "testCases": [
+    { "input": [4], "expectedOutput": 16 },
+    { "input": [7], "expectedOutput": 49 },
+    { "input": [0], "expectedOutput": 0 },
+    { "input": [-5], "expectedOutput": 25 },
+    { "input": [12], "expectedOutput": 144 }
+  ]
+}
+```
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `title` | string | Yes | Stored as supplied. |
+| `instruction` | string | Yes | Stored as `instructions` in response payloads. |
+| `skillLevel`, `scope` | enum | Yes | Shared enum values above. |
+| `methodName` | string | Yes | Must match `^[A-Za-z_][A-Za-z0-9_]*$`. |
+| `parameters` | array | Yes | Each `name` must match identifier regex; duplicate parameter names are rejected. |
+| `parameters[].type` | enum | Yes | `INT`, `INT_ARRAY`, `STRING`, `STRING_ARRAY`, `DOUBLE`, `BOOLEAN`. |
+| `returnType` | enum | Yes | Same enum as parameter type. |
+| `orderInsensitiveOutput` | boolean | Yes | If `true`, array outputs are compared ignoring order. |
+| `testCases` | array | Yes | Minimum 5 required. Each test case input count must equal parameter count and JSON types must match declared parameter/return types. |
+
+Success: `201 Created`.
+
+```json
+{
+  "id": "27a2c4d7-913a-4656-8a95-fd2bd836e489",
+  "title": "Square a Number",
+  "instructions": "Write a method that takes an integer n and returns its square (n * n).",
+  "skillLevel": "BEGINNER",
+  "scope": "PUBLIC",
+  "methodName": "square",
+  "parameters": [
+    { "name": "n", "type": "INT" }
+  ],
+  "returnType": "INT",
+  "exampleTestCases": [
+    { "input": [4], "expectedOutput": 16 },
+    { "input": [7], "expectedOutput": 49 },
+    { "input": [0], "expectedOutput": 0 }
+  ],
+  "orderInsensitiveOutput": false
+}
+```
+
+Only `exampleTestCases` are returned (currently capped at 3). Full hidden test
+cases are stored server-side.
+
+Expected application errors:
+
+| Status | Message | Condition |
+| --- | --- | --- |
+| `400` | `methodName '<value>' is not a valid identifier` | `methodName` fails identifier regex. |
+| `400` | `parameter name '<value>' is not a valid identifier` | A parameter name fails identifier regex. |
+| `400` | `Duplicate parameter names: [<name>]` | Duplicate parameter names in request. |
+| `400` | `Task must have minimum 5 test cases` | Fewer than 5 test cases supplied. |
+| `400` | `Test case <i> has <x> input values but method expects <y>` | Test-case arity mismatch. |
+| `400` | `Test case <i>, input[<j>] does not match declared type <TYPE>` | Input type does not match parameter type. |
+| `400` | `Test case <i>, expectedOutput does not match declared type <TYPE>` | Expected-output type does not match `returnType`. |
+| `404` | `User not found` | Token user no longer exists. |
+
+### Read
+
+`GET /programming/get` returns all programming tasks created by the current user.
+
+`GET /programming/getAll` returns the current user's programming tasks plus all
+public programming tasks.
+
+Both return `200 OK` and an array of `ProgrammingTaskDto` (or `[]`). As with
+create response, only `exampleTestCases` are exposed (max 3), not the full test
+set used for judging.
+
+### Submit a programming task
+
+`POST /submit`
+
+```json
+{
+  "taskId": "27a2c4d7-913a-4656-8a95-fd2bd836e489",
+  "taskType": "PROGRAMMING",
+  "language": "JAVA",
+  "code": "class Solution {\n    public int square(int n) {\n        return n * n;\n    }\n}"
+}
+```
+
+`code` and `language` are required for `PROGRAMMING`. `codes` is ignored.
+
+### Supported languages and how judging works
+
+- Declared language enum values are `JAVA` and `PYTHON`.
+- Current executable support is **JAVA only**. `PYTHON` currently has no
+  executor implementation.
+- Judge flow (JAVA):
+  - Writes `Solution.java` (candidate), generated `Driver.java`, and
+    `testcases.json` into a temp folder.
+  - Runs compile and execution inside Docker image `coderunner-java`.
+  - Runtime sandbox settings: memory `256m`, CPU `0.5`, PID limit `128`,
+    no network, read-only FS, tmpfs `/tmp`.
+  - Compile timeout: 10 seconds. Run timeout: 10 seconds.
+  - Driver prints one JSON output line per test case; backend parses each line
+    and compares with expected output.
+  - Numeric compare uses epsilon (`1e-6`); array compare respects
+    `orderInsensitiveOutput`.
+
+Success example:
+
+```json
+{
+  "taskId": "27a2c4d7-913a-4656-8a95-fd2bd836e489",
+  "taskType": "PROGRAMMING",
+  "passed": true,
+  "achievedScore": 5.0,
+  "requiredScore": 5.0,
+  "message": null
+}
+```
+
+Scoring:
+
+- `requiredScore` = total hidden test-case count for the task.
+- `achievedScore` = number of passed test cases.
+- `passed` is true only when all test cases pass.
+
+Programming failure behavior:
+
+- Compile errors, runtime errors, timeouts, unsupported language, or output
+  cardinality mismatches are returned as `200` with `passed: false`,
+  `achievedScore: 0.0`, and an error `message`.
+- If output lines are present but one line is not valid JSON, only that case is
+  marked failed (not a hard failure for all cases).
+
+Programming-specific HTTP errors:
+
+| Status | Message | Condition |
+| --- | --- | --- |
+| `400` | `The 'code' field should be present while submitting this task` | `code` omitted or null. |
+| `400` | `The 'language' field should be present while submitting this task` | `language` omitted or null. |
+| `404` | `Task not found` | Task ID not found under `PROGRAMMING`. |
+| `404` | `User not found` | Solver user missing when persisting a successful judged submission. |
