@@ -22,7 +22,10 @@ class SecurityConfig(
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/refresh",
-                    "/api/auth/verify-otp"
+                    "/api/auth/verify-otp",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
                 ).permitAll()
                 it.anyRequest().authenticated()
             }
