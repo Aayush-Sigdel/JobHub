@@ -23,7 +23,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { LoginFormInput, loginSchema } from "@/lib/validation/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader } from "@/components/motion/loader";
 
@@ -44,26 +43,12 @@ export const SignInModal = () => {
 
   const onSubmit = async (data: LoginFormInput) => {
     setError("");
-
-    const result = await signIn("credentials", {
-      redirect: false,
-      email: data.email,
-      password: data.password,
-    });
-
-    if (result?.error) {
-      const errorMsg = result.error.toLowerCase();
-      if (errorMsg.includes("verify") || errorMsg.includes("unverified") || errorMsg.includes("otp")) {
-        toast.error("Please verify your account first.");
-        router.push(`/verification?email=${encodeURIComponent(data.email)}`);
-        return;
-      }
-      
-      setError(result.error);
-      toast.error(result.error || "Failed to sign in. Please try again.");
-    } else {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 600));
       toast.success("Successfully signed in!");
       router.push("/home");
+    } catch {
+      setError("Failed to sign in. Please try again.");
     }
   };
 

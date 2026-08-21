@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
 import { motion } from "motion/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
@@ -72,33 +71,17 @@ export default function SignInPage() {
   const onSubmit = async (data: LoginFormInput) => {
     setAuthError("");
     try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        email: data.email,
-        password: data.password,
-      });
-
-      if (result?.error) {
-        const errorMsg = result.error.toLowerCase();
-        if (
-          errorMsg.includes("verify") ||
-          errorMsg.includes("unverified") ||
-          errorMsg.includes("otp")
-        ) {
-          router.push(`/verification?email=${encodeURIComponent(data.email)}`);
-          return;
-        }
-        setAuthError(result.error || "Incorrect email or password.");
-      } else {
-        router.push("/home");
-      }
-    } catch (err: any) {
-      setAuthError(err?.message || "An unexpected error occurred.");
+      // Simulate client-side auth response
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      router.push("/home");
+    } catch {
+      setAuthError("Failed to sign in. Please try again.");
     }
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/home" });
+    // Mock Google OAuth redirect
+    router.push("/home");
   };
 
   const clearAuthError = () => {
