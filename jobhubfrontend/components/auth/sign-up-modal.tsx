@@ -66,33 +66,12 @@ export const SignUpModal = () => {
 
   const onSubmit = async (data: RegisterFormInput) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          employer: data.employer || false,
-        }),
-      });
-
-      const text = await res.text();
-      let responseData;
-      try {
-        responseData = JSON.parse(text);
-      } catch (e) {
-        responseData = { message: text };
-      }
-
-      if (!res.ok) {
-        throw new Error(responseData.message || "Failed to register");
-      }
-
+      // Simulate client-side registration
+      await new Promise((resolve) => setTimeout(resolve, 600));
       toast.success("Account created! Please verify your email.");
       router.push(`/verification?email=${encodeURIComponent(data.email)}`);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch {
+      toast.error("Failed to register account. Please try again.");
     }
   };
 

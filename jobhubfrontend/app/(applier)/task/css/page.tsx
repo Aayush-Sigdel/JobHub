@@ -6,7 +6,6 @@ import CssArenaHeader from "@/components/task/CssArenaHeader";
 import CodeOutputCanvas from "@/components/task/CodeOutputCanvas";
 import TargetGoalCanvas from "@/components/task/TargetGoalCanvas";
 import SubmitConfirmModal from "@/components/task/SubmitConfirmModal";
-import { apiClient } from "@/lib/api";
 import {
   DEFAULT_CSS_TASK,
   PASSING_TOLERANCE,
@@ -30,7 +29,7 @@ export default function CSSBattlePage() {
   const [highScore, setHighScore] = useState<ScoreResult | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
 
-  // Target score qualification check according to task-controller-api.md
+  // Target score qualification check
   const isTargetScoreMet = useMemo(() => {
     return (
       lastScore !== null &&
@@ -85,7 +84,7 @@ export default function CSSBattlePage() {
     }
   }, [task]);
 
-  // Submit to Backend POST /api/task/submit following task-controller-api.md
+  // Client-side UI final submission confirmation
   const handleConfirmSubmit = useCallback(async () => {
     if (isSubmitLocked) {
       toast.warning(submitLockMessage);
@@ -105,26 +104,11 @@ export default function CSSBattlePage() {
         !prev || localResult.score > prev.score ? localResult : prev
       );
 
-      // Backend API contract payload: { taskId, taskType: "DESIGN", code }
-      const payload = {
-        taskId: task.id,
-        taskType: "DESIGN",
-        code: latestCodeRef.current,
-      };
-
-      const response = await apiClient.post("/task/submit", payload);
-      if (response.data && response.data.passed) {
-        toast.success(`Task Passed! Achieved: ${response.data.achievedScore}%`);
-      } else {
-        toast.success("Final assignment answer submitted successfully!");
-      }
-    } catch {
-      // Graceful fallback for local development without active Spring Boot server
-      toast.success(
-        "Final assignment answer submitted successfully (Recorded locally)!"
-      );
-    } finally {
       setShowSubmitModal(false);
+      toast.success("Final assignment answer submitted successfully!");
+    } catch {
+      toast.error("Submission failed. Please check your code.");
+    } finally {
       setIsSubmitting(false);
     }
   }, [isSubmitLocked, submitLockMessage, task]);
