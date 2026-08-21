@@ -29,6 +29,19 @@ JWT_SECRET=<jwt-secret>
 REDIS_HOST=redis
 REDIS_PORT=6379
 ```
+
+## Sandbox Images
+
+Programming-task submissions are judged inside isolated Docker containers, built from images defined in `application.properties`:
+
+```properties
+sandbox.image-java=coderunner-java
+sandbox.images[0].image-name=${sandbox.image-java}
+sandbox.images[0].dockerfile-dir=docker/coderunner-java
+```
+
+These images are **built automatically on first startup** (via `SandboxImageInitializer`) if they don't already exist locally — no manual `docker build` step needed. First run will take a bit longer than subsequent ones while the image builds; check the startup logs for `[SandboxImageInitializer]` lines to confirm it completed successfully before submitting a programming task.
+
 ## Running
 
 Load the environment variables and start the app (Bash terminal):
@@ -39,30 +52,29 @@ Load the environment variables and start the app (Bash terminal):
 
 Confirm it's running by visiting `http://localhost:8080` (or your configured `SERVER_PORT`).
 
+**Note:** ensure Docker Desktop (or the Docker daemon) is running locally before starting the app, programming-task submission and judging will fail otherwise, since `SandboxRunner` shells out to the local `docker` CLI directly.
+
 ## Running in Docker
 
 1. Setup network
-
-    ```bash
+```bash
     docker network create jobhub-network
-    ```
-
+```
 2. Run redis container
-
-    ```bash
+```bash
     docker run -d --name redis --network jobhub-network redis:latest
-    ```
-
+```
 3. Build the image:
-    ```bash
+```bash
     docker build -t jobhub .
-    ```
+```
+4. Run the container using the same `.env` file **and the Docker socket mounted** (required — see below):
+```bash
+    docker run -d --name jobhub --network jobhub-network --env-file .env \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -p 8080:8080 jobhub
+```
 
-4. Run the container using the same `.env` file:
-
-    ```bash
-    docker run -d --name jobhub --network jobhub-network --env-file .env -p 8080:8080 jobhub
-    ```
 
 ## Viewing Logs
 

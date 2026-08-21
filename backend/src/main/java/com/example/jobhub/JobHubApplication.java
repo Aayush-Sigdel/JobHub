@@ -8,11 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @ConfigurationPropertiesScan
 public class JobHubApplication {
 
-
     public static void main(String[] args) {
-
-
         SpringApplication.run(JobHubApplication.class, args);
     }
-
 }

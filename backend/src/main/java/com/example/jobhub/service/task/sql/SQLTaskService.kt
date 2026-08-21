@@ -21,20 +21,17 @@ import java.util.UUID
 
 @Service
 class SQLTaskService(
-    val taskRepository: SQLTaskRepository,
-    val taskSubmissionRepository: TaskSubmissionRepository,
-    val taskMapper: TaskMapper,
-    val taskSubmissionMapper: TaskSubmissionMapper,
-    val userRepository: UserRepository,
-    val sqlExecutionEngine: SQLExecutionEngine
+    private val taskRepository: SQLTaskRepository,
+    private val taskSubmissionRepository: TaskSubmissionRepository,
+    private val taskMapper: TaskMapper,
+    private val taskSubmissionMapper: TaskSubmissionMapper,
+    private val userRepository: UserRepository,
+    private val sqlExecutionEngine: SQLExecutionEngine
 ) : TaskExecutionService{
 
     override val taskType = TaskType.SQL
 
     fun createTask(userId: UUID, createTask: CreateSQLTask): SQLTaskDto{
-        val user = userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-
         if (createTask.assertions.isEmpty()) {
             throw ApiException("Task must have at least one assertion", HttpStatus.BAD_REQUEST)
         }
@@ -45,7 +42,7 @@ class SQLTaskService(
             createTask.instructions,
             createTask.skillLevel,
             createTask.scope,
-            user
+            user(userId)
         )
         return taskMapper.toSQLTaskDto(
             taskRepository.save(task)
@@ -53,12 +50,7 @@ class SQLTaskService(
     }
 
     override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
-        val task = taskRepository.findById(submitTask.taskId)
-            .orElseThrow { ApiException("Task not found", HttpStatus.NOT_FOUND) }
-
-        val user = userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-
+        val task = task(submitTask.taskId)
         if(submitTask.codes.isNullOrEmpty()) {
             throw ApiException("The 'codes' must not be null or empty and must contain at least one item", HttpStatus.BAD_REQUEST)
         }
@@ -76,7 +68,7 @@ class SQLTaskService(
                 0.0,
                 totalAssertions.toDouble(),
                 e.message,
-                user
+                user(userId)
             )
             return taskSubmissionMapper.toTaskSubmissionResponse(
                 taskSubmissionRepository.save(taskSubmission)
@@ -90,7 +82,7 @@ class SQLTaskService(
             passedCount == totalAssertions,
             passedCount.toDouble(),
             totalAssertions.toDouble(),
-            user
+            user(userId)
         )
         return taskSubmissionMapper.toTaskSubmissionResponse(
             taskSubmissionRepository.save(taskSubmission)
@@ -106,4 +98,10 @@ class SQLTaskService(
             taskRepository.findAllByCreatedByIdOrScope(userId, TaskScope.PUBLIC)
         )
     }
+
+    private fun user(userId: UUID) = userRepository.findById(userId)
+        .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
+
+    private fun task(taskId: UUID) = taskRepository.findById(taskId)
+        .orElseThrow { ApiException("Task not found", HttpStatus.NOT_FOUND) }
 }
