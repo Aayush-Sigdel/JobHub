@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.info.License
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -14,6 +15,12 @@ import org.springframework.context.annotation.Configuration
 class OpenApiConfig {
 
     private val securitySchemeName = "BearerAuth"
+    private val publicAuthPaths = setOf(
+        "/api/auth/register",
+        "/api/auth/login",
+        "/api/auth/refresh",
+        "/api/auth/verify-otp"
+    )
 
     @Bean
     fun jobHubOpenAPI(): OpenAPI {
@@ -33,9 +40,6 @@ class OpenApiConfig {
                             .url("https://springdoc.org")
                     )
             )
-            .addSecurityItem(
-                SecurityRequirement().addList(securitySchemeName)
-            )
             .components(
                 Components()
                     .addSecuritySchemes(
@@ -48,5 +52,22 @@ class OpenApiConfig {
                             .description("Provide JWT access token for authorization")
                     )
             )
+    }
+
+    @Bean
+    fun operationSecurityCustomizer(): OpenApiCustomizer {
+        return OpenApiCustomizer { openApi ->
+            openApi.paths?.forEach { (path, pathItem) ->
+                pathItem.readOperations().forEach { operation ->
+                    if (path in publicAuthPaths) {
+                        operation.security = mutableListOf()
+                    } else if (operation.security == null) {
+                        operation.security = mutableListOf(
+                            SecurityRequirement().addList(securitySchemeName)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
