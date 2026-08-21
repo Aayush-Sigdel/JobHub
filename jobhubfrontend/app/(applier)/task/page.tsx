@@ -71,7 +71,7 @@ export default function CSSBattlePage() {
 
       if (result.matchPct >= task.minimumMatchingScore - PASSING_TOLERANCE) {
         toast.success(
-          `🎉 Target Met! ${result.matchPct}% Match — Submission Unlocked!`
+          `Target Met! ${result.matchPct}% Match — Submission Unlocked!`
         );
       } else {
         toast.info(
@@ -141,7 +141,7 @@ export default function CSSBattlePage() {
       {/* 2. 3-Column Arena Layout */}
       <main className="flex-1 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-border min-h-0 overflow-hidden bg-background">
         {/* Column 1: Code Editor */}
-        <div className="flex-1 min-w-[380px] h-full flex flex-col min-h-0 overflow-hidden bg-card">
+        <div className="flex-1 min-w-95 h-full flex flex-col min-h-0 overflow-hidden bg-card">
           <CodeEditor
             initialCode={task.initialCode}
             onChange={handleCodeChange}

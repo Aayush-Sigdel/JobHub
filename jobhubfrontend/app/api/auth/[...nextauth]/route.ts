@@ -2,7 +2,7 @@ import { loginSchema } from "@/lib/validation/auth";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/sign-in",
   },
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET || "jobhub-secret-fallback-key",
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
