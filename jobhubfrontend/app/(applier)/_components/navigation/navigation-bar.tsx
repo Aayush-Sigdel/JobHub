@@ -2,17 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
+import { useSession } from "next-auth/react";
 
 import { SearchBar } from "@/components/web/search";
 import { ThemeToggle } from "@/components/motion/theme-toggle";
-import { buttonVariants } from "@/components/ui/button";
 import { DropdownMenuProfileIcons } from "@/app/(applier)/_components/dropdown/dropdown-profile";
 import NotificationCenter from "@/app/(applier)/_components/dropdown/dropdown-notification";
-import { cn } from "@/lib/utils";
-import { AuthModalWrapper } from "@/components/auth/auth-modal-wrapper";
-import { SignInModal } from "@/components/auth/sign-in-modal";
-import { SignUpModal } from "@/components/auth/sign-up-modal";
 import Logo from "./logo";
 import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
@@ -23,10 +19,9 @@ const links = [
 ];
 
 const NavigationBar = () => {
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(true);
+  const { data: session, status } = useSession();
+  const isUserLoggedIn = status === "authenticated";
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [isSignInOpen, setIsSignInOpen] = useState(false);
-  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border dark:border-slate-800 bg-background/80 backdrop-blur-md">
@@ -64,7 +59,7 @@ const NavigationBar = () => {
               <DropdownMenuProfileIcons />
             ) : (
               <div className="flex items-center justify-center gap-2">
-                <div onClick={() => setIsSignInOpen(true)}>
+                <Link href="/sign-in">
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -72,9 +67,9 @@ const NavigationBar = () => {
                   >
                     Sign In
                   </motion.div>
-                </div>
+                </Link>
 
-                <div onClick={() => setIsSignUpOpen(true)}>
+                <Link href="/sign-up">
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -82,21 +77,12 @@ const NavigationBar = () => {
                   >
                     Sign Up
                   </motion.div>
-                </div>
+                </Link>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* State-driven Modals */}
-      <AuthModalWrapper isOpen={isSignInOpen} setIsOpen={setIsSignInOpen}>
-        <SignInModal />
-      </AuthModalWrapper>
-
-      <AuthModalWrapper isOpen={isSignUpOpen} setIsOpen={setIsSignUpOpen}>
-        <SignUpModal />
-      </AuthModalWrapper>
     </nav>
   );
 };

@@ -16,8 +16,8 @@ export default function CandidateProfilePage({
 }: {
   user: CandidateProfile;
 }) {
-  console.log(user.user.followingCount);
-  console.log(user.jobsApplied);
+  // console.log(user.user.followingCount);
+  // console.log(user.jobsApplied);
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12 font-sans text-foreground">
       <div className="max-w-275 mx-auto flex flex-col lg:flex-row gap-8">

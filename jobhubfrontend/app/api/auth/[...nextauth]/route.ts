@@ -2,6 +2,8 @@ import { loginSchema } from "@/lib/validation/auth";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -18,29 +20,42 @@ export const authOptions: NextAuthOptions = {
         }
         const { email, password } = parsedCredentials.data;
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/login`,
-          {
+        try {
+          const res = await fetch(`${API_BASE_URL}/login`, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               email,
               password,
             }),
-          },
-        );
-        const data = await res.json();
+          });
 
-        if (res.ok && data.accessToken) {
-          return {
-            id: email,
-            email: email,
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
-          };
+          const contentType = res.headers.get("content-type") || "";
+          let data: any = {};
+          if (contentType.includes("application/json")) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            try {
+              data = JSON.parse(text);
+            } catch {
+              data = { message: res.ok ? "" : "Authentication service unavailable" };
+            }
+          }
+
+          if (res.ok && data.accessToken) {
+            return {
+              id: email,
+              email: email,
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+            };
+          }
+
+          throw new Error(data.message || "Invalid email or password");
+        } catch (err: any) {
+          throw new Error(err.message || "Invalid email or password");
         }
-
-        throw new Error(data.message || "Invalid email or password");
       },
     }),
   ],
@@ -61,7 +76,8 @@ export const authOptions: NextAuthOptions = {
     signIn: "/sign-in",
   },
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "jobhub-secret-fallback-key",
 };
+
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
