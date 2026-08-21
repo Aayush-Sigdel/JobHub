@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
 import { motion } from "motion/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
@@ -85,54 +84,20 @@ export default function SignUpPage() {
 
   const onSubmit = async (data: RegisterFormInput) => {
     setAuthError("");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
     try {
-      const res = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          employer: false,
-        }),
-      });
-
-      const contentType = res.headers.get("content-type") || "";
-      let errorMsg = "Failed to register account.";
-
-      if (contentType.includes("application/json")) {
-        const json = await res.json();
-        if (!res.ok) {
-          throw new Error(json.message || json.error || errorMsg);
-        }
-      } else {
-        const text = await res.text();
-        if (!res.ok) {
-          if (text.includes("{") && text.includes("}")) {
-            try {
-              const parsed = JSON.parse(text);
-              errorMsg = parsed.message || parsed.error || errorMsg;
-            } catch {
-              errorMsg = "Registration service unavailable.";
-            }
-          } else if (!text.includes("<html") && !text.includes("<!DOCTYPE") && text.length < 100) {
-            errorMsg = text;
-          } else {
-            errorMsg = "Unable to connect to backend server (404/Offline).";
-          }
-          throw new Error(errorMsg);
-        }
-      }
-
-      router.push(`/verification?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.name)}`);
-    } catch (error: any) {
-      setAuthError(error.message || "Failed to create account. Please try again.");
+      // Simulate client-side registration
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      router.push(
+        `/verification?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.name)}`
+      );
+    } catch {
+      setAuthError("Failed to create account. Please try again.");
     }
   };
 
   const handleGoogleSignUp = () => {
-    signIn("google", { callbackUrl: "/home" });
+    // Mock Google sign up redirect
+    router.push("/onboarding");
   };
 
   const getActiveErrorMessage = () => {
