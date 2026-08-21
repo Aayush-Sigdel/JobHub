@@ -18,7 +18,7 @@ data class ProcessResult(
 
 @Component
 class SandboxRunner(
-    @param:Value("\${sandbox.runtime-user:10001:10001}")
+    @param:Value("\${sandbox.runtime-user}")
     private val sandboxRuntimeUser: String
 ) {
 
