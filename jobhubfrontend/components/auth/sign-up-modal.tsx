@@ -43,9 +43,7 @@ export const SignUpModal = () => {
       name: "",
       email: "",
       password: "",
-      confirmPassword: "",
       employer: false,
-      userName: "",
     },
   });
 
