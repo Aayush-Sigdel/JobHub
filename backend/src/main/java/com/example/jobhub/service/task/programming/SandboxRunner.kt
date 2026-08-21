@@ -1,7 +1,10 @@
 package com.example.jobhub.service.task.programming
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.nio.file.Path
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -14,18 +17,25 @@ data class ProcessResult(
 )
 
 @Component
-class SandboxRunner {
+class SandboxRunner(
+    @param:Value("\${sandbox.runtime-user}")
+    private val sandboxRuntimeUser: String
+) {
 
     fun run(workDir: Path, imageName: String, command: List<String>, timeoutSeconds: Long = 10): ProcessResult {
         require(command.isNotEmpty()) { "Command cannot be empty" }
         require(imageName.isNotBlank()) { "Image name cannot be blank" }
+        require(sandboxRuntimeUser.isNotBlank()) { "Sandbox runtime user cannot be blank" }
         check(imageExists(imageName)) { "Docker image '$imageName' does not exist" }
+        ensureSandboxWritableWorkdir(workDir)
 
         val dockerCommand = mutableListOf(
             "docker", "run", "--rm",
             "--memory=256m", "--memory-swap=256m",
             "--cpus=0.5", "--pids-limit=128",
             "--network=none", "--read-only", "--tmpfs", "/tmp",
+            "--cap-drop=ALL", "--security-opt", "no-new-privileges",
+            "--user", sandboxRuntimeUser,
             "-v", "${workDir.toAbsolutePath()}:/code",
             "-w", "/code",
             imageName
@@ -66,5 +76,20 @@ class SandboxRunner {
         val output = check.inputStream.bufferedReader().use { it.readText().trim() }
         check.waitFor()
         return output.isNotEmpty()
+    }
+
+    private fun ensureSandboxWritableWorkdir(workDir: Path) {
+        val allReadWriteExec = setOf(
+            PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
+            PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE, PosixFilePermission.GROUP_EXECUTE,
+            PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_WRITE, PosixFilePermission.OTHERS_EXECUTE
+        )
+        try {
+            Files.setPosixFilePermissions(workDir, allReadWriteExec)
+        } catch (_: UnsupportedOperationException) {
+            val dir = workDir.toFile()
+            val changed = dir.setReadable(true, false) && dir.setWritable(true, false) && dir.setExecutable(true, false)
+            check(changed) { "Failed to relax sandbox work directory permissions for ${workDir.toAbsolutePath()}" }
+        }
     }
 }

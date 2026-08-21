@@ -6,3 +6,7 @@ RUN mkdir /libs && \
     curl -fsSL -o /libs/jackson-core.jar https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.17.2/jackson-core-2.17.2.jar && \
     curl -fsSL -o /libs/jackson-annotations.jar https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.17.2/jackson-annotations-2.17.2.jar && \
     apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -g 10001 runner && useradd -m -u 10001 -g runner runner
+
+USER runner:runner
