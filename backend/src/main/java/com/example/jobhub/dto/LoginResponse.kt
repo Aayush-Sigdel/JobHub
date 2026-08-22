@@ -7,5 +7,6 @@ data class LoginResponse(
     val refreshToken: String,
     val id: UUID,
     val name: String,
-    val imageUrl: String
+    val imageUrl: String,
+    val onboardingCompleted: Boolean
 )

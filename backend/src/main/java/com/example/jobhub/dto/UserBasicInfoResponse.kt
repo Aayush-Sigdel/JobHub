@@ -5,5 +5,6 @@ data class UserBasicInfoResponse(
     val name: String,
     val email: String,
     val title: String?,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val onboardingCompleted: Boolean
 )
