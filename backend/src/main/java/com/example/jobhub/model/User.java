@@ -37,6 +37,9 @@ public class User {
     @Column(nullable = false)
     private boolean employer;
 
+    @Column(nullable = false)
+    private boolean onboardingCompleted = false;
+
     private String title;
 
     private boolean verified = false;
