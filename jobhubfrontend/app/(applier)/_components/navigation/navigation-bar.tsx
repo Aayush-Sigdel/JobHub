@@ -65,12 +65,19 @@ const NavigationBar = () => {
                 setIsPaletteOpen(true);
               }}
             >
-              <SearchBar disabled />
+              <SearchBar />
             </div>
 
             <AnimatePresence>
               {isPaletteOpen && (
-                <CommandPalette onClose={() => setIsPaletteOpen(false)} />
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
+                    onClick={() => setIsPaletteOpen(false)}
+                  />
+                  <CommandPalette onClose={() => setIsPaletteOpen(false)} />
+                </>
               )}
             </AnimatePresence>
           </div>
