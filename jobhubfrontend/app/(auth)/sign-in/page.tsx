@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -9,7 +9,12 @@ import { motion } from "motion/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { LoginFormInput, loginSchema } from "@/lib/validation/auth";
-import { AuthCharacters, AuthFieldType } from "@/components/auth/auth-characters";
+import {
+  AuthCharacters,
+  AuthFieldType,
+} from "@/components/auth/auth-characters";
+
+import { signIn } from "next-auth/react";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -70,18 +75,21 @@ export default function SignInPage() {
 
   const onSubmit = async (data: LoginFormInput) => {
     setAuthError("");
-    try {
-      // Simulate client-side auth response
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      router.push("/home");
-    } catch {
-      setAuthError("Failed to sign in. Please try again.");
+    const result = await signIn("credentials", {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    });
+
+    if (result?.error) {
+      setAuthError("Invalid email or password.");
     }
+    router.push("/home");
+    router.refresh();
   };
 
   const handleGoogleSignIn = () => {
-    // Mock Google OAuth redirect
-    router.push("/home");
+    signIn("google", { callbackUrl: "/home" });
   };
 
   const clearAuthError = () => {
@@ -90,8 +98,14 @@ export default function SignInPage() {
 
   const getActiveErrorMessage = () => {
     if (authError) return authError;
-    if (focusedField === "email" && touchedFields.email && errors.email) return errors.email.message || "";
-    if (focusedField === "password" && touchedFields.password && errors.password) return errors.password.message || "";
+    if (focusedField === "email" && touchedFields.email && errors.email)
+      return errors.email.message || "";
+    if (
+      focusedField === "password" &&
+      touchedFields.password &&
+      errors.password
+    )
+      return errors.password.message || "";
     if (isSubmitted) {
       return errors.email?.message || errors.password?.message || "";
     }
@@ -177,7 +191,9 @@ export default function SignInPage() {
                 }}
                 placeholder="name@company.com"
                 className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
-                  errors.email && (touchedFields.email || isSubmitted) ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                  errors.email && (touchedFields.email || isSubmitted)
+                    ? "border-rose-400 bg-rose-50/20"
+                    : "border-neutral-200"
                 } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
               />
               {errors.email && (touchedFields.email || isSubmitted) && (
@@ -216,7 +232,9 @@ export default function SignInPage() {
                   }}
                   placeholder="••••••••"
                   className={`w-full h-13 px-4 pr-12 rounded-2xl bg-neutral-50 border-2 ${
-                    errors.password && (touchedFields.password || isSubmitted) ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                    errors.password && (touchedFields.password || isSubmitted)
+                      ? "border-rose-400 bg-rose-50/20"
+                      : "border-neutral-200"
                   } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
                 />
                 <button

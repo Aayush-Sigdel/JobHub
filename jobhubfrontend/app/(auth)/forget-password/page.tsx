@@ -4,7 +4,13 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Loader2, Mail } from "lucide-react";
 import Link from "next/link";
-import { AuthCharacters, AuthFieldType } from "@/components/auth/auth-characters";
+import {
+  AuthCharacters,
+  AuthFieldType,
+} from "@/components/auth/auth-characters";
+import { useRouter } from "next/navigation";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const BrandMark = () => (
   <svg
@@ -17,6 +23,8 @@ const BrandMark = () => (
 );
 
 export default function ForgetPasswordPage() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [focusedField, setFocusedField] = useState<AuthFieldType>("none");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -34,10 +42,24 @@ export default function ForgetPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      await new Promise((res) => setTimeout(res, 800));
-      setIsSubmitted(true);
-    } catch {
-      setAuthError("Failed to send reset email. Please try again.");
+      const res = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setAuthError(
+          err.message || "Failed to process request. Please try again.",
+        );
+        return;
+      }
+
+      // Redirect to Reset Password Page with email prefilled
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+    } catch (err) {
+      setAuthError("Failed to connect to authentication server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +137,9 @@ export default function ForgetPasswordPage() {
                         if (authError) setAuthError("");
                       }}
                       className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
-                        authError ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                        authError
+                          ? "border-rose-400 bg-rose-50/20"
+                          : "border-neutral-200"
                       } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
                     />
                     {authError && (
