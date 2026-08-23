@@ -79,6 +79,12 @@ class UserService(
             val socialLink = userMapper.toSocialLink(socialLinkRequest, user)
             socialLinkRepository.save(socialLink)
         }
+        return userMapper.toUserProfileResponse(userRepository.save(user))
+    }
+
+    fun completeOnboarding(userId: UUID): UserProfileResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         user.isOnboardingCompleted = true
         return userMapper.toUserProfileResponse(userRepository.save(user))
     }
