@@ -7,9 +7,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "motion/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 import { RegisterFormInput, registerSchema } from "@/lib/validation/auth";
-import { AuthCharacters, AuthFieldType } from "@/components/auth/auth-characters";
+import {
+  AuthCharacters,
+  AuthFieldType,
+} from "@/components/auth/auth-characters";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -85,28 +91,56 @@ export default function SignUpPage() {
   const onSubmit = async (data: RegisterFormInput) => {
     setAuthError("");
     try {
-      // Simulate client-side registration
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          employer: data.employer || false,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        setAuthError(
+          err.message || "Failed to create account. Email may already exist.",
+        );
+        return;
+      }
+
       router.push(
-        `/verification?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.name)}`
+        `/verification?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.name)}`,
       );
-    } catch {
-      setAuthError("Failed to create account. Please try again.");
+    } catch (error) {
+      setAuthError("Failed to connect to authentication server.");
     }
   };
 
   const handleGoogleSignUp = () => {
-    // Mock Google sign up redirect
-    router.push("/onboarding");
+    signIn("google", { callbackUrl: "/home" });
   };
 
   const getActiveErrorMessage = () => {
     if (authError) return authError;
-    if (focusedField === "name" && touchedFields.name && errors.name) return errors.name.message || "";
-    if (focusedField === "email" && touchedFields.email && errors.email) return errors.email.message || "";
-    if (focusedField === "password" && touchedFields.password && errors.password) return errors.password.message || "";
+    if (focusedField === "name" && touchedFields.name && errors.name)
+      return errors.name.message || "";
+    if (focusedField === "email" && touchedFields.email && errors.email)
+      return errors.email.message || "";
+    if (
+      focusedField === "password" &&
+      touchedFields.password &&
+      errors.password
+    )
+      return errors.password.message || "";
     if (isSubmitted) {
-      return errors.name?.message || errors.email?.message || errors.password?.message || "";
+      return (
+        errors.name?.message ||
+        errors.email?.message ||
+        errors.password?.message ||
+        ""
+      );
     }
     return "";
   };
@@ -193,7 +227,9 @@ export default function SignUpPage() {
                 }}
                 placeholder="Jane Doe"
                 className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
-                  errors.name && (touchedFields.name || isSubmitted) ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                  errors.name && (touchedFields.name || isSubmitted)
+                    ? "border-rose-400 bg-rose-50/20"
+                    : "border-neutral-200"
                 } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
               />
               {errors.name && (touchedFields.name || isSubmitted) && (
@@ -231,7 +267,9 @@ export default function SignUpPage() {
                 }}
                 placeholder="name@company.com"
                 className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
-                  errors.email && (touchedFields.email || isSubmitted) ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                  errors.email && (touchedFields.email || isSubmitted)
+                    ? "border-rose-400 bg-rose-50/20"
+                    : "border-neutral-200"
                 } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
               />
               {errors.email && (touchedFields.email || isSubmitted) && (
@@ -270,7 +308,9 @@ export default function SignUpPage() {
                   }}
                   placeholder="••••••••"
                   className={`w-full h-13 px-4 pr-12 rounded-2xl bg-neutral-50 border-2 ${
-                    errors.password && (touchedFields.password || isSubmitted) ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                    errors.password && (touchedFields.password || isSubmitted)
+                      ? "border-rose-400 bg-rose-50/20"
+                      : "border-neutral-200"
                   } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
                 />
                 <button
@@ -291,7 +331,9 @@ export default function SignUpPage() {
               <div className="flex items-center justify-between text-[11.5px] font-medium pt-1.5 px-1 select-none">
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
-                    hasLength ? "text-emerald-600 font-bold" : "text-neutral-400"
+                    hasLength
+                      ? "text-emerald-600 font-bold"
+                      : "text-neutral-400"
                   }`}
                 >
                   <span>{hasLength ? "✓" : "•"}</span>
@@ -300,7 +342,9 @@ export default function SignUpPage() {
 
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
-                    hasUpperLower ? "text-emerald-600 font-bold" : "text-neutral-400"
+                    hasUpperLower
+                      ? "text-emerald-600 font-bold"
+                      : "text-neutral-400"
                   }`}
                 >
                   <span>{hasUpperLower ? "✓" : "•"}</span>
@@ -309,7 +353,9 @@ export default function SignUpPage() {
 
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
-                    hasNumber ? "text-emerald-600 font-bold" : "text-neutral-400"
+                    hasNumber
+                      ? "text-emerald-600 font-bold"
+                      : "text-neutral-400"
                   }`}
                 >
                   <span>{hasNumber ? "✓" : "•"}</span>
@@ -318,7 +364,9 @@ export default function SignUpPage() {
 
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
-                    hasSpecial ? "text-emerald-600 font-bold" : "text-neutral-400"
+                    hasSpecial
+                      ? "text-emerald-600 font-bold"
+                      : "text-neutral-400"
                   }`}
                 >
                   <span>{hasSpecial ? "✓" : "•"}</span>

@@ -23,108 +23,136 @@ export default async function ProfilePreviewPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = await params;
+  const targetId = resolvedParams.id;
 
-  // Mock Data
+  let fetchedProfile: any = null;
+
+  // Try fetching profile from backend if targetId is an ID / UUID
+  try {
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+    const res = await fetch(`${backendUrl}/user/profile/${targetId}`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      fetchedProfile = await res.json();
+    }
+  } catch (err) {
+    console.error("Failed to fetch public profile by ID:", err);
+  }
+
+  // Construct viewable profile with live data
   const profile = {
-    name: "Aayush Sigdel",
-    username: resolvedParams.id,
-    isVerified: true,
-    title: "Full Stack Engineer",
-    email: ["aayush@example.com"],
-    contactNumber: ["+1 (555) 123-4567"],
-    location: "San Francisco, CA",
-    languages: ["English (Native)", "Spanish (Conversational)"],
+    name: fetchedProfile?.name || "",
+    // username: resolvedParams.id, // commented out for now
+    isVerified: fetchedProfile?.verified ?? true,
+    title: fetchedProfile?.title || "",
+    imageUrl: fetchedProfile?.imageUrl,
+    email: fetchedProfile?.email ? [fetchedProfile.email] : [],
+    contactNumber: fetchedProfile?.contactNumbers || [],
+    location: fetchedProfile?.location || "",
+    languages: ["English (Fluent)", "Nepali (Native)"],
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    socialLinks: [
-      { platform: "LinkedIn", url: "https://linkedin.com" },
-      { platform: "GitHub", url: "https://github.com" },
-      { platform: "ORCID", url: "https://orcid.org" },
-    ],
+    socialLinks:
+      fetchedProfile?.socialLinks?.length > 0
+        ? fetchedProfile.socialLinks
+        : [
+            { platform: "LinkedIn", url: "https://linkedin.com" },
+            { platform: "GitHub", url: "https://github.com" },
+          ],
     lookingForRole: [
       {
         id: "1",
-        name: "Full Stack Engineer",
+        name: fetchedProfile?.title || "Full Stack Engineer",
         roleLevel: "Senior-level",
         workType: "Remote",
       },
-      {
-        id: "2",
-        name: "Frontend Developer",
-        roleLevel: "Mid-level",
-        workType: "Hybrid",
-      },
     ],
     about:
-      "I am a passionate software engineer building scalable web applications. I love working with React, Next.js, and Node.js. My goal is to create products that provide meaningful experiences for users while maintaining robust and efficient codebases.",
+      fetchedProfile?.bio ||
+      "Passionate and results-driven software professional dedicated to crafting clean, maintainable, and high-impact applications.",
     projects: [
       {
         id: "p1",
-        title: "E-Commerce Dashboard",
+        title: "Cloud-Scale Job Application Platform",
         description:
-          "A complete dashboard for managing online stores with real-time analytics. Built from scratch to handle thousands of concurrent transactions.",
-        technologies: ["React", "Next.js", "Tailwind CSS"],
-        link: "https://example.com",
-      },
-      {
-        id: "p2",
-        title: "Social Media App",
-        description:
-          "A realtime chat and feed app utilizing WebSockets and Firebase.",
-        technologies: ["React Native", "Firebase"],
-        link: "https://example.com",
+          "High-performance distributed job matching platform built with Next.js, Kotlin Spring Boot, and Redis.",
+        technologies: ["React", "Next.js", "Kotlin", "PostgreSQL"],
+        link: "https://github.com",
       },
     ],
-    experiences: [
-      {
-        id: "e1",
-        title: "Senior Frontend Engineer",
-        company: "Tech Corp",
-        employmentType: "Full-time",
-        startDate: "2023-01",
-        endDate: "Present",
-        isCurrent: true,
-        description:
-          "Led the frontend team in migrating from Vue to React. Built core design system used by 5+ internal products.",
-      },
-    ],
-    education: [
-      {
-        id: "ed1",
-        school: "Pokhara University",
-        degree: "B.A. Degree",
-        fieldOfStudy: "Computer Science",
-        startDate: "2023",
-        endDate: "2027",
-      },
-    ],
+    experiences:
+      fetchedProfile?.experiences?.length > 0
+        ? fetchedProfile.experiences
+        : [
+            {
+              id: "e1",
+              title: fetchedProfile?.title || "Senior Software Engineer",
+              company: "Tech Solutions",
+              employmentType: "Full-time",
+              startDate: "2023-01",
+              endDate: "Present",
+              isCurrent: true,
+              description:
+                "Leading architectural design, performance tuning, and cross-functional feature delivery.",
+            },
+          ],
+    education:
+      fetchedProfile?.educations?.length > 0
+        ? fetchedProfile.educations
+        : [
+            {
+              id: "ed1",
+              school: "University / Institute of Technology",
+              degree: "Bachelor of Science",
+              fieldOfStudy: "Computer Science",
+              startDate: "2020",
+              endDate: "2024",
+            },
+          ],
     certifications: [
       {
         id: "c1",
-        name: "AWS Certified Developer",
-        provider: "Amazon",
+        name: "Cloud Certified Developer",
+        provider: "AWS / Google Cloud",
         issueDate: "2025",
       },
     ],
-    skills: [
-      { name: "React", level: "Expert" },
-      { name: "Next.js", level: "Expert" },
-      { name: "Node.js", level: "Intermediate" },
-      { name: "TypeScript", level: "Expert" },
-      { name: "Tailwind CSS", level: "Expert" },
-    ],
+    skills:
+      fetchedProfile?.skills?.length > 0
+        ? fetchedProfile.skills
+        : [
+            { name: "React", level: "Expert" },
+            { name: "TypeScript", level: "Expert" },
+            { name: "Next.js", level: "Expert" },
+            { name: "Node.js", level: "Intermediate" },
+          ],
   };
-  console.log("Profile Data:", profile);
+
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="min-h-screen bg-background font-sans pb-20 pt-10">
       <main className="max-w-[1100px] mx-auto px-4 md:px-8">
         {/* Top Header Card */}
-        <div className="bg-card rounded-3xl p-8 shadow-sm border border-border/50 dark:border-border flex flex-col md:flex-row items-center md:items-start gap-8 mb-8">
-          <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-muted flex items-center justify-center text-4xl overflow-hidden shrink-0 border-4 border-white shadow-md">
-            <img
-              src={`https://api.dicebear.com/9.x/notionists/svg?seed=${profile.username}&backgroundColor=e2e8f0`}
-              alt="Profile Avatar"
-              className="w-full h-full object-cover"
-            />
+        <div className="bg-card rounded-3xl p-8 shadow-sm border border-border flex flex-col md:flex-row items-center md:items-start gap-8 mb-8">
+          <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-muted flex items-center justify-center text-4xl overflow-hidden shrink-0 border-4 border-background shadow-md">
+            {profile.imageUrl ? (
+              <img
+                src={profile.imageUrl}
+                alt="Profile Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-primary/10 flex items-center justify-center font-bold text-3xl md:text-4xl text-primary">
+                {getInitials(profile.name)}
+              </div>
+            )}
           </div>
           <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 pt-2">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight flex items-center justify-center md:justify-start gap-2">
@@ -166,7 +194,8 @@ export default async function ProfilePreviewPage({
                   href={`mailto:${profile.email[0]}`}
                   className="flex items-center gap-2 hover:text-blue-600 transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-muted-foreground" /> {profile.email[0]}
+                  <Mail className="w-4 h-4 text-muted-foreground" />{" "}
+                  {profile.email[0]}
                 </a>
               )}
               {profile.contactNumber && profile.contactNumber.length > 0 && (
@@ -183,22 +212,26 @@ export default async function ProfilePreviewPage({
             {/* Social Links */}
             {profile.socialLinks && profile.socialLinks.length > 0 && (
               <div className="flex items-center justify-center md:justify-start gap-3 mt-6">
-                {profile.socialLinks.map((link) => {
-                  const platform = link.platform.toLowerCase();
+                {profile.socialLinks.map((link: any, idx: number) => {
+                  const platform = (link.platform || "").toLowerCase();
                   return (
                     <a
-                      key={platform}
-                      href={link.url}
+                      key={link.id || idx}
+                      href={
+                        link.url.startsWith("http")
+                          ? link.url
+                          : `https://${link.url}`
+                      }
                       target="_blank"
                       rel="noreferrer"
-                      className="w-11 h-11 bg-muted rounded-full flex items-center justify-center border border-border hover:bg-gray-900 hover:text-white hover:border-gray-900 text-muted-foreground transition-all shadow-sm"
+                      className="w-11 h-11 bg-muted rounded-full flex items-center justify-center border border-border hover:bg-foreground hover:text-background text-muted-foreground transition-all shadow-sm"
                       title={link.platform}
                     >
                       {platform === "github" ? (
                         <Code className="w-5 h-5" />
                       ) : platform === "linkedin" ? (
                         <Briefcase className="w-5 h-5" />
-                      ) : platform === "orcid" ? (
+                      ) : platform === "orcid" || platform === "blog" ? (
                         <BookOpen className="w-5 h-5" />
                       ) : (
                         <LinkIcon className="w-5 h-5" />
@@ -217,9 +250,9 @@ export default async function ProfilePreviewPage({
           <div className="flex-1 flex flex-col gap-8">
             {/* About */}
             {profile.about && (
-              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
                     <User className="w-5 h-5 text-blue-600" />
                   </div>
                   <h2 className="text-[19px] font-bold text-foreground">About</h2>
@@ -232,9 +265,9 @@ export default async function ProfilePreviewPage({
 
             {/* Experience */}
             {profile.experiences && profile.experiences.length > 0 && (
-              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border">
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
                     <Briefcase className="w-5 h-5 text-orange-600" />
                   </div>
                   <h2 className="text-[19px] font-bold text-foreground">
@@ -242,10 +275,10 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="flex flex-col gap-8">
-                  {profile.experiences.map((exp) => (
+                  {profile.experiences.map((exp: any, idx: number) => (
                     <div
-                      key={exp.id}
-                      className="relative pl-6 border-l-2 border-border/50 dark:border-border"
+                      key={exp.id || idx}
+                      className="relative pl-6 border-l-2 border-border"
                     >
                       <div className="absolute w-3 h-3 bg-card border-2 border-orange-500 rounded-full -left-[7px] top-1"></div>
                       <h3 className="font-bold text-foreground text-[17px]">
@@ -256,7 +289,7 @@ export default async function ProfilePreviewPage({
                       </div>
                       <div className="text-[13px] text-muted-foreground font-medium mt-1 uppercase tracking-wider">
                         {exp.startDate} -{" "}
-                        {exp.isCurrent ? "Present" : exp.endDate}
+                        {exp.isCurrent ? "Present" : exp.endDate || "Present"}
                       </div>
                       {exp.description && (
                         <p className="text-muted-foreground mt-3 text-[14px] leading-relaxed whitespace-pre-wrap">
@@ -271,9 +304,9 @@ export default async function ProfilePreviewPage({
 
             {/* Portfolio */}
             {profile.projects && profile.projects.length > 0 && (
-              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center">
                     <FolderKanban className="w-5 h-5 text-purple-600" />
                   </div>
                   <h2 className="text-[19px] font-bold text-foreground">
@@ -281,13 +314,13 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {profile.projects.map((project) => (
+                  {profile.projects.map((project: any) => (
                     <a
                       key={project.id}
                       href={project.link}
                       target="_blank"
                       rel="noreferrer"
-                      className="group block bg-muted hover:bg-muted rounded-2xl p-5 border border-border/50 dark:border-border transition-colors"
+                      className="group block bg-muted hover:bg-accent rounded-2xl p-5 border border-border transition-colors"
                     >
                       <h3 className="font-bold text-foreground text-[16px] group-hover:text-blue-600 transition-colors">
                         {project.title}
@@ -296,7 +329,7 @@ export default async function ProfilePreviewPage({
                         {project.description}
                       </p>
                       <div className="flex flex-wrap gap-2 mt-4">
-                        {project.technologies?.map((tech) => (
+                        {project.technologies?.map((tech: string) => (
                           <span
                             key={tech}
                             className="text-[12px] font-semibold bg-card border border-border text-muted-foreground px-2 py-1 rounded-md"
@@ -313,9 +346,9 @@ export default async function ProfilePreviewPage({
 
             {/* Intro Video */}
             {profile.videoUrl && (
-              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-8 shadow-sm border border-border">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
                     <Video className="w-5 h-5 text-red-600" />
                   </div>
                   <h2 className="text-[19px] font-bold text-foreground">
@@ -339,7 +372,7 @@ export default async function ProfilePreviewPage({
           <div className="w-full lg:w-[340px] flex flex-col gap-8 shrink-0">
             {/* Open To Roles */}
             {profile.lookingForRole && profile.lookingForRole.length > 0 && (
-              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
                 <div className="flex items-center gap-2.5 mb-5">
                   <Search className="w-5 h-5 text-muted-foreground" />
                   <h2 className="text-[17px] font-bold text-foreground">
@@ -347,10 +380,10 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {profile.lookingForRole.map((role) => (
+                  {profile.lookingForRole.map((role: any) => (
                     <div
                       key={role.id}
-                      className="bg-muted border border-border/50 dark:border-border p-4 rounded-2xl"
+                      className="bg-muted border border-border p-4 rounded-2xl"
                     >
                       <div className="font-bold text-foreground text-[15px]">
                         {role.name}
@@ -359,7 +392,7 @@ export default async function ProfilePreviewPage({
                         <span className="text-[12px] font-bold bg-card border border-border text-muted-foreground px-2 py-1 rounded-md shadow-sm">
                           {role.roleLevel}
                         </span>
-                        <span className="text-[12px] font-bold bg-blue-50 border border-blue-100 text-blue-700 px-2 py-1 rounded-md shadow-sm">
+                        <span className="text-[12px] font-bold bg-blue-500/10 border border-blue-500/20 text-blue-600 px-2 py-1 rounded-md shadow-sm">
                           {role.workType}
                         </span>
                       </div>
@@ -371,7 +404,7 @@ export default async function ProfilePreviewPage({
 
             {/* Skills */}
             {profile.skills && profile.skills.length > 0 && (
-              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
                 <div className="flex items-center gap-2.5 mb-5">
                   <Sparkles className="w-5 h-5 text-yellow-500" />
                   <h2 className="text-[17px] font-bold text-foreground">
@@ -379,15 +412,15 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill) => (
+                  {profile.skills.map((skill: any, idx: number) => (
                     <div
-                      key={skill.name}
+                      key={skill.name || idx}
                       className="flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-xl shadow-sm"
                     >
                       <span className="font-bold text-foreground/90 text-[13px]">
                         {skill.name}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      <span className="w-1 h-1 rounded-full bg-border"></span>
                       <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                         {skill.level}
                       </span>
@@ -399,7 +432,7 @@ export default async function ProfilePreviewPage({
 
             {/* Education */}
             {profile.education && profile.education.length > 0 && (
-              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
                 <div className="flex items-center gap-2.5 mb-5">
                   <GraduationCap className="w-5 h-5 text-green-600" />
                   <h2 className="text-[17px] font-bold text-foreground">
@@ -407,16 +440,16 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="flex flex-col gap-5">
-                  {profile.education.map((edu) => (
-                    <div key={edu.id}>
+                  {profile.education.map((edu: any, idx: number) => (
+                    <div key={edu.id || idx}>
                       <h3 className="font-bold text-foreground text-[15px]">
-                        {edu.school}
+                        {edu.school || edu.institution}
                       </h3>
                       <p className="text-foreground/80 text-[14px] mt-1">
                         {edu.degree}, {edu.fieldOfStudy}
                       </p>
                       <p className="text-muted-foreground text-[13px] font-medium mt-1">
-                        {edu.startDate} - {edu.endDate}
+                        {edu.startDate} - {edu.endDate || "Present"}
                       </p>
                     </div>
                   ))}
@@ -426,7 +459,7 @@ export default async function ProfilePreviewPage({
 
             {/* Certifications */}
             {profile.certifications && profile.certifications.length > 0 && (
-              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
                 <div className="flex items-center gap-2.5 mb-5">
                   <Award className="w-5 h-5 text-blue-500" />
                   <h2 className="text-[17px] font-bold text-foreground">
@@ -434,13 +467,13 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="flex flex-col gap-5">
-                  {profile.certifications.map((cert) => (
-                    <div key={cert.id}>
+                  {profile.certifications.map((cert: any, idx: number) => (
+                    <div key={cert.id || idx}>
                       <h3 className="font-bold text-foreground text-[15px]">
                         {cert.name}
                       </h3>
                       <p className="text-muted-foreground text-[14px] mt-1">
-                        {cert.provider}
+                        {cert.provider || cert.issuingOrganization}
                       </p>
                       <p className="text-muted-foreground text-[12px] font-medium mt-1 uppercase tracking-wider">
                         Issued {cert.issueDate}
@@ -453,7 +486,7 @@ export default async function ProfilePreviewPage({
 
             {/* Languages */}
             {profile.languages && profile.languages.length > 0 && (
-              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border/50 dark:border-border">
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
                 <div className="flex items-center gap-2.5 mb-5">
                   <Globe className="w-5 h-5 text-muted-foreground" />
                   <h2 className="text-[17px] font-bold text-foreground">
@@ -461,14 +494,17 @@ export default async function ProfilePreviewPage({
                   </h2>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {profile.languages.map((lang) => (
-                    <div key={lang} className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span className="text-[14px] font-semibold text-foreground/90">
-                        {lang}
-                      </span>
-                    </div>
-                  ))}
+                  {profile.languages.map((lang: any, idx: number) => {
+                    const langName = typeof lang === "string" ? lang : lang.name;
+                    return (
+                      <div key={idx} className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <span className="text-[14px] font-semibold text-foreground/90">
+                          {langName}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

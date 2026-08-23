@@ -15,6 +15,7 @@ interface JobCardProps {
   postedAt: string;
   tags: string[];
   featured?: boolean;
+  appliedCount?: number;
 }
 
 export function JobCard({
@@ -28,6 +29,7 @@ export function JobCard({
   postedAt,
   tags,
   featured = false,
+  appliedCount = 18,
 }: JobCardProps) {
   return (
     <Card className={`group relative overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${featured ? 'border-primary/50 shadow-primary/10' : 'border-border/50'}`}>
@@ -96,7 +98,7 @@ export function JobCard({
 
       <CardFooter className="p-5 pt-0 border-t border-border/40 mt-4 flex items-center justify-between">
         <span className="text-xs font-semibold text-muted-foreground">
-          {Math.floor(Math.random() * 50) + 1} applied
+          {appliedCount} applied
         </span>
         <Button asChild size="sm" className="font-bold">
           <Link href={`/find-job/${id}`}>View Details</Link>

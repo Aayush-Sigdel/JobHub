@@ -1,5 +1,11 @@
 import { Salary } from "./common";
 
+export interface Location {
+  city: string;
+  state?: string;
+  country: string;
+}
+
 export type UserRole = "admin" | "candidate" | "employer";
 
 export interface Language {
@@ -10,7 +16,13 @@ export interface Language {
 export interface Skill {
   id: string;
   name: string;
-  level: "Beginner" | "Intermediate" | "Expert";
+  level:
+    | "Beginner"
+    | "Intermediate"
+    | "Expert"
+    | "BEGINNER"
+    | "INTERMEDIATE"
+    | "EXPERT";
 }
 
 export interface Education {
@@ -38,12 +50,25 @@ export interface Project {
   title: string;
   description: string;
   link?: string;
+  imageUrl?: string[];
   imageUrls?: string[];
   technologies?: string[];
 }
 
 export interface SocialLink {
-  platform: "GitHub" | "LinkedIn" | "Portfolio" | "Website" | "ORCID" | "Other";
+  platform:
+    | "GitHub"
+    | "LinkedIn"
+    | "Portfolio"
+    | "Website"
+    | "ORCID"
+    | "Other"
+    | "GITHUB"
+    | "LINKEDIN"
+    | "PORTFOLIO"
+    | "WEBSITE"
+    | "ORCID"
+    | "OTHER";
   url: string;
 }
 
@@ -105,6 +130,7 @@ export interface User {
   secondaryEmails?: string[];
   phone?: string;
   isVerified: boolean;
+  onboardingCompleted?: boolean;
 
   imageUrl?: string;
   videoUrl?: string;
