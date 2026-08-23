@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   CreditCardIcon,
   HelpCircleIcon,
@@ -17,9 +20,40 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { api } from "@/lib/api";
 
 export function DropdownMenuIcons() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await api.get("/user/profile");
+        if (res.data) {
+          setProfile(res.data);
+        }
+      } catch (err) {
+        // fallback to session
+      }
+    }
+    loadProfile();
+  }, []);
+
+  const user = session?.user;
+  const userName = profile?.name || user?.name || "Candidate";
+  const userEmail = profile?.email || user?.email || "";
+  const userImage =
+    profile?.imageUrl || (user as any)?.imageUrl || (user as any)?.image;
+
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
 
   return (
     <DropdownMenu>
@@ -27,9 +61,17 @@ export function DropdownMenuIcons() {
         <DropdownMenuTrigger asChild>
           <div className="flex items-center gap-2.5">
             <div className="p-[2px] rounded-full border border-border bg-muted cursor-pointer transition-transform hover:scale-105">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                KS
-              </div>
+              {userImage ? (
+                <img
+                  src={userImage}
+                  alt={userName}
+                  className="w-9 h-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                  {getInitials(userName)}
+                </div>
+              )}
             </div>
           </div>
         </DropdownMenuTrigger>
@@ -45,38 +87,44 @@ export function DropdownMenuIcons() {
             transition={{ type: "spring", bounce: 0.35, duration: 0.5 }}
             className="p-2 bg-background rounded-2xl border border-border"
           >
-            {/* <div className="px-3 py-2.5 border-b border-white/6 mb-1">
-            <p className="text-sm font-medium text-zinc-100">kamal subedi</p>
-            <p className="text-xs text-zinc-500 mt-0.5">subedivaii@gmail.com</p>
-          </div> */}
-            <div className="flex px-3 py-3 border-b border-border mb-2">
-              <div className="flex items-center gap-2.5">
-                <button className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors">
-                  <ShareIcon size={14} />
-                  Share
-                </button>
-              </div>
-              <div className="flex items-center gap-2.5 ml-auto">
-                <div className="p-[2px] rounded-full border border-border bg-muted cursor-pointer">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                    KS
+            {/* User Info Header */}
+            <div className="px-3 py-3 border-b border-border mb-1.5 flex items-center gap-3">
+              <div className="p-[2px] rounded-full border border-border bg-muted shrink-0">
+                {userImage ? (
+                  <img
+                    src={userImage}
+                    alt={userName}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {getInitials(userName)}
                   </div>
-                </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground truncate">
+                  {userName}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {userEmail}
+                </p>
               </div>
             </div>
-            <DropdownMenuItem className="rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
+
+            <DropdownMenuItem asChild className="rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
               <Link
-                href={"/candidate-profile"}
-                className="flex items-center gap-2.5"
+                href="/candidate-profile"
+                className="flex items-center gap-2.5 w-full"
               >
                 <UserCircleIcon size={16} strokeWidth={2} />
-                Profile
+                <span>Profile</span>
               </Link>
             </DropdownMenuItem>
 
             <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
               <UsersIcon size={16} strokeWidth={2} />
-              Community
+              <span>Community</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
@@ -84,14 +132,9 @@ export function DropdownMenuIcons() {
               <span className="flex-1">Subscription</span>
             </DropdownMenuItem>
 
-            {/* <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
-              <SettingsIcon size={16} strokeWidth={2} />
-              <span className="flex-1">Settings</span>
-            </DropdownMenuItem> */}
-
             <DropdownMenuItem
               onClick={() => router.push("/setting")}
-              className="flex items-center gap-2.5"
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted"
             >
               <SettingsIcon size={16} strokeWidth={2} />
               <span className="flex-1">Settings</span>
@@ -101,14 +144,17 @@ export function DropdownMenuIcons() {
 
             <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
               <HelpCircleIcon size={16} strokeWidth={2} />
-              Help center
+              <span>Help center</span>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator className="my-1 bg-border h-px" />
 
-            <DropdownMenuItem className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive">
+            <DropdownMenuItem
+              onClick={() => signOut({ callbackUrl: "/sign-in" })}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive"
+            >
               <LogOutIcon size={16} strokeWidth={2} />
-              Sign out
+              <span>Sign out</span>
             </DropdownMenuItem>
           </motion.div>
         </DropdownMenuContent>

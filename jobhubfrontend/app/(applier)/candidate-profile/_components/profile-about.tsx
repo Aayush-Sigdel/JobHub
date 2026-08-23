@@ -1,32 +1,52 @@
 "use client";
-import { Pencil, Check, Copy, Plus, Info } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Check, Copy, Plus, Info, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { api } from "@/lib/api";
 
 interface ProfileAboutProps {
   about?: string;
+  onSaved?: (bio: string) => void;
 }
 
-export function ProfileAbout({ about = "" }: ProfileAboutProps) {
+export function ProfileAbout({ about = "", onSaved }: ProfileAboutProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [aboutText, setAboutText] = useState(about);
   const [draftText, setDraftText] = useState(aboutText);
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const MAX_CHARS = 500;
+
+  useEffect(() => {
+    setAboutText(about);
+    setDraftText(about);
+  }, [about]);
 
   const handleEdit = () => {
     setDraftText(aboutText);
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    setAboutText(draftText.trim());
-    setIsEditing(false);
-    // TODO: Trigger API save here
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const cleanBio = draftText.trim();
+      await api.put("/user/profile/bio", { bio: cleanBio });
+      setAboutText(cleanBio);
+      setIsEditing(false);
+      if (onSaved) {
+        onSaved(cleanBio);
+      }
+    } catch (err) {
+      console.error("Failed to save bio:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
+    setDraftText(aboutText);
     setIsEditing(false);
   };
 
@@ -45,7 +65,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
   return (
     <div className="bg-card border border-border rounded-2xl p-6 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground ">About</h2>
+        <h2 className="text-lg font-bold text-foreground">About</h2>
 
         <AnimatePresence mode="wait">
           {!isEditing && aboutText && (
@@ -55,7 +75,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={handleEdit}
-              className="p-2 text-muted-foreground hover:text-foreground dark:hover:text-foreground hover:bg-muted dark:hover:bg-accent rounded-full transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors cursor-pointer"
               aria-label="Edit about section"
             >
               <Pencil size={16} />
@@ -76,11 +96,10 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
             className="overflow-hidden"
           >
             <div className="space-y-4">
-              <div className="flex items-start gap-2 p-4 bg-info/10 text-info border border-info/20 rounded-lg">
+              <div className="flex items-start gap-2 p-4 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg">
                 <Info size={18} className="mt-0.5 shrink-0" />
                 <p className="text-[13px] font-medium leading-relaxed">
-                  Add details about your expertise and the services you offer to
-                  help clients get to know you better.
+                  Add details about your expertise and the work you do to help clients and recruiters know you better.
                 </p>
               </div>
 
@@ -90,15 +109,15 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                   onChange={(e) =>
                     setDraftText(e.target.value.slice(0, MAX_CHARS))
                   }
-                  className="w-full min-h-30 p-4 bg-transparent text-foreground focus:outline-none resize-y text-[14px] leading-relaxed placeholder:text-muted-foreground dark:placeholder:text-muted-foreground"
+                  className="w-full min-h-30 p-4 bg-transparent text-foreground focus:outline-none resize-y text-[14px] leading-relaxed placeholder:text-muted-foreground"
                   placeholder="Introduce yourself..."
                 />
 
-                <div className="flex items-center justify-between px-3 py-2 border-t border-input dark:border-border bg-transparent">
+                <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-transparent">
                   <button
                     onClick={handleCopy}
                     disabled={!draftText}
-                    className="p-1.5 text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground rounded-md transition-colors disabled:opacity-50"
+                    className="p-1.5 text-muted-foreground hover:text-foreground rounded-md transition-colors disabled:opacity-50 cursor-pointer"
                     title="Copy to clipboard"
                   >
                     {copied ? (
@@ -107,7 +126,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                       <Copy size={16} />
                     )}
                   </button>
-                  <span className="text-xs font-medium text-muted-foreground dark:text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {draftText.length} / {MAX_CHARS}
                   </span>
                 </div>
@@ -116,15 +135,22 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
               <div className="flex gap-3 justify-end pt-2">
                 <button
                   onClick={handleCancel}
-                  className="px-5 py-2 text-[14px] font-medium text-foreground/80 border border-border bg-transparent hover:bg-muted rounded-lg transition-colors"
+                  disabled={isSaving}
+                  className="px-5 py-2 text-[14px] font-medium text-foreground/80 border border-border bg-transparent hover:bg-muted rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-5 py-2 text-[14px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2"
+                  disabled={isSaving}
+                  className="px-5 py-2 text-[14px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Check size={16} /> Save
+                  {isSaving ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Check size={16} />
+                  )}
+                  Save
                 </button>
               </div>
             </div>
@@ -139,7 +165,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="text-foreground/80 dark:text-foreground/80 text-[14px] leading-relaxed whitespace-pre-wrap">
+            <div className="text-foreground/80 text-[14px] leading-relaxed whitespace-pre-wrap">
               {aboutText}
             </div>
           </motion.div>
@@ -154,13 +180,12 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
             className="overflow-hidden"
           >
             <div className="flex flex-col items-start gap-4 pb-2">
-              <p className="text-[14px] text-muted-foreground dark:text-muted-foreground">
-                Introduce yourself to clients by adding a quick summary of your
-                expertise and background.
+              <p className="text-[14px] text-muted-foreground">
+                Introduce yourself to clients by adding a quick summary of your expertise and background.
               </p>
               <button
                 onClick={handleEdit}
-                className="flex items-center gap-2 px-4 py-2 text-[14px] font-medium text-foreground/90 dark:text-foreground dark:border-border hover:bg-muted dark:hover:bg-accent rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-[14px] font-medium text-foreground border border-border hover:bg-muted rounded-lg transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Add about
               </button>

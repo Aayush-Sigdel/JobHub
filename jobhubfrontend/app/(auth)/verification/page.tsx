@@ -92,14 +92,6 @@ function VerificationForm() {
       }
 
       setIsVerified(true);
-      setTimeout(() => {
-        router.push(
-          "/onboarding?email=" +
-            encodeURIComponent(email) +
-            "&name=" +
-            encodeURIComponent(name),
-        );
-      }, 2000);
     } catch (error) {
       setAuthError("Failed to connect to verification server.");
     } finally {
@@ -226,18 +218,17 @@ function VerificationForm() {
                   Email Verified!
                 </h2>
                 <p className="text-neutral-500 text-base font-medium leading-relaxed mb-7">
-                  Your email has been confirmed. Let's finish setting up your
-                  candidate profile!
+                  Your email has been verified! Sign in to complete your profile setup.
                 </p>
                 <Link
-                  href={`/onboarding?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`}
+                  href={`/sign-in?email=${encodeURIComponent(email)}`}
                   className="w-full"
                 >
                   <button
                     type="button"
                     className="w-full h-13 sm:h-14 bg-[#18181B] hover:bg-neutral-800 text-white rounded-full font-bold text-base transition-colors flex items-center justify-center gap-2.5 cursor-pointer shadow-md"
                   >
-                    <span>Complete Profile Setup</span>
+                    <span>Sign In to Continue</span>
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>

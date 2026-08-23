@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "motion/react";
@@ -14,7 +14,7 @@ import {
   AuthFieldType,
 } from "@/components/auth/auth-characters";
 
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -47,8 +47,11 @@ const BrandMark = () => (
   </svg>
 );
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get("email") || "";
+
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<AuthFieldType>("none");
   const [isHoveringSubmit, setIsHoveringSubmit] = useState(false);
@@ -59,16 +62,23 @@ export default function SignInPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors, isSubmitting, isSubmitted, touchedFields },
   } = useForm<LoginFormInput>({
     resolver: zodResolver(loginSchema),
     mode: "onTouched",
     defaultValues: {
-      email: "",
+      email: emailParam,
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (emailParam) {
+      setValue("email", emailParam);
+    }
+  }, [emailParam, setValue]);
 
   const emailValue = watch("email") || "";
   const passwordValue = watch("password") || "";
@@ -82,8 +92,10 @@ export default function SignInPage() {
     });
 
     if (result?.error) {
-      setAuthError("Invalid email or password.");
+      setAuthError("Invalid email or password. Please check your credentials.");
+      return;
     }
+
     router.push("/home");
     router.refresh();
   };
@@ -328,5 +340,19 @@ export default function SignInPage() {
         </motion.div>
       </div>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen w-full bg-white flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-neutral-800" />
+        </div>
+      }
+    >
+      <SignInContent />
+    </Suspense>
   );
 }

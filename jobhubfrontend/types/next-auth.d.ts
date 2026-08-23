@@ -8,6 +8,8 @@ declare module "next-auth" {
     user: {
       id?: string;
       imageUrl?: string;
+      onboardingCompleted?: boolean;
+      verified?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -15,6 +17,8 @@ declare module "next-auth" {
     accessToken?: string;
     refreshToken?: string;
     imageUrl?: string;
+    onboardingCompleted?: boolean;
+    verified?: boolean;
   }
 }
 
@@ -30,6 +34,8 @@ declare module "next-auth/jwt" {
       email?: string | null;
       name?: string | null;
       imageUrl?: string | null;
+      onboardingCompleted?: boolean;
+      verified?: boolean;
     };
   }
 }

@@ -2,9 +2,14 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 const refreshBackendToken = async (token: any) => {
+  if (!token?.refreshToken) {
+    return token;
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
@@ -12,21 +17,34 @@ const refreshBackendToken = async (token: any) => {
       body: JSON.stringify({ refreshToken: token.refreshToken }),
     });
 
-    const refreshedTokens = await response.json();
-    if (!response.ok) throw refreshedTokens;
+    if (!response.ok) {
+      console.warn("Token refresh failed: server responded with", response.status);
+      return {
+        ...token,
+        refreshToken: undefined,
+        accessTokenExpires: Date.now() + 60 * 60 * 1000,
+        error: "RefreshAccessTokenError",
+      };
+    }
+
+    const text = await response.text();
+    if (!text) return token;
+
+    const refreshedTokens = JSON.parse(text);
 
     return {
       ...token,
-      accessToken: refreshedTokens.accessToken,
+      accessToken: refreshedTokens.accessToken || token.accessToken,
       refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
-      accessTokenExpires:
-        Date.now() + (refreshedTokens.expiresIn ?? 15 * 60) * 1000,
+      accessTokenExpires: Date.now() + 15 * 60 * 1000,
       error: undefined,
     };
   } catch (error) {
     console.error("Error refreshing access token:", error);
     return {
       ...token,
+      refreshToken: undefined,
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
       error: "RefreshAccessTokenError",
     };
   }
@@ -70,12 +88,22 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      if (trigger === "update" && session) {
+        if (session.user) {
+          token.user = { ...(token.user as any), ...session.user };
+        }
+        if (session.onboardingCompleted !== undefined && token.user) {
+          (token.user as any).onboardingCompleted = session.onboardingCompleted;
+        }
+        return token;
+      }
+
       if (account && user) {
         if (account.provider === "credentials") {
           return {
@@ -88,6 +116,8 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               name: user.name,
               imageUrl: (user as any).imageUrl || user.image,
+              onboardingCompleted: (user as any).onboardingCompleted ?? false,
+              verified: (user as any).verified ?? (user as any).isVerified ?? false,
             },
           };
         }
@@ -102,15 +132,19 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             imageUrl: user.image,
+            onboardingCompleted: (user as any).onboardingCompleted ?? false,
+            verified: true, // Google emails are pre-verified
           },
         };
       }
 
-      if (Date.now() < (token.accessTokenExpires as number)) {
+      // Check if token is still valid
+      if (token.accessTokenExpires && Date.now() < (token.accessTokenExpires as number)) {
         return token;
       }
 
-      if (token.provider === "credentials") {
+      // Refresh if it's a credentials provider with a valid refreshToken
+      if (token.provider === "credentials" && token.refreshToken) {
         return refreshBackendToken(token);
       }
 
