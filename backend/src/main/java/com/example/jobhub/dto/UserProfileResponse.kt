@@ -13,6 +13,7 @@ data class UserProfileResponse(
     val imageUrl: String?,
     val employer: Boolean,
     val isVerified: Boolean,
+    val onboardingCompleted: Boolean,
     val contactNumbers: List<String>,
     val skills: List<SkillDto>,
     val experiences: List<ExperienceDto>,

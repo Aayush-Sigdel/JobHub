@@ -17,6 +17,7 @@ class UserMapper {
         imageUrl = user.imageUrl,
         employer = user.isEmployer,
         isVerified = user.isVerified,
+        onboardingCompleted = user.isOnboardingCompleted,
         contactNumbers = user.contactNumbers,
         skills = user.skills.map { toSkillDto(it) },
         experiences = user.experiences.map { toExperienceDto(it) },
