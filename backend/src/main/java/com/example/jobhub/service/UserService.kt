@@ -59,29 +59,28 @@ class UserService(
         updateRequest.imageUrl?.let { user.imageUrl = it }
         updateRequest.contactNumbers?.let { user.contactNumbers = it }
 
-        val updatedUser = userRepository.save(user)
 
         updateRequest.skills?.forEach { skillRequest ->
-            val skill = userMapper.toSkill(skillRequest, updatedUser)
+            val skill = userMapper.toSkill(skillRequest, user)
             skillRepository.save(skill)
         }
 
         updateRequest.experiences?.forEach { experienceRequest ->
-            val experience = userMapper.toExperience(experienceRequest, updatedUser)
+            val experience = userMapper.toExperience(experienceRequest, user)
             experienceRepository.save(experience)
         }
 
         updateRequest.educations?.forEach { educationRequest ->
-            val education = userMapper.toEducation(educationRequest, updatedUser)
+            val education = userMapper.toEducation(educationRequest, user)
             educationRepository.save(education)
         }
 
         updateRequest.socialLinks?.forEach { socialLinkRequest ->
-            val socialLink = userMapper.toSocialLink(socialLinkRequest, updatedUser)
+            val socialLink = userMapper.toSocialLink(socialLinkRequest, user)
             socialLinkRepository.save(socialLink)
         }
-
-        return userMapper.toUserProfileResponse(updatedUser)
+        user.isOnboardingCompleted = true
+        return userMapper.toUserProfileResponse(userRepository.save(user))
     }
 
     fun setUserTitle(userId: UUID, title: String): UserProfileResponse {

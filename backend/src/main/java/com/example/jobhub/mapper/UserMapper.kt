@@ -31,7 +31,8 @@ class UserMapper {
         name = user.name,
         email = user.email,
         title = user.title,
-        imageUrl = user.imageUrl
+        imageUrl = user.imageUrl,
+        onboardingCompleted = user.isOnboardingCompleted
     )
 
     fun toSkillDto(skill: Skill) = SkillDto(
