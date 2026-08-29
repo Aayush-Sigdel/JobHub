@@ -15,6 +15,8 @@ import com.example.jobhub.dto.UpdateSocialLinkRequest
 import com.example.jobhub.dto.UpdateUserProfileRequest
 import com.example.jobhub.dto.UserBasicInfoResponse
 import com.example.jobhub.dto.UserProfileResponse
+import com.example.jobhub.dto.social.*
+import com.example.jobhub.model.SocialPlatform
 import com.example.jobhub.security.UserPrincipal
 import com.example.jobhub.service.UserService
 import org.springframework.http.HttpStatus
@@ -80,7 +82,7 @@ class UserController(
     }
 
     @PutMapping("/profile/bio")
-    fun settUserBio(
+    fun setUserBio(
         @AuthenticationPrincipal userDetails: UserPrincipal,
         @RequestBody request: Map<String, String>
     ): ResponseEntity<UserProfileResponse> {
@@ -241,4 +243,45 @@ class UserController(
         return ResponseEntity.noContent().build()
     }
 
+    @PostMapping("/social/resync")
+    fun resyncAllSocials(
+        @AuthenticationPrincipal userDetails: UserPrincipal
+    ): ResponseEntity<SocialSyncResponse> {
+        val response = userService.syncAllSocials(userDetails.id)
+        return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/social/resync/{platform}")
+    fun resyncSocialPlatform(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @PathVariable platform: SocialPlatform
+    ): ResponseEntity<SocialSyncPlatformResult> {
+        val response = userService.syncSocialPlatform(userDetails.id, platform)
+        return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/embeddings/resync")
+    fun resyncAllEmbeddings(
+        @AuthenticationPrincipal userDetails: UserPrincipal
+    ): ResponseEntity<UserEmbeddingSyncResponse> {
+        val response = userService.syncAllEmbeddings(userDetails.id)
+        return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/embeddings/resync/platform")
+    fun resyncPlatformEmbedding(
+        @AuthenticationPrincipal userDetails: UserPrincipal
+    ): ResponseEntity<PlatformEmbeddingSyncResult> {
+        val response = userService.syncPlatformEmbedding(userDetails.id)
+        return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/embeddings/resync/{source}")
+    fun resyncEmbeddingSource(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @PathVariable source: EmbeddingSource
+    ): ResponseEntity<EmbeddingSyncResult> {
+        val response = userService.syncEmbeddingSource(userDetails.id, source)
+        return ResponseEntity.ok(response)
+    }
 }

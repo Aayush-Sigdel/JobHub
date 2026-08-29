@@ -6,5 +6,7 @@ public enum SocialPlatform {
     PORTFOLIO,
     WEBSITE,
     ORCID,
+    STACKOVERFLOW,
+    DEV_TO,
     OTHER
 }

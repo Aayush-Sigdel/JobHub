@@ -14,7 +14,12 @@ public record OrcidWorkDto(
     ) {}
 
     public record WorkSummary(
-            Title title
+            Title title,
+            String type,
+            @JsonProperty("journal-title")
+            TitleValue journalTitle,
+            @JsonProperty("publication-date")
+            PublicationDate publicationDate
     ) {}
 
     public record Title(
@@ -23,6 +28,15 @@ public record OrcidWorkDto(
     ) {}
 
     public record TitleValue(
+            String value
+    ) {}
+
+    public record PublicationDate(
+            DateValue year,
+            DateValue month
+    ) {}
+
+    public record DateValue(
             String value
     ) {}
 }

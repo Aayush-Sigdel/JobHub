@@ -1,6 +1,7 @@
 package com.example.jobhub.service.social;
 
 import com.example.jobhub.dto.Portfolio;
+import com.example.jobhub.model.SocialPlatform;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -74,7 +75,7 @@ public class PortfolioService implements SocialService<Portfolio> {
     }
 
     @Override
-    public SocialType getType() {
-        return SocialType.PORTFOLIO;
+    public SocialPlatform getType() {
+        return SocialPlatform.PORTFOLIO;
     }
 }

@@ -81,7 +81,19 @@ public class User {
 
     @JdbcTypeCode(SqlTypes.VECTOR)
     @Column(columnDefinition = "vector(256)")
+    private float[] stackoverflowEmbedding;
+
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(columnDefinition = "vector(256)")
+    private float[] devtoEmbedding;
+
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(columnDefinition = "vector(256)")
     private float[] profileEmbedding;
+
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(columnDefinition = "vector(256)")
+    private float[] platformEmbedding;
 
     @CreationTimestamp
     private Instant createdAt;
