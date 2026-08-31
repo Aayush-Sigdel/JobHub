@@ -243,24 +243,7 @@ class UserController(
         return ResponseEntity.noContent().build()
     }
 
-    @PostMapping("/social/resync")
-    fun resyncAllSocials(
-        @AuthenticationPrincipal userDetails: UserPrincipal
-    ): ResponseEntity<SocialSyncResponse> {
-        val response = userService.syncAllSocials(userDetails.id)
-        return ResponseEntity.ok(response)
-    }
-
-    @PostMapping("/social/resync/{platform}")
-    fun resyncSocialPlatform(
-        @AuthenticationPrincipal userDetails: UserPrincipal,
-        @PathVariable platform: SocialPlatform
-    ): ResponseEntity<SocialSyncPlatformResult> {
-        val response = userService.syncSocialPlatform(userDetails.id, platform)
-        return ResponseEntity.ok(response)
-    }
-
-    @PostMapping("/embeddings/resync")
+    @PostMapping("/embedding/resync")
     fun resyncAllEmbeddings(
         @AuthenticationPrincipal userDetails: UserPrincipal
     ): ResponseEntity<UserEmbeddingSyncResponse> {
@@ -268,7 +251,7 @@ class UserController(
         return ResponseEntity.ok(response)
     }
 
-    @PostMapping("/embeddings/resync/platform")
+    @PostMapping("/embedding/resync/platform")
     fun resyncPlatformEmbedding(
         @AuthenticationPrincipal userDetails: UserPrincipal
     ): ResponseEntity<PlatformEmbeddingSyncResult> {

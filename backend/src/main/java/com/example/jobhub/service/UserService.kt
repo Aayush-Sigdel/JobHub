@@ -49,31 +49,35 @@ class UserService(
 
         updateRequest.skills?.forEach { skillRequest ->
             val skill = userMapper.toSkill(skillRequest, user)
-            skillRepository.save(skill)
+            val savedSkill = skillRepository.save(skill)
+            user.skills.add(savedSkill)
         }
 
         updateRequest.experiences?.forEach { experienceRequest ->
             val experience = userMapper.toExperience(experienceRequest, user)
-            experienceRepository.save(experience)
+            val savedExp = experienceRepository.save(experience)
+            user.experiences.add(savedExp)
         }
 
         updateRequest.educations?.forEach { educationRequest ->
             val education = userMapper.toEducation(educationRequest, user)
-            educationRepository.save(education)
+            val savedEdu = educationRepository.save(education)
+            user.educations.add(savedEdu)
         }
 
         updateRequest.socialLinks?.forEach { socialLinkRequest ->
             val socialLink = userMapper.toSocialLink(socialLinkRequest, user)
             val savedLink = socialLinkRepository.save(socialLink)
-            savedLink.platform?.let { platform ->
-                savedLink.url?.let { url ->
-                    userEmbeddingService.syncSocialPlatform(userId, platform, url)
-                }
-            }
+            user.socialLinks.add(savedLink)
         }
+
         user.isOnboardingCompleted = true
-        userEmbeddingService.updateUserProfileEmbedding(user)
-        return userMapper.toUserProfileResponse(userRepository.save(user))
+        userRepository.save(user)
+
+        userEmbeddingService.syncAllEmbeddings(userId)
+
+        val updatedUser = userRepository.findById(userId).orElse(user)
+        return userMapper.toUserProfileResponse(updatedUser)
     }
 
     @Transactional
@@ -81,7 +85,6 @@ class UserService(
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         user.title = title
-        userEmbeddingService.updateUserProfileEmbedding(user)
         val updatedUser = userRepository.save(user)
         return userMapper.toUserProfileResponse(updatedUser)
     }
@@ -91,7 +94,6 @@ class UserService(
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         user.bio = bio
-        userEmbeddingService.updateUserProfileEmbedding(user)
         val updatedUser = userRepository.save(user)
         return userMapper.toUserProfileResponse(updatedUser)
     }
@@ -101,7 +103,6 @@ class UserService(
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         user.location = location
-        userEmbeddingService.updateUserProfileEmbedding(user)
         val updatedUser = userRepository.save(user)
         return userMapper.toUserProfileResponse(updatedUser)
     }
@@ -139,7 +140,6 @@ class UserService(
         val skill = userMapper.toSkill(createSkillRequest, user)
         val savedSkill = skillRepository.save(skill)
         user.skills.add(savedSkill)
-        userEmbeddingService.updateUserProfileEmbedding(user)
         userRepository.save(user)
         return userMapper.toSkillDto(savedSkill)
     }
@@ -151,10 +151,6 @@ class UserService(
         updateSkillRequest.name?.let { skill.name = it }
         updateSkillRequest.level?.let { skill.level = it }
         val updatedSkill = skillRepository.save(skill)
-        userRepository.findById(userId).ifPresent { user ->
-            userEmbeddingService.updateUserProfileEmbedding(user)
-            userRepository.save(user)
-        }
         return userMapper.toSkillDto(updatedSkill)
     }
 
@@ -165,7 +161,6 @@ class UserService(
         skillRepository.delete(skill)
         userRepository.findById(userId).ifPresent { user ->
             user.skills.removeIf { it.id == skillId }
-            userEmbeddingService.updateUserProfileEmbedding(user)
             userRepository.save(user)
         }
     }
@@ -177,7 +172,6 @@ class UserService(
         val experience = userMapper.toExperience(createExperienceRequest, user)
         val savedExperience = experienceRepository.save(experience)
         user.experiences.add(savedExperience)
-        userEmbeddingService.updateUserProfileEmbedding(user)
         userRepository.save(user)
         return userMapper.toExperienceDto(savedExperience)
     }
@@ -193,10 +187,6 @@ class UserService(
         updateExperienceRequest.isCurrentRole?.let { experience.isCurrentRole = it }
         updateExperienceRequest.description?.let { experience.description = it }
         val updatedExperience = experienceRepository.save(experience)
-        userRepository.findById(userId).ifPresent { user ->
-            userEmbeddingService.updateUserProfileEmbedding(user)
-            userRepository.save(user)
-        }
         return userMapper.toExperienceDto(updatedExperience)
     }
 
@@ -207,7 +197,6 @@ class UserService(
         experienceRepository.delete(experience)
         userRepository.findById(userId).ifPresent { user ->
             user.experiences.removeIf { it.id == experienceId }
-            userEmbeddingService.updateUserProfileEmbedding(user)
             userRepository.save(user)
         }
     }
@@ -219,7 +208,6 @@ class UserService(
         val education = userMapper.toEducation(createEducationRequest, user)
         val savedEducation = educationRepository.save(education)
         user.educations.add(savedEducation)
-        userEmbeddingService.updateUserProfileEmbedding(user)
         userRepository.save(user)
         return userMapper.toEducationDto(savedEducation)
     }
@@ -235,10 +223,6 @@ class UserService(
         updateEducationRequest.endDate?.let { education.endDate = it }
         updateEducationRequest.description?.let { education.description = it }
         val updatedEducation = educationRepository.save(education)
-        userRepository.findById(userId).ifPresent { user ->
-            userEmbeddingService.updateUserProfileEmbedding(user)
-            userRepository.save(user)
-        }
         return userMapper.toEducationDto(updatedEducation)
     }
 
@@ -249,7 +233,6 @@ class UserService(
         educationRepository.delete(education)
         userRepository.findById(userId).ifPresent { user ->
             user.educations.removeIf { it.id == educationId }
-            userEmbeddingService.updateUserProfileEmbedding(user)
             userRepository.save(user)
         }
     }
@@ -305,17 +288,5 @@ class UserService(
 
     fun syncEmbeddingSource(userId: UUID, source: EmbeddingSource): EmbeddingSyncResult {
         return userEmbeddingService.syncEmbeddingSource(userId, source)
-    }
-
-    fun syncAllSocials(userId: UUID): SocialSyncResponse {
-        return userEmbeddingService.syncAllSocials(userId)
-    }
-
-    fun syncSocialPlatform(userId: UUID, platform: SocialPlatform): SocialSyncPlatformResult {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
-        val link = user.socialLinks.firstOrNull { it.platform == platform }
-            ?: throw ApiException("No social link found for platform: $platform", HttpStatus.BAD_REQUEST)
-        return userEmbeddingService.syncSocialPlatform(userId, platform, link.url ?: "")
     }
 }

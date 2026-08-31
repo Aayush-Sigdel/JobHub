@@ -9,6 +9,9 @@ import com.example.jobhub.repository.UserRepository
 import com.example.jobhub.service.embedding.*
 import com.example.jobhub.service.social.*
 import com.example.jobhub.util.FormatUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -39,6 +42,17 @@ class UserEmbeddingService(
 
     private val logger = LoggerFactory.getLogger(UserEmbeddingService::class.java)
 
+    fun generateProfileEmbedding(user: User): FloatArray? {
+        val text = buildUserProfileEmbeddingText(user)
+        if (text.isBlank()) return null
+        return try {
+            embeddingApiClient.embed(text)
+        } catch (e: Exception) {
+            logger.warn("Could not generate profile embedding via EmbeddingApiClient: ${e.message}")
+            null
+        }
+    }
+
     @Transactional
     fun syncPlatformEmbedding(userId: UUID): PlatformEmbeddingSyncResult {
         val user = userRepository.findById(userId).orElseThrow {
@@ -46,13 +60,21 @@ class UserEmbeddingService(
         }
 
         return try {
-            val platformEmbedding = runBlocking {
-                platformEmbeddingService.generateEmbedding(user)
+            val (profileEmbedding, platformEmbedding) = runBlocking(Dispatchers.IO) {
+                val profileDeferred = async { generateProfileEmbedding(user) }
+                val platformDeferred = async { platformEmbeddingService.generateEmbedding(user) }
+                Pair(profileDeferred.await(), platformDeferred.await())
+            }
+
+            if (profileEmbedding != null) {
+                user.profileEmbedding = profileEmbedding
             }
             if (platformEmbedding != null) {
                 user.platformEmbedding = platformEmbedding
-                updateUserProfileEmbedding(user)
-                userRepository.save(user)
+            }
+            userRepository.save(user)
+
+            if (platformEmbedding != null) {
                 PlatformEmbeddingSyncResult(
                     success = true,
                     embeddingGenerated = true,
@@ -75,116 +97,142 @@ class UserEmbeddingService(
         }
     }
 
-    @Transactional
-    fun syncSocialPlatform(userId: UUID, platform: SocialPlatform, rawUrl: String): SocialSyncPlatformResult {
-        val user = userRepository.findById(userId).orElseThrow {
-            ApiException("User not found: $userId", HttpStatus.NOT_FOUND)
-        }
+    data class PlatformFetchResult(
+        val platform: SocialPlatform,
+        val identifier: String?,
+        val snapshotJson: String?,
+        val embedding: FloatArray?,
+        val success: Boolean,
+        val errorMessage: String? = null
+    )
 
+    suspend fun fetchAndEmbedPlatform(platform: SocialPlatform, rawUrl: String): PlatformFetchResult {
         val identifier = extractIdentifier(platform, rawUrl)
         if (identifier.isBlank()) {
-            return SocialSyncPlatformResult(
+            return PlatformFetchResult(
                 platform = platform,
-                success = false,
                 identifier = null,
-                embeddingGenerated = false,
-                snapshotSaved = false,
-                message = "Invalid identifier or URL for platform $platform"
+                snapshotJson = null,
+                embedding = null,
+                success = false,
+                errorMessage = "Invalid identifier or URL for platform $platform"
             )
         }
 
-        try {
-            var embeddingGenerated = false
-            var snapshotSaved = false
+        return try {
+            var snapshotJson: String? = null
+            var embedding: FloatArray? = null
 
             when (platform) {
                 SocialPlatform.GITHUB -> {
                     val profile = githubService.fetch(identifier)
-                    val json = objectMapper.writeValueAsString(profile)
-                    userSocialSnapshotService.save(userId, platform, json)
-                    snapshotSaved = true
-
-                    val embedding = runBlocking {
-                        githubEmbeddingService.generateEmbeddings(profile)
-                    }
-                    user.githubEmbedding = embedding
-                    embeddingGenerated = true
+                    snapshotJson = objectMapper.writeValueAsString(profile)
+                    embedding = githubEmbeddingService.generateEmbeddings(profile)
                 }
                 SocialPlatform.DEV_TO -> {
                     val profile = devtoService.fetch(identifier)
-                    val json = objectMapper.writeValueAsString(profile)
-                    userSocialSnapshotService.save(userId, platform, json)
-                    snapshotSaved = true
-
-                    val embedding = runBlocking {
-                        devtoEmbeddingService.generateEmbeddings(profile)
-                    }
-                    user.devtoEmbedding = embedding
-                    embeddingGenerated = true
+                    snapshotJson = objectMapper.writeValueAsString(profile)
+                    embedding = devtoEmbeddingService.generateEmbeddings(profile)
                 }
                 SocialPlatform.ORCID -> {
                     val profile = orcidService.fetch(identifier)
-                    val json = objectMapper.writeValueAsString(profile)
-                    userSocialSnapshotService.save(userId, platform, json)
-                    snapshotSaved = true
-
-                    val embedding = runBlocking {
-                        orcidEmbeddingService.generateEmbeddings(profile)
-                    }
-                    user.orcidEmbedding = embedding
-                    embeddingGenerated = true
+                    snapshotJson = objectMapper.writeValueAsString(profile)
+                    embedding = orcidEmbeddingService.generateEmbeddings(profile)
                 }
                 SocialPlatform.STACKOVERFLOW -> {
                     val profile = stackoverflowService.fetch(identifier)
-                    val json = objectMapper.writeValueAsString(profile)
-                    userSocialSnapshotService.save(userId, platform, json)
-                    snapshotSaved = true
-
-                    val embedding = runBlocking {
-                        stackoverflowEmbeddingService.generateEmbeddings(profile)
-                    }
-                    user.stackoverflowEmbedding = embedding
-                    embeddingGenerated = true
+                    snapshotJson = objectMapper.writeValueAsString(profile)
+                    embedding = stackoverflowEmbeddingService.generateEmbeddings(profile)
                 }
                 SocialPlatform.PORTFOLIO, SocialPlatform.WEBSITE -> {
                     val profile = portfolioService.fetch(identifier)
-                    val json = objectMapper.writeValueAsString(profile)
-                    userSocialSnapshotService.save(userId, platform, json)
-                    snapshotSaved = true
-
-                    val embedding = runBlocking {
-                        portfolioEmbeddingService.generateEmbeddings(profile)
-                    }
-                    user.portfolioEmbedding = embedding
-                    embeddingGenerated = true
+                    snapshotJson = objectMapper.writeValueAsString(profile)
+                    embedding = portfolioEmbeddingService.generateEmbeddings(profile)
                 }
                 else -> {
                     logger.info("No external embedding/snapshot service configured for platform: $platform")
                 }
             }
 
-            updateUserProfileEmbedding(user)
-            userRepository.save(user)
-
-            return SocialSyncPlatformResult(
+            PlatformFetchResult(
                 platform = platform,
-                success = true,
                 identifier = identifier,
-                embeddingGenerated = embeddingGenerated,
-                snapshotSaved = snapshotSaved,
-                message = "Successfully synced $platform embedding and snapshot"
+                snapshotJson = snapshotJson,
+                embedding = embedding,
+                success = true
             )
         } catch (e: Exception) {
-            logger.error("Failed to sync social platform $platform for user $userId: ${e.message}", e)
-            return SocialSyncPlatformResult(
+            logger.error("Failed to fetch/embed social platform $platform for identifier $identifier: ${e.message}", e)
+            PlatformFetchResult(
                 platform = platform,
-                success = false,
                 identifier = identifier,
-                embeddingGenerated = false,
-                snapshotSaved = false,
-                message = "Error syncing $platform: ${e.message}"
+                snapshotJson = null,
+                embedding = null,
+                success = false,
+                errorMessage = "Error syncing $platform: ${e.message}"
             )
         }
+    }
+
+    private fun applyPlatformResult(userId: UUID, user: User, result: PlatformFetchResult): SocialSyncPlatformResult {
+        if (!result.success) {
+            return SocialSyncPlatformResult(
+                platform = result.platform,
+                success = false,
+                identifier = result.identifier,
+                embeddingGenerated = false,
+                snapshotSaved = false,
+                message = result.errorMessage ?: "Failed to sync ${result.platform}"
+            )
+        }
+
+        var snapshotSaved = false
+        var embeddingGenerated = false
+
+        if (result.snapshotJson != null) {
+            userSocialSnapshotService.save(userId, result.platform, result.snapshotJson)
+            snapshotSaved = true
+        }
+
+        if (result.embedding != null) {
+            when (result.platform) {
+                SocialPlatform.GITHUB -> user.githubEmbedding = result.embedding
+                SocialPlatform.DEV_TO -> user.devtoEmbedding = result.embedding
+                SocialPlatform.ORCID -> user.orcidEmbedding = result.embedding
+                SocialPlatform.STACKOVERFLOW -> user.stackoverflowEmbedding = result.embedding
+                SocialPlatform.PORTFOLIO, SocialPlatform.WEBSITE -> user.portfolioEmbedding = result.embedding
+                else -> {}
+            }
+            embeddingGenerated = true
+        }
+
+        return SocialSyncPlatformResult(
+            platform = result.platform,
+            success = true,
+            identifier = result.identifier,
+            embeddingGenerated = embeddingGenerated,
+            snapshotSaved = snapshotSaved,
+            message = "Successfully synced ${result.platform} embedding and snapshot"
+        )
+    }
+
+    @Transactional
+    fun syncSocialPlatform(userId: UUID, platform: SocialPlatform, rawUrl: String): SocialSyncPlatformResult {
+        val user = userRepository.findById(userId).orElseThrow {
+            ApiException("User not found: $userId", HttpStatus.NOT_FOUND)
+        }
+
+        val fetchResult = runBlocking(Dispatchers.IO) {
+            fetchAndEmbedPlatform(platform, rawUrl)
+        }
+
+        val syncResult = applyPlatformResult(userId, user, fetchResult)
+
+        if (syncResult.success) {
+            userRepository.save(user)
+        }
+
+        return syncResult
     }
 
     @Transactional
@@ -224,27 +272,44 @@ class UserEmbeddingService(
             ApiException("User not found: $userId", HttpStatus.NOT_FOUND)
         }
 
-        val socialResults = mutableListOf<SocialSyncPlatformResult>()
-        val links = user.socialLinks
-
-        for (link in links) {
-            val platform = link.platform ?: continue
-            val url = link.url ?: continue
-            if (url.isNotBlank()) {
-                val res = syncSocialPlatform(userId, platform, url)
-                socialResults.add(res)
-            }
+        val linksToSync = user.socialLinks.mapNotNull { link ->
+            val platform = link.platform ?: return@mapNotNull null
+            val url = link.url ?: return@mapNotNull null
+            if (url.isNotBlank()) Pair(platform, url) else null
         }
 
-        val profileUpdated = try {
-            updateUserProfileEmbedding(user)
+        // Parallel fetch and embedding generation for profile + platform + all social links
+        val (profileEmbedding, platformEmbedding, fetchResults) = runBlocking(Dispatchers.IO) {
+            val profileDeferred = async { generateProfileEmbedding(user) }
+            val platformDeferred = async { platformEmbeddingService.generateEmbedding(user) }
+            val socialDeferreds = linksToSync.map { (platform, url) ->
+                async { fetchAndEmbedPlatform(platform, url) }
+            }
+            Triple(profileDeferred.await(), platformDeferred.await(), socialDeferreds.awaitAll())
+        }
+
+        // Synchronous DB and entity updates
+        if (profileEmbedding != null) {
+            user.profileEmbedding = profileEmbedding
+        }
+        if (platformEmbedding != null) {
+            user.platformEmbedding = platformEmbedding
+        }
+
+        val socialResults = fetchResults.map { fetchResult ->
+            applyPlatformResult(userId, user, fetchResult)
+        }
+
+        val saved = try {
             userRepository.save(user)
             true
         } catch (e: Exception) {
-            logger.error("Error updating profile/platform embedding for user $userId: ${e.message}", e)
+            logger.error("Error saving user embeddings for user $userId: ${e.message}", e)
             false
         }
 
+        val profileUpdated = saved && (profileEmbedding != null || user.profileEmbedding != null)
+        val platformUpdated = saved && (platformEmbedding != null || user.platformEmbedding != null)
         val overallSuccess = (socialResults.isEmpty() || socialResults.all { it.success }) && profileUpdated
 
         return UserEmbeddingSyncResponse(
@@ -252,76 +317,14 @@ class UserEmbeddingService(
             syncedAt = Instant.now(),
             overallSuccess = overallSuccess,
             platformResult = PlatformEmbeddingSyncResult(
-                success = profileUpdated,
+                success = platformUpdated,
                 embeddingGenerated = user.platformEmbedding != null,
-                message = if (profileUpdated) "Platform embedding refreshed" else "Failed to refresh platform embedding"
+                message = if (platformUpdated) "Platform embedding refreshed" else "Failed to refresh platform embedding"
             ),
             socialResults = socialResults,
             profileEmbeddingUpdated = profileUpdated,
-            platformEmbeddingUpdated = profileUpdated
+            platformEmbeddingUpdated = platformUpdated
         )
-    }
-
-    @Transactional
-    fun syncAllSocials(userId: UUID): SocialSyncResponse {
-        val user = userRepository.findById(userId).orElseThrow {
-            ApiException("User not found: $userId", HttpStatus.NOT_FOUND)
-        }
-
-        val results = mutableListOf<SocialSyncPlatformResult>()
-        val links = user.socialLinks
-
-        for (link in links) {
-            val platform = link.platform ?: continue
-            val url = link.url ?: continue
-            if (url.isNotBlank()) {
-                val res = syncSocialPlatform(userId, platform, url)
-                results.add(res)
-            }
-        }
-
-        val profileUpdated = try {
-            updateUserProfileEmbedding(user)
-            userRepository.save(user)
-            true
-        } catch (e: Exception) {
-            logger.error("Error updating profile embedding for user $userId: ${e.message}", e)
-            false
-        }
-
-        val overallSuccess = (results.isEmpty() || results.all { it.success }) && profileUpdated
-
-        return SocialSyncResponse(
-            userId = userId.toString(),
-            syncedAt = Instant.now(),
-            overallSuccess = overallSuccess,
-            results = results,
-            profileEmbeddingUpdated = profileUpdated,
-            platformEmbeddingUpdated = profileUpdated
-        )
-    }
-
-    fun updateUserProfileEmbedding(user: User) {
-        val text = buildUserProfileEmbeddingText(user)
-        if (text.isNotBlank()) {
-            try {
-                val embedding = embeddingApiClient.embed(text)
-                user.profileEmbedding = embedding
-            } catch (e: Exception) {
-                logger.warn("Could not generate profile embedding via EmbeddingApiClient: ${e.message}")
-            }
-        }
-
-        try {
-            val platformEmbedding = runBlocking {
-                platformEmbeddingService.generateEmbedding(user)
-            }
-            if (platformEmbedding != null) {
-                user.platformEmbedding = platformEmbedding
-            }
-        } catch (e: Exception) {
-            logger.warn("Could not generate platform embedding: ${e.message}")
-        }
     }
 
     fun buildUserProfileEmbeddingText(user: User): String {

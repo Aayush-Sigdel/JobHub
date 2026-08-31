@@ -59,15 +59,6 @@ data class EmbeddingSyncResult(
     val message: String? = null
 )
 
-data class SocialSyncResponse(
-    val userId: String,
-    val syncedAt: Instant = Instant.now(),
-    val overallSuccess: Boolean,
-    val results: List<SocialSyncPlatformResult>,
-    val profileEmbeddingUpdated: Boolean,
-    val platformEmbeddingUpdated: Boolean
-)
-
 data class UserEmbeddingSyncResponse(
     val userId: String,
     val syncedAt: Instant = Instant.now(),
