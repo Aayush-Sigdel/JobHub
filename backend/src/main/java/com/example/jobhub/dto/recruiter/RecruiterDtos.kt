@@ -43,8 +43,7 @@ data class RecruiterJobSummaryResponse(
 data class CandidateSocialSnapshotDto(
     val platform: SocialPlatform,
     val updatedAt: Instant?,
-    val dataJson: String,
-    val processingItems: List<String> = emptyList(),
+    val aiCoolFeedItems: List<String> = emptyList(),
     val summary: Map<String, Any?> = emptyMap()
 )
 
@@ -86,9 +85,5 @@ data class CandidateDashboardResponse(
     val devtoSimilarity: Double?,
     val orcidSimilarity: Double?,
     val stackoverflowSimilarity: Double?,
-    val portfolioSimilarity: Double?,
-
-    // Social Snapshots used to generate embeddings
-    val socialSnapshots: List<CandidateSocialSnapshotDto>,
-    val aiCoolFeedItems: List<String> // Live simulated or parsed cool feed strings for UI animations
+    val portfolioSimilarity: Double?
 )

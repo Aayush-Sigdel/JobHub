@@ -54,6 +54,16 @@ class RecruiterController(
         return ResponseEntity.ok(candidates)
     }
 
+    @GetMapping("/jobs/{jobId}/candidates/{candidateId}/snapshots")
+    fun getCandidateSocialSnapshots(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @PathVariable jobId: UUID,
+        @PathVariable candidateId: UUID
+    ): ResponseEntity<List<com.example.jobhub.dto.recruiter.CandidateSocialSnapshotDto>> {
+        val snapshots = recruiterDashboardService.getCandidateSocialSnapshots(userDetails.id, jobId, candidateId)
+        return ResponseEntity.ok(snapshots)
+    }
+
     @PutMapping("/applications/{applicationId}/status")
     fun updateApplicationStatus(
         @AuthenticationPrincipal userDetails: UserPrincipal,

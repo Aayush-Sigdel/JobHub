@@ -86,8 +86,6 @@ class RecruiterDashboardService(
         }
 
         val applications = jobApplicationRepository.findByJobPostIdOrderByCreatedAtDesc(jobId)
-        val candidateIds = applications.mapNotNull { it.candidate?.id }.distinct()
-        val snapshotsByCandidateId = userSocialSnapshotService.findByUserIds(candidateIds).groupBy { it.user.id }
 
         val candidateResponses = applications.mapNotNull { app ->
             val candidate = app.candidate ?: return@mapNotNull null
@@ -123,14 +121,11 @@ class RecruiterDashboardService(
                 return@mapNotNull null
             }
 
-            val snapshots = snapshotsByCandidateId[candidate.id] ?: emptyList()
-
             buildCandidateDashboardResponse(
                 candidate = candidate,
                 job = job,
                 application = app,
-                simScores = simScores,
-                snapshots = snapshots
+                simScores = simScores
             )
         }
 
@@ -146,6 +141,24 @@ class RecruiterDashboardService(
             "name" -> candidateResponses.sortedBy { it.name.lowercase() }
             else -> candidateResponses.sortedByDescending { it.overallSimilarity }
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun getCandidateSocialSnapshots(
+        employerId: UUID,
+        jobId: UUID,
+        candidateId: UUID
+    ): List<CandidateSocialSnapshotDto> {
+        jobPostRepository.findByIdAndPostedById(jobId, employerId).orElseThrow {
+            ApiException("Job post not found or not owned by recruiter", HttpStatus.NOT_FOUND)
+        }
+
+        jobApplicationRepository.findByJobPostIdAndCandidateId(jobId, candidateId).orElseThrow {
+            ApiException("Candidate has not applied for this job", HttpStatus.NOT_FOUND)
+        }
+
+        val snapshots = userSocialSnapshotService.findByUserId(candidateId)
+        return snapshots.map { parseSocialSnapshot(it.platform, it.updatedAt, it.data) }
     }
 
     @Transactional
@@ -213,16 +226,8 @@ class RecruiterDashboardService(
         candidate: User,
         job: JobPost,
         application: JobApplication,
-        simScores: SimilarityBreakdown,
-        snapshots: List<com.example.jobhub.model.UserSocialSnapshot>
+        simScores: SimilarityBreakdown
     ): CandidateDashboardResponse {
-        val snapshotDtos = snapshots.map { parseSocialSnapshot(it.platform, it.updatedAt, it.data) }
-
-        val coolFeedItems = mutableListOf<String>()
-        snapshotDtos.forEach { snap ->
-            coolFeedItems.addAll(snap.processingItems)
-        }
-
         val tabSwitchEvents: List<TabSwitchEvent>? = application.tabSwitchEventsJson?.let {
             try {
                 objectMapper.readValue(
@@ -279,9 +284,7 @@ class RecruiterDashboardService(
             devtoSimilarity = simScores.devto,
             orcidSimilarity = simScores.orcid,
             stackoverflowSimilarity = simScores.stackoverflow,
-            portfolioSimilarity = simScores.portfolio,
-            socialSnapshots = snapshotDtos,
-            aiCoolFeedItems = coolFeedItems
+            portfolioSimilarity = simScores.portfolio
         )
     }
 
@@ -409,8 +412,7 @@ class RecruiterDashboardService(
         return CandidateSocialSnapshotDto(
             platform = platform,
             updatedAt = updatedAt,
-            dataJson = dataJson,
-            processingItems = processingItems,
+            aiCoolFeedItems = processingItems,
             summary = summary
         )
     }
