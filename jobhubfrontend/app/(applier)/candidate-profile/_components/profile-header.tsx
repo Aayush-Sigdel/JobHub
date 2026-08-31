@@ -1,15 +1,17 @@
 "use client";
 
-import { Share, Eye, Pencil, Settings } from "lucide-react";
+import { Share, Eye, Pencil, Check, Loader2 } from "lucide-react";
 import { User, Language, Location } from "@/types/user";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { ImagePopover } from "./image-popover";
 import { LocationPopover } from "./location-popover";
 import { LanguagesPopover } from "./languages-popover";
+import { api } from "@/lib/api";
 
 interface ProfileHeaderProps {
+  userId?: string;
   imageUrl?: string;
   name: string;
   username: string;
@@ -17,9 +19,11 @@ interface ProfileHeaderProps {
   location?: Location;
   languages?: Language[];
   isVerified?: boolean;
+  onProfileUpdated?: () => void;
 }
 
 export function ProfileHeader({
+  userId,
   imageUrl,
   name,
   username,
@@ -27,6 +31,7 @@ export function ProfileHeader({
   location,
   languages,
   isVerified,
+  onProfileUpdated,
 }: ProfileHeaderProps) {
   const [profileImage, setProfileImage] = useState(imageUrl || "");
   const [profileName, setProfileName] = useState(name);
@@ -42,16 +47,67 @@ export function ProfileHeader({
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [tempName, setTempName] = useState(profileName);
   const [tempUsername, setTempUsername] = useState(profileUsername);
   const [tempTitle, setTempTitle] = useState(profileTitle);
   const [copied, setCopied] = useState(false);
 
-  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+  useEffect(() => {
+    setProfileName(name);
+    setTempName(name);
+  }, [name]);
+
+  useEffect(() => {
+    setProfileTitle(title || "");
+    setTempTitle(title || "");
+  }, [title]);
+
+  useEffect(() => {
+    setProfileImage(imageUrl || "");
+  }, [imageUrl]);
+
+  useEffect(() => {
+    setProfileLocation(location || null);
+  }, [location]);
+
+  const saveHeaderChanges = async (updates: {
+    name?: string;
+    title?: string;
+    location?: Location | null;
+    imageUrl?: string;
+  }) => {
+    try {
+      setIsSaving(true);
+      const locString = updates.location
+        ? `${updates.location.city}${updates.location.country ? ", " + updates.location.country : ""}`
+        : profileLocation
+          ? `${profileLocation.city}${profileLocation.country ? ", " + profileLocation.country : ""}`
+          : undefined;
+
+      await api.put("/user/profile", {
+        name: updates.name !== undefined ? updates.name : profileName,
+        title: updates.title !== undefined ? updates.title : profileTitle,
+        imageUrl: updates.imageUrl !== undefined ? updates.imageUrl : profileImage,
+        location: locString,
+      });
+
+      if (onProfileUpdated) {
+        onProfileUpdated();
+      }
+    } catch (err) {
+      console.error("Failed to save profile header changes:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNameKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       setProfileName(tempName);
       setIsEditingName(false);
+      await saveHeaderChanges({ name: tempName });
     } else if (e.key === "Escape") {
       setTempName(profileName);
       setIsEditingName(false);
@@ -68,15 +124,28 @@ export function ProfileHeader({
     }
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+  const handleTitleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       setProfileTitle(tempTitle);
       setIsEditingTitle(false);
+      await saveHeaderChanges({ title: tempTitle });
     } else if (e.key === "Escape") {
       setTempTitle(profileTitle);
       setIsEditingTitle(false);
     }
   };
+
+  const handleLocationChange = async (newLoc: Location) => {
+    setProfileLocation(newLoc);
+    await saveHeaderChanges({ location: newLoc });
+  };
+
+  const handleImageUpdate = async (newImgUrl: string) => {
+    setProfileImage(newImgUrl);
+    await saveHeaderChanges({ imageUrl: newImgUrl });
+  };
+
+  const previewId = userId || profileUsername || "me";
 
   return (
     <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
@@ -84,7 +153,7 @@ export function ProfileHeader({
         <ImagePopover
           profileImage={profileImage}
           profileUsername={profileUsername}
-          onImageUpdate={setProfileImage}
+          onImageUpdate={handleImageUpdate}
         />
 
         <div className="flex flex-col gap-1.5 w-full">
@@ -94,16 +163,17 @@ export function ProfileHeader({
                 autoFocus
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
-                onBlur={() => {
+                onBlur={async () => {
                   setProfileName(tempName);
                   setIsEditingName(false);
+                  await saveHeaderChanges({ name: tempName });
                 }}
                 onKeyDown={handleNameKeyDown}
                 className="h-8 w-48 text-xl font-bold bg-card border-input focus-visible:ring-ring px-2"
               />
             ) : (
               <h1
-                className="text-2xl font-bold tracking-tight text-foreground  flex items-center gap-2 group cursor-pointer w-max"
+                className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 group cursor-pointer w-max"
                 onClick={() => {
                   setTempName(profileName);
                   setIsEditingName(true);
@@ -130,10 +200,12 @@ export function ProfileHeader({
                     </svg>
                   </div>
                 )}
-                <Pencil className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
+                <Pencil className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </h1>
             )}
 
+            {/* Username (commented out for now) */}
+            {/*
             {isEditingUsername ? (
               <div className="flex items-center gap-1">
                 <span className="text-muted-foreground font-medium">@</span>
@@ -161,6 +233,7 @@ export function ProfileHeader({
                 <Pencil className="w-3 h-3 text-muted-foreground/50 group-hover:text-muted-foreground opacity-0 group-hover:opacity-100 transition-all" />
               </span>
             )}
+            */}
           </div>
 
           <div className="h-6 flex items-center">
@@ -169,9 +242,10 @@ export function ProfileHeader({
                 autoFocus
                 value={tempTitle}
                 onChange={(e) => setTempTitle(e.target.value)}
-                onBlur={() => {
+                onBlur={async () => {
                   setProfileTitle(tempTitle);
                   setIsEditingTitle(false);
+                  await saveHeaderChanges({ title: tempTitle });
                 }}
                 onKeyDown={handleTitleKeyDown}
                 className="h-7 w-64 text-sm bg-card border-input focus-visible:ring-ring px-2"
@@ -198,7 +272,7 @@ export function ProfileHeader({
           <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground font-medium">
             <LocationPopover
               profileLocation={profileLocation}
-              setProfileLocation={setProfileLocation}
+              setProfileLocation={handleLocationChange}
             />
 
             <LanguagesPopover
@@ -212,21 +286,21 @@ export function ProfileHeader({
       <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 shrink-0">
         <button
           onClick={() => {
-            const url = `${window.location.origin}/preview/${profileUsername || "me"}`;
+            const url = `${window.location.origin}/preview/${previewId}`;
             navigator.clipboard.writeText(url);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
-          className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-border font-semibold rounded-lg bg-card text-foreground/90 hover:bg-muted transition-colors relative"
+          className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-border font-semibold rounded-lg bg-card text-foreground hover:bg-muted transition-colors relative cursor-pointer"
         >
-          <Share className="w-4 h-4 mr-2" /> {copied ? "Copied!" : "Share"}
+          <Share className="w-4 h-4 mr-2" /> {copied ? "Copied Link!" : "Share"}
         </button>
 
         <Link
-          href={`/preview/${profileUsername || "me"}`}
-          className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-border font-semibold rounded-lg bg-card text-foreground/90 hover:bg-muted transition-colors"
+          href={`/preview/${previewId}`}
+          className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-border font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
         >
-          <Eye className="w-4 h-4 mr-2" /> Preview
+          <Eye className="w-4 h-4 mr-2" /> Public Preview
         </Link>
       </div>
     </div>

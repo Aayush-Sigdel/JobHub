@@ -6,6 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
 import { AuthCharacters } from "@/components/auth/auth-characters";
+import { useRouter } from "next/navigation";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const BrandMark = () => (
   <svg
@@ -18,6 +21,7 @@ const BrandMark = () => (
 );
 
 function VerificationForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
   const name = searchParams.get("name") || "";
@@ -53,7 +57,10 @@ function VerificationForm() {
     }
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Backspace" && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -62,20 +69,35 @@ function VerificationForm() {
   const isComplete = code.every((digit) => digit !== "");
 
   const handleVerify = async () => {
+    if (!isComplete) return;
     setAuthError("");
     setIsSubmitting(true);
 
+    const otpCode = code.join("");
+
     try {
-      // Simulate client-side OTP validation
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          otp: otpCode,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        setAuthError(err.message || "Invalid or expired 6-digit code.");
+        return;
+      }
+
       setIsVerified(true);
-    } catch {
-      setAuthError("Invalid 6-digit code. Please check again.");
+    } catch (error) {
+      setAuthError("Failed to connect to verification server.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
   return (
     <main className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-neutral-900 selection:text-white">
       {/* Left Column: Generous character stage */}
@@ -119,7 +141,9 @@ function VerificationForm() {
                   </h1>
                   <p className="text-base text-neutral-500 font-medium leading-relaxed">
                     We sent a 6-digit verification code to{" "}
-                    <span className="font-bold text-neutral-900">{email || "your email"}</span>
+                    <span className="font-bold text-neutral-900">
+                      {email || "your email"}
+                    </span>
                   </p>
                 </div>
 
@@ -167,7 +191,11 @@ function VerificationForm() {
                   Didn't receive the code?{" "}
                   <button
                     type="button"
-                    onClick={() => setAuthError("Code resent! Please check your spam folder too 📬")}
+                    onClick={() =>
+                      setAuthError(
+                        "Code resent! Please check your spam folder too 📬",
+                      )
+                    }
                     className="text-neutral-900 font-bold hover:underline transition-colors ml-1 cursor-pointer"
                   >
                     Resend Code
@@ -190,17 +218,17 @@ function VerificationForm() {
                   Email Verified!
                 </h2>
                 <p className="text-neutral-500 text-base font-medium leading-relaxed mb-7">
-                  Your email has been confirmed. Let's finish setting up your candidate profile!
+                  Your email has been verified! Sign in to complete your profile setup.
                 </p>
                 <Link
-                  href={`/onboarding?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`}
+                  href={`/sign-in?email=${encodeURIComponent(email)}`}
                   className="w-full"
                 >
                   <button
                     type="button"
                     className="w-full h-13 sm:h-14 bg-[#18181B] hover:bg-neutral-800 text-white rounded-full font-bold text-base transition-colors flex items-center justify-center gap-2.5 cursor-pointer shadow-md"
                   >
-                    <span>Complete Profile Setup</span>
+                    <span>Sign In to Continue</span>
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>

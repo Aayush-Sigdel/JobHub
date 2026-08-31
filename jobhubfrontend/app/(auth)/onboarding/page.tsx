@@ -15,15 +15,24 @@ import {
   UploadCloud,
   FileText,
   Trash2,
+  Phone,
 } from "lucide-react";
 
 import { AuthCharacters, AuthFieldType } from "@/components/auth/auth-characters";
 import { Location } from "@/types/user";
 import { LocationPopover } from "@/app/(applier)/candidate-profile/_components/location-popover";
+import { api } from "@/lib/api";
+import { getSession, useSession } from "next-auth/react";
 
 const GithubIcon = () => (
   <svg className="w-4 h-4 shrink-0 text-neutral-700" viewBox="0 0 24 24" fill="currentColor">
     <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+  </svg>
+);
+
+const LinkedinIcon = () => (
+  <svg className="w-4 h-4 shrink-0 text-[#0a66c2]" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.2a1.64 1.64 0 0 0-1.64 1.63c0 .91.74 1.64 1.64 1.64.9 0 1.63-.73 1.63-1.64 0-.9-.73-1.63-1.63-1.63Z" />
   </svg>
 );
 
@@ -55,6 +64,7 @@ const workTypes = ["Remote", "Hybrid", "On-site"];
 
 function OnboardingContent() {
   const router = useRouter();
+  const { data: session, update } = useSession();
   const searchParams = useSearchParams();
   const initialEmail = searchParams.get("email") || "";
   const initialName = searchParams.get("name") || "";
@@ -62,9 +72,13 @@ function OnboardingContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState(1);
 
-  // Step 1: Handle & Title
-  const [username, setUsername] = useState("");
+  // Step 1: Full Name, Title & Bio
+  const [fullName, setFullName] = useState(
+    initialName || session?.user?.name || "",
+  );
+  // const [username, setUsername] = useState(""); // commented out for now
   const [title, setTitle] = useState("");
+  const [bio, setBio] = useState("");
 
   // Step 2: Role Preferences
   const [preferredRole, setPreferredRole] = useState("");
@@ -79,7 +93,9 @@ function OnboardingContent() {
     country: "Nepal",
   });
 
-  // Step 4: Links & Resume
+  // Step 4: Links & Contact
+  const [contactNumber, setContactNumber] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [resumeFile, setResumeFile] = useState<{ name: string; size: string } | null>(null);
@@ -94,16 +110,12 @@ function OnboardingContent() {
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    if (!username) {
-      if (initialName) {
-        const clean = initialName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 20);
-        setUsername(clean);
-      } else if (initialEmail) {
-        const clean = initialEmail.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 20);
-        setUsername(clean);
-      }
+    if (initialName) {
+      setFullName(initialName);
+    } else if (session?.user?.name) {
+      setFullName(session.user.name);
     }
-  }, [initialName, initialEmail, username]);
+  }, [initialName, session?.user?.name]);
 
   const clearError = (field?: string) => {
     if (authError) setAuthError("");
@@ -116,11 +128,13 @@ function OnboardingContent() {
     }
   };
 
+  /*
   const handleUsernameChange = (val: string) => {
     clearError("username");
     const formatted = val.toLowerCase().replace(/[^a-z0-9_]/g, "");
     setUsername(formatted);
   };
+  */
 
   const addSkill = (skill: string) => {
     clearError("skills");
@@ -159,15 +173,18 @@ function OnboardingContent() {
     const newErrors: { [key: string]: string } = {};
 
     if (currentStep === 1) {
-      if (!username.trim() || username.length < 3) {
-        newErrors.username = "Username must be at least 3 characters long.";
+      if (!fullName.trim() || fullName.trim().length < 2) {
+        newErrors.fullName = "Please enter your full name.";
       }
       if (!title.trim()) {
         newErrors.title = "Please provide your professional title.";
       }
+      if (!bio.trim() || bio.trim().length < 10) {
+        newErrors.bio = "Please provide a short bio (at least 10 characters).";
+      }
       if (Object.keys(newErrors).length > 0) {
         setFieldErrors(newErrors);
-        setAuthError(newErrors.username || newErrors.title);
+        setAuthError(newErrors.fullName || newErrors.title || newErrors.bio);
         return;
       }
     } else if (currentStep === 2) {
@@ -218,10 +235,77 @@ function OnboardingContent() {
     setAuthError("");
     setIsSubmitting(true);
     try {
-      await new Promise((res) => setTimeout(res, 900));
-      setIsSubmitted(true);
-    } catch {
-      setAuthError("Failed to save profile. Please try again.");
+      const currentSession = await getSession();
+      if (!currentSession?.accessToken) {
+        setAuthError("Please sign in to save your profile. Redirecting...");
+        setTimeout(() => {
+          router.push("/sign-in?callbackUrl=/onboarding");
+        }, 1200);
+        return;
+      }
+
+      const formattedSocialLinks = [];
+      if (githubUrl.trim()) {
+        formattedSocialLinks.push({ platform: "GITHUB", url: githubUrl.trim() });
+      }
+      if (linkedinUrl.trim()) {
+        formattedSocialLinks.push({ platform: "LINKEDIN", url: linkedinUrl.trim() });
+      }
+      if (portfolioUrl.trim()) {
+        formattedSocialLinks.push({ platform: "PORTFOLIO", url: portfolioUrl.trim() });
+      }
+
+      const formattedSkills = skills.map((s) => ({
+        name: s,
+        level: "INTERMEDIATE",
+      }));
+
+      const contactNumbers = contactNumber.trim() ? [contactNumber.trim()] : undefined;
+
+      // 1. Update user profile with real bio and full name from signup
+      await api.put("/user/profile", {
+        name: fullName.trim() || initialName || session?.user?.name,
+        title: title.trim() || undefined,
+        bio: bio.trim() || undefined,
+        location: profileLocation ? `${profileLocation.city}, ${profileLocation.country}` : undefined,
+        skills: formattedSkills.length > 0 ? formattedSkills : undefined,
+        socialLinks: formattedSocialLinks.length > 0 ? formattedSocialLinks : undefined,
+        contactNumbers: contactNumbers,
+      });
+
+      // 2. Mark onboarding completed in database
+      await api.post("/user/profile/complete-onboarding");
+
+      // 3. Update local session token so middleware allows /home
+      if (update) {
+        await update({
+          onboardingCompleted: true,
+          user: {
+            onboardingCompleted: true,
+          },
+        });
+      }
+
+      // 4. Directly navigate to /home dashboard
+      window.location.href = "/home";
+    } catch (error: any) {
+      console.error("Failed to complete onboarding:", error);
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+        setAuthError(
+          "Your session has expired. Redirecting to sign in...",
+        );
+        setTimeout(() => {
+          router.push("/sign-in?callbackUrl=/onboarding");
+        }, 1500);
+        return;
+      }
+      setAuthError(
+        error.response?.data?.message ||
+          "Failed to save profile. Please check your connection and try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -251,8 +335,8 @@ function OnboardingContent() {
             focusedField={focusedField}
             isSubmitting={isSubmitting}
             isHoveringSubmit={isHoveringSubmit}
-            nameValue={initialName || username}
-            usernameValue={username}
+            nameValue={fullName || initialName}
+            usernameValue=""
             errorMessage={authError}
             pageType="onboarding"
             onboardingStep={currentStep}
@@ -296,56 +380,89 @@ function OnboardingContent() {
                       <div className="space-y-4">
                         <div>
                           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
-                            Create your handle & title
+                            Profile Details & Headline
                           </h1>
                           <p className="text-sm text-neutral-500 font-medium">
-                            Your public username and professional headline.
+                            Confirm your name and introduce your professional background.
                           </p>
                         </div>
 
                         <div className="space-y-3">
-                          {/* Username handle */}
+                          {/* Full Name from Sign Up */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Username Handle <span className="text-rose-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Full Name
+                              </label>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                Required
+                              </span>
+                            </div>
+                            <div className="relative flex items-center">
+                              <User className="absolute left-3.5 w-4 h-4 text-neutral-400" />
+                              <input
+                                type="text"
+                                autoFocus
+                                required
+                                placeholder="Your full name"
+                                value={fullName}
+                                onFocus={() => {
+                                  setFocusedField("name");
+                                  clearError("fullName");
+                                }}
+                                onBlur={() => setFocusedField("none")}
+                                onChange={(e) => {
+                                  setFullName(e.target.value);
+                                  clearError("fullName");
+                                }}
+                                className={`w-full h-12 pl-10 pr-4 rounded-xl bg-neutral-50 border ${
+                                  fieldErrors.fullName ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                                } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                              />
+                            </div>
+                            {fieldErrors.fullName && (
+                              <p className="text-xs font-semibold text-rose-500 pl-1">
+                                {fieldErrors.fullName}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Username handle (commented out for now) */}
+                          {/*
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Username Handle
+                              </label>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                Required
+                              </span>
+                            </div>
                             <div className="relative flex items-center">
                               <span className="absolute left-4 text-neutral-400 font-bold text-base select-none">
                                 @
                               </span>
                               <input
                                 type="text"
-                                autoFocus
-                                required
                                 placeholder="username"
                                 value={username}
-                                onFocus={() => {
-                                  setFocusedField("username");
-                                  clearError("username");
-                                }}
-                                onBlur={() => setFocusedField("none")}
                                 onChange={(e) => handleUsernameChange(e.target.value)}
-                                className={`w-full h-12 pl-9 pr-4 rounded-xl bg-neutral-50 border ${
-                                  fieldErrors.username ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
-                                } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                                className="w-full h-12 pl-9 pr-4 rounded-xl bg-neutral-50 border border-neutral-200"
                               />
                             </div>
-                            {fieldErrors.username ? (
-                              <p className="text-xs font-semibold text-rose-500 pl-1">
-                                {fieldErrors.username}
-                              </p>
-                            ) : (
-                              <p className="text-[11px] text-neutral-400 font-medium pl-1">
-                                Profile URL: jobhub.com/@{username || "username"}
-                              </p>
-                            )}
                           </div>
+                          */}
 
                           {/* Professional Title */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Professional Title <span className="text-rose-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Professional Title
+                              </label>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                Required
+                              </span>
+                            </div>
                             <input
                               type="text"
                               placeholder="e.g. Senior Frontend Engineer"
@@ -369,6 +486,49 @@ function OnboardingContent() {
                               </p>
                             )}
                           </div>
+
+                          {/* Bio / About Me */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Bio / About Me
+                              </label>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                Required
+                              </span>
+                            </div>
+                            <textarea
+                              rows={3}
+                              placeholder="Write a brief professional summary about your background, strengths, and goals..."
+                              value={bio}
+                              onFocus={() => {
+                                setFocusedField("name");
+                                clearError("bio");
+                              }}
+                              onBlur={() => setFocusedField("none")}
+                              onChange={(e) => {
+                                setBio(e.target.value);
+                                clearError("bio");
+                              }}
+                              className={`w-full p-3 rounded-xl bg-neutral-50 border ${
+                                fieldErrors.bio ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                              } text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all resize-none`}
+                            />
+                            <div className="flex items-center justify-between pl-1">
+                              {fieldErrors.bio ? (
+                                <p className="text-xs font-semibold text-rose-500">
+                                  {fieldErrors.bio}
+                                </p>
+                              ) : (
+                                <p className="text-[11px] text-neutral-400">
+                                  Short summary shown on your public profile
+                                </p>
+                              )}
+                              <span className="text-[11px] text-neutral-400 font-medium">
+                                {bio.length}/300
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -388,9 +548,14 @@ function OnboardingContent() {
                         <div className="space-y-3.5">
                           {/* Preferred Role Name */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Preferred Role <span className="text-rose-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Preferred Role
+                              </label>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                Required
+                              </span>
+                            </div>
                             <input
                               type="text"
                               autoFocus
@@ -418,9 +583,14 @@ function OnboardingContent() {
 
                           {/* Experience Level */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Seniority Level
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Seniority Level
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
                             <div className="grid grid-cols-2 gap-1.5">
                               {roleLevels.map((lvl) => (
                                 <button
@@ -444,9 +614,14 @@ function OnboardingContent() {
 
                           {/* Work Type */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Work Style
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Work Style
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
                             <div className="grid grid-cols-3 gap-1.5">
                               {workTypes.map((type) => (
                                 <button
@@ -486,9 +661,14 @@ function OnboardingContent() {
                         <div className="space-y-3.5">
                           {/* Active Selected Skills */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Selected Skills ({skills.length}/8) <span className="text-rose-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Selected Skills ({skills.length}/8)
+                              </label>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                Min 1 Required
+                              </span>
+                            </div>
                             <div
                               className={`flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-xl bg-neutral-50 border ${
                                 fieldErrors.skills ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
@@ -543,9 +723,14 @@ function OnboardingContent() {
 
                           {/* Location Picker (Reused from candidate profile page) */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Location
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Location
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
                             <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-between">
                               <LocationPopover
                                 profileLocation={profileLocation}
@@ -573,11 +758,68 @@ function OnboardingContent() {
                         </div>
 
                         <div className="space-y-3.5">
+                          {/* Phone / Contact Number */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Contact Phone Number
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
+                            <div className="relative flex items-center">
+                              <Phone className="absolute left-3.5 w-4 h-4 text-neutral-400" />
+                              <input
+                                type="tel"
+                                placeholder="+977 98XXXXXXXX"
+                                value={contactNumber}
+                                onChange={(e) => {
+                                  setContactNumber(e.target.value);
+                                  clearError();
+                                }}
+                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                              />
+                            </div>
+                          </div>
+
+                          {/* LinkedIn URL */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                LinkedIn Profile
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
+                            <div className="relative flex items-center">
+                              <span className="absolute left-3.5 flex items-center">
+                                <LinkedinIcon />
+                              </span>
+                              <input
+                                type="url"
+                                placeholder="https://linkedin.com/in/username"
+                                value={linkedinUrl}
+                                onChange={(e) => {
+                                  setLinkedinUrl(e.target.value);
+                                  clearError();
+                                }}
+                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                              />
+                            </div>
+                          </div>
+
                           {/* GitHub URL */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              GitHub Profile
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                GitHub Profile
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
                             <div className="relative flex items-center">
                               <span className="absolute left-3.5 flex items-center">
                                 <GithubIcon />
@@ -597,9 +839,14 @@ function OnboardingContent() {
 
                           {/* Portfolio / Website URL */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Portfolio / Website
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Portfolio / Website
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
                             <div className="relative flex items-center">
                               <Globe className="absolute left-3.5 w-4 h-4 text-neutral-400" />
                               <input
@@ -617,9 +864,14 @@ function OnboardingContent() {
 
                           {/* Resume Upload */}
                           <div className="space-y-1.5">
-                            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
-                              Upload Resume / CV
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                                Upload Resume / CV
+                              </label>
+                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
+                            </div>
                             <input
                               type="file"
                               ref={fileInputRef}
@@ -734,7 +986,7 @@ function OnboardingContent() {
                     Profile Ready!
                   </h2>
                   <p className="text-sm text-neutral-500 font-medium leading-relaxed">
-                    Welcome to JobHub, <span className="font-bold text-neutral-900">@{username}</span>. Your candidate profile is set up to receive matched opportunities.
+                    Welcome to JobHub, <span className="font-bold text-neutral-900">{fullName || initialName || "Candidate"}</span>. Your candidate profile is set up to receive matched opportunities.
                   </p>
                 </div>
 

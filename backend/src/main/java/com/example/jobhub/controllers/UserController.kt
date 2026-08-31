@@ -71,6 +71,14 @@ class UserController(
         return ResponseEntity.ok(updatedProfile)
     }
 
+    @PostMapping("/profile/complete-onboarding")
+    fun completeOnboarding(
+        @AuthenticationPrincipal userDetails: UserPrincipal
+    ): ResponseEntity<UserProfileResponse> {
+        val updatedProfile = userService.completeOnboarding(userDetails.id)
+        return ResponseEntity.ok(updatedProfile)
+    }
+
     @PutMapping("/profile/title")
     fun setUserTitle(
         @AuthenticationPrincipal userDetails: UserPrincipal,

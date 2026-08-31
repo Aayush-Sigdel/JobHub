@@ -383,7 +383,12 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
                   : { opacity: 1, scale: 1, y: 0, x: 0 }
               }
               exit={{ opacity: 0, scale: 0.88, y: -6 }}
-              transition={{ type: "spring", stiffness: 360, damping: 24 }}
+              transition={{
+                type: "spring",
+                stiffness: 360,
+                damping: 24,
+                x: { duration: 0.4, ease: "easeInOut" },
+              }}
               className="relative"
             >
               {/* Hand-Drawn Sketch Accent Lines around the bubble */}
@@ -492,12 +497,12 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
                   : isInputFocused
                     ? 2
                     : 0,
-              scaleY: [1, 1.01, 1],
+              scale: [1, 1.008, 1],
             }}
             transition={{
               y: { type: "spring", stiffness: 240, damping: 18 },
               rotate: { type: "spring", stiffness: 240, damping: 18 },
-              scaleY: { repeat: Infinity, duration: 4, ease: "easeInOut" },
+              scale: { repeat: Infinity, duration: 4, ease: "easeInOut" },
             }}
             style={{ transformOrigin: "170px 480px" }}
           >
@@ -607,11 +612,11 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
               y: isCovering ? 12 : isPeeking ? -16 : isInputFocused ? -6 : 0,
               x: isPeeking ? 8 : 0,
               rotate: isCovering ? 3 : isPeeking ? 5 : 0,
-              scaleY: [1, 1.015, 1],
+              scale: [1, 1.01, 1],
             }}
             transition={{
               y: { type: "spring", stiffness: 260, damping: 20 },
-              scaleY: {
+              scale: {
                 repeat: Infinity,
                 duration: 4.6,
                 ease: "easeInOut",
@@ -805,11 +810,11 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
                     ? 2.5
                     : 0,
               x: isPeeking ? 8 : 0,
-              scaleY: [1, 1.012, 1],
+              scale: [1, 1.01, 1],
             }}
             transition={{
               y: { type: "spring", stiffness: 280, damping: 20 },
-              scaleY: {
+              scale: {
                 repeat: Infinity,
                 duration: 3.8,
                 ease: "easeInOut",

@@ -79,6 +79,13 @@ class UserService(
         val updatedUser = userRepository.findById(userId).orElse(user)
         return userMapper.toUserProfileResponse(updatedUser)
     }
+    
+    fun completeOnboarding(userId: UUID): UserProfileResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
+        user.isOnboardingCompleted = true
+        return userMapper.toUserProfileResponse(userRepository.save(user))
+    }
 
     @Transactional
     fun setUserTitle(userId: UUID, title: String): UserProfileResponse {
