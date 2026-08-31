@@ -38,6 +38,14 @@ class RecruiterDashboardService(
     private val objectMapper: ObjectMapper
 ) {
 
+    companion object {
+        private const val WEIGHT_PLATFORM = 0.50
+        private const val WEIGHT_GITHUB = 0.30
+        private const val WEIGHT_STACKOVERFLOW = 0.10
+        private const val WEIGHT_DEVTO = 0.05
+        private const val WEIGHT_ORCID = 0.05
+    }
+
     private val logger = LoggerFactory.getLogger(RecruiterDashboardService::class.java)
 
     @Transactional(readOnly = true)
@@ -204,9 +212,17 @@ class RecruiterDashboardService(
         val stackoverflowSim = candidate.stackoverflowEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
         val portfolioSim = candidate.portfolioEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
 
-        val allScores = listOfNotNull(profileSim, platformSim, githubSim, devtoSim, orcidSim, stackoverflowSim, portfolioSim)
-        val overall = if (allScores.isNotEmpty()) {
-            allScores.maxOrNull() ?: 0.0
+        val weightedScores = listOfNotNull(
+            platformSim?.let { it to WEIGHT_PLATFORM },
+            githubSim?.let { it to WEIGHT_GITHUB },
+            stackoverflowSim?.let { it to WEIGHT_STACKOVERFLOW },
+            devtoSim?.let { it to WEIGHT_DEVTO },
+            orcidSim?.let { it to WEIGHT_ORCID }
+        )
+
+        val totalWeight = weightedScores.sumOf { it.second }
+        val overall = if (totalWeight > 0.0) {
+            weightedScores.sumOf { it.first * it.second } / totalWeight
         } else {
             0.0
         }
