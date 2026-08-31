@@ -24,10 +24,25 @@ public record OrcidEmploymentDto(
             @JsonProperty("department-name")
             String departmentName,
 
-            Organization organization
+            Organization organization,
+
+            @JsonProperty("start-date")
+            DatePart startDate,
+
+            @JsonProperty("end-date")
+            DatePart endDate
     ) {}
 
     public record Organization(
             String name
+    ) {}
+
+    public record DatePart(
+            Value year,
+            Value month
+    ) {}
+
+    public record Value(
+            String value
     ) {}
 }

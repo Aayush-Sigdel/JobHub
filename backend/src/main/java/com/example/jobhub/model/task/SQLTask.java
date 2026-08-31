@@ -25,9 +25,11 @@ public class SQLTask {
     private String title;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @OrderColumn(name = "query_order")
     private List<String> setupQueries;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @OrderColumn(name = "assertion_order")
     private List<String> assertions;
 
     @Column(columnDefinition = "TEXT")

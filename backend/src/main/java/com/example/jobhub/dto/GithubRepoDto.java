@@ -1,19 +1,17 @@
 package com.example.jobhub.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+
+
 
 public record GithubRepoDto(
         String name,
+        @JsonProperty("full_name")
+        String fullName,
         String description,
-        String language,
-
-        @JsonProperty("stargazers_count")
-        Integer stars,
-
-        @JsonProperty("forks_count")
-        Integer forks,
-
-        @JsonProperty("html_url")
-        String repoUrl
-) {
-}
+        List<String> topics,
+        Boolean fork,
+        @JsonProperty("pushed_at")
+        String pushedAt
+) {}
