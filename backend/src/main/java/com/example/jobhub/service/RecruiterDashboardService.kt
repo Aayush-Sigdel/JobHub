@@ -38,6 +38,14 @@ class RecruiterDashboardService(
     private val objectMapper: ObjectMapper
 ) {
 
+    companion object {
+        private const val WEIGHT_PLATFORM = 0.50
+        private const val WEIGHT_GITHUB = 0.30
+        private const val WEIGHT_STACKOVERFLOW = 0.10
+        private const val WEIGHT_DEVTO = 0.05
+        private const val WEIGHT_ORCID = 0.05
+    }
+
     private val logger = LoggerFactory.getLogger(RecruiterDashboardService::class.java)
 
     @Transactional(readOnly = true)
@@ -190,16 +198,6 @@ class RecruiterDashboardService(
         val stackoverflow: Double?,
         val portfolio: Double?
     )
-
-    companion object {
-        // Explicit platform weights for candidate-job semantic matching (Sum = 1.0)
-        // Profile and Portfolio are explicitly ignored (0% weight)
-        private const val WEIGHT_PLATFORM = 0.50      // Structured platform resume & skills breakdown (50%)
-        private const val WEIGHT_GITHUB = 0.30        // Code repositories, active projects & language mastery (30%)
-        private const val WEIGHT_STACKOVERFLOW = 0.10 // Practical troubleshooting & community Q&A depth (10%)
-        private const val WEIGHT_DEVTO = 0.05         // Technical communication, writing & tutorials (5%)
-        private const val WEIGHT_ORCID = 0.05         // Academic research, publications & algorithmic theory (5%)
-    }
 
     private fun computeSimilarityBreakdown(jobEmbedding: FloatArray?, candidate: User): SimilarityBreakdown {
         if (jobEmbedding == null) {
