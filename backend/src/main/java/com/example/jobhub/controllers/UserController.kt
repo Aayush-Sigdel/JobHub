@@ -251,24 +251,24 @@ class UserController(
         return ResponseEntity.noContent().build()
     }
 
-    @PostMapping("/embedding/resync")
-    fun resyncAllEmbeddings(
+    @PostMapping("/embedding/sync")
+    fun syncAllEmbeddings(
         @AuthenticationPrincipal userDetails: UserPrincipal
     ): ResponseEntity<UserEmbeddingSyncResponse> {
         val response = userService.syncAllEmbeddings(userDetails.id)
         return ResponseEntity.ok(response)
     }
 
-    @PostMapping("/embedding/resync/platform")
-    fun resyncPlatformEmbedding(
+    @PostMapping("/embedding/sync/platform")
+    fun syncPlatformEmbedding(
         @AuthenticationPrincipal userDetails: UserPrincipal
     ): ResponseEntity<PlatformEmbeddingSyncResult> {
         val response = userService.syncPlatformEmbedding(userDetails.id)
         return ResponseEntity.ok(response)
     }
 
-    @PostMapping("/embeddings/resync/{source}")
-    fun resyncEmbeddingSource(
+    @PostMapping("/embeddings/sync/{source}")
+    fun syncEmbeddingSource(
         @AuthenticationPrincipal userDetails: UserPrincipal,
         @PathVariable source: EmbeddingSource
     ): ResponseEntity<EmbeddingSyncResult> {

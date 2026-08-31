@@ -35,7 +35,6 @@ class UserService(
         return userMapper.toUserBasicInfoResponse(user)
     }
 
-    @Transactional
     fun updateUserProfile(userId: UUID, updateRequest: UpdateUserProfileRequest): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -70,14 +69,7 @@ class UserService(
             val savedLink = socialLinkRepository.save(socialLink)
             user.socialLinks.add(savedLink)
         }
-
-        user.isOnboardingCompleted = true
-        userRepository.save(user)
-
-        userEmbeddingService.syncAllEmbeddings(userId)
-
-        val updatedUser = userRepository.findById(userId).orElse(user)
-        return userMapper.toUserProfileResponse(updatedUser)
+        return userMapper.toUserProfileResponse(userRepository.save(user))
     }
     
     fun completeOnboarding(userId: UUID): UserProfileResponse {
@@ -249,13 +241,6 @@ class UserService(
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         val socialLink = userMapper.toSocialLink(createSocialLinkRequest, user)
         val savedSocialLink = socialLinkRepository.save(socialLink)
-
-        savedSocialLink.platform?.let { platform ->
-            savedSocialLink.url?.let { url ->
-                userEmbeddingService.syncSocialPlatform(userId, platform, url)
-            }
-        }
-
         return userMapper.toSocialLinkDto(savedSocialLink)
     }
 
@@ -265,13 +250,6 @@ class UserService(
         updateSocialLinkRequest.platform?.let { socialLink.platform = it }
         updateSocialLinkRequest.url?.let { socialLink.url = it }
         val updatedSocialLink = socialLinkRepository.save(socialLink)
-
-        updatedSocialLink.platform?.let { platform ->
-            updatedSocialLink.url?.let { url ->
-                userEmbeddingService.syncSocialPlatform(userId, platform, url)
-            }
-        }
-
         return userMapper.toSocialLinkDto(updatedSocialLink)
     }
 
