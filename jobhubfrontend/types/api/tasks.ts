@@ -57,6 +57,7 @@ export interface SubmitTaskRequest {
 }
 
 export interface TaskSubmissionResponse {
+  id: string;
   taskId: string;
   taskType: TaskType;
   passed: boolean;

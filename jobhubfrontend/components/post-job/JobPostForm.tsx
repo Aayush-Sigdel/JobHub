@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, ClipboardCheck, CircleCheck } from "lucide-react";
 import { toast } from "sonner";
 import { createJobAction } from "@/lib/actions/jobs";
@@ -41,11 +42,12 @@ function optionalNumber(value: string) {
   return Number.isFinite(number) ? number : undefined;
 }
 
-function TaskSelect({ label, tasks, value, onChange }: {
+function TaskSelect({ label, tasks, value, onChange, createHref }: {
   label: string;
   tasks: TaskOption[];
   value: string;
   onChange: (value: string) => void;
+  createHref: string;
 }) {
   return (
     <div className="space-y-2">
@@ -59,7 +61,10 @@ function TaskSelect({ label, tasks, value, onChange }: {
         <option value="">No {label.toLowerCase()}</option>
         {tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}
       </select>
-      {tasks.length === 0 && <p className="text-xs text-muted-foreground">No tasks are available in your assessment library.</p>}
+      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+        <span>{tasks.length === 0 ? "No tasks are available in your assessment library." : `${tasks.length} task${tasks.length === 1 ? "" : "s"} available.`}</span>
+        <Link href={createHref} className="shrink-0 font-medium text-primary hover:underline">Create task</Link>
+      </div>
     </div>
   );
 }
@@ -178,9 +183,9 @@ export function JobPostForm({ designTasks, programmingTasks, sqlTasks }: JobPost
         <section className="rounded-lg border bg-card p-5 md:p-7">
           <div className="flex gap-3"><ClipboardCheck className="mt-0.5 size-5 text-primary" /><div><h2 className="font-semibold">Evaluation setup</h2><p className="mt-1 text-sm text-muted-foreground">Attach only relevant assessments. Each selected task appears to candidates with this job.</p></div></div>
           <div className="mt-6 grid gap-5 md:grid-cols-3">
-            <TaskSelect label="Design task" tasks={designTasks} value={designTaskId} onChange={setDesignTaskId} />
-            <TaskSelect label="Programming task" tasks={programmingTasks} value={programmingTaskId} onChange={setProgrammingTaskId} />
-            <TaskSelect label="SQL task" tasks={sqlTasks} value={sqlTaskId} onChange={setSqlTaskId} />
+            <TaskSelect label="Design task" tasks={designTasks} value={designTaskId} onChange={setDesignTaskId} createHref="/post-task/css" />
+            <TaskSelect label="Programming task" tasks={programmingTasks} value={programmingTaskId} onChange={setProgrammingTaskId} createHref="/post-task/programming" />
+            <TaskSelect label="SQL task" tasks={sqlTasks} value={sqlTaskId} onChange={setSqlTaskId} createHref="/post-task/sql" />
           </div>
           <label className="mt-7 flex cursor-pointer items-start gap-3 rounded-lg border p-4">
             <input type="checkbox" checked={tabLock} onChange={(event) => setTabLock(event.target.checked)} className="mt-1 size-4" />

@@ -73,7 +73,7 @@ export function JobDetailView({ detail }: { detail: JobPostDetailResponse }) {
                 {job.hasSqlTask && <Badge variant="secondary">SQL task</Badge>}
               </div>
               <div className="mt-5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-950 dark:text-amber-200">
-                Assessment results can be completed in the current frontend, but the available API does not return a submission identifier needed to attach them to this application. Direct submission is intentionally unavailable for assessed roles.
+                Submit every required assessment before applying. Results are shared with the recruiter, including submissions that do not pass.
               </div>
             </section>
           )}
@@ -84,11 +84,19 @@ export function JobDetailView({ detail }: { detail: JobPostDetailResponse }) {
             <p className="text-sm text-muted-foreground">Compensation</p>
             <p className="mt-1 text-xl font-semibold">{formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}</p>
             <div className="mt-5 border-t pt-5">
-              {hasTasks ? (
-                <Button disabled className="w-full">Assessment application unavailable</Button>
-              ) : (
-                <JobApplicationModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} hasTasks={false} hasApplied={detail.hasApplied} />
-              )}
+              <JobApplicationModal
+                jobId={job.id}
+                jobTitle={job.title}
+                companyName={job.companyName}
+                hasApplied={detail.hasApplied}
+                tabLock={job.tabLock}
+                tabLockWarningLimit={job.tabLockWarningLimit}
+                tasks={{
+                  design: detail.designTask,
+                  programming: detail.programmingTask,
+                  sql: detail.sqlTask,
+                }}
+              />
               <p className="mt-3 text-center text-xs text-muted-foreground">{detail.applicantCount} applicant{detail.applicantCount === 1 ? "" : "s"}</p>
             </div>
           </div>
