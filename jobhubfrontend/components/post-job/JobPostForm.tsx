@@ -122,7 +122,7 @@ export function JobPostForm({ designTasks, programmingTasks, sqlTasks }: JobPost
       salaryCurrency: salaryCurrency.trim().toUpperCase() || undefined,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
       tabLock,
-      tabLockWarningLimit: tabLock ? warningLimit : undefined,
+      tabLockWarningLimit: tabLock ? (warningLimit ?? 3) : 3,
       designTaskId: designTaskId || undefined,
       programmingTaskId: programmingTaskId || undefined,
       sqlTaskId: sqlTaskId || undefined,

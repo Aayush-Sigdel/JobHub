@@ -41,10 +41,10 @@ data class CreateJobPostRequest(
     @field:Size(max = 10, message = "Salary currency code too long")
     val salaryCurrency: String? = "USD",
 
-    val tabLock: Boolean = false,
+    val tabLock: Boolean? = false,
 
     @field:Min(value = 1, message = "Tab lock warning limit must be at least 1")
-    val tabLockWarningLimit: Int = 3,
+    val tabLockWarningLimit: Int? = 3,
 
     val deadline: Instant? = null,
 
