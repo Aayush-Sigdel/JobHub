@@ -1,7 +1,4 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { fetchWithAuth } from "@/lib/service-api";
 import { ProfileHeader } from "./_components/profile-header";
 import { ProfileAbout } from "./_components/profile-about";
 import { ProfilePortfolio } from "./_components/profile-portfolio";
@@ -13,46 +10,30 @@ import { ProfileCertifications } from "./_components/profile-certifications";
 import { ProfileStrength } from "./_components/profile-strength";
 import { ProfileContact } from "./_components/profile-contact";
 import { ProfileLookingForRole } from "./_components/profile-looking-for-role";
-import { api } from "@/lib/api";
-import { Loader2 } from "lucide-react";
 
-export default function CandidateProfilePage() {
-  const { data: session } = useSession();
-  const [profile, setProfile] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface ProfileData {
+  id: string;
+  name: string;
+  email: string;
+  title?: string;
+  bio?: string;
+  location?: string;
+  imageUrl?: string;
+  isVerified?: boolean;
+  verified?: boolean;
+  contactNumbers?: string[];
+  skills?: { id: string; name: string; level: string }[];
+  experiences?: any[];
+  educations?: any[];
+  socialLinks?: { id: string; platform: string; url: string }[];
+  connectionCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const res = await api.get("/user/profile");
-      if (res.data) {
-        setProfile(res.data);
-      }
-    } catch (err) {
-      console.error("Failed to load candidate profile:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+export default async function CandidateProfilePage() {
+  const profile = await fetchWithAuth<ProfileData>("/user/profile");
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm font-medium text-muted-foreground">
-          Loading your profile...
-        </p>
-      </div>
-    );
-  }
-
-  const name = profile?.name || session?.user?.name || "";
-  // const username = profile?.email?.split("@")[0] || "";
-  const title = profile?.title || "";
-  const bio = profile?.bio || "";
   const locationObj = profile?.location
     ? {
         city: profile.location.split(",")[0]?.trim() || profile.location,
@@ -66,23 +47,19 @@ export default function CandidateProfilePage() {
         <div className="flex-1 flex flex-col gap-6">
           <ProfileHeader
             userId={profile?.id}
-            name={name}
+            name={profile?.name || ""}
             username=""
-            title={title}
+            title={profile?.title}
             location={locationObj}
-            imageUrl={profile?.imageUrl || (session?.user as any)?.imageUrl}
-            isVerified={profile?.verified ?? true}
-            onProfileUpdated={fetchProfile}
+            imageUrl={profile?.imageUrl}
+            isVerified={profile?.isVerified ?? profile?.verified ?? true}
           />
           <ProfileLookingForRole />
-          <ProfileAbout about={bio} onSaved={fetchProfile} />
+          <ProfileAbout about={profile?.bio || ""} />
           <ProfilePortfolio />
           <ProfileIntroVideo />
           <ProfileWorkExperience />
-          <ProfileSkills
-            initialSkills={profile?.skills || []}
-            onSkillsUpdated={fetchProfile}
-          />
+          <ProfileSkills initialSkills={profile?.skills || []} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ProfileEducation />
@@ -95,7 +72,6 @@ export default function CandidateProfilePage() {
             initialEmails={profile?.email ? [profile.email] : []}
             initialPhones={profile?.contactNumbers || []}
             initialSocialLinks={profile?.socialLinks || []}
-            onContactUpdated={fetchProfile}
           />
           <ProfileStrength />
         </div>

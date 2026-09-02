@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   CreditCardIcon,
   HelpCircleIcon,
   LogOutIcon,
   SettingsIcon,
-  ShareIcon,
   UserCircleIcon,
   UsersIcon,
 } from "lucide-react";
@@ -21,26 +19,20 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { api } from "@/lib/api";
 
-export function DropdownMenuIcons() {
+interface DropdownMenuIconsProps {
+  profile?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    imageUrl?: string;
+    title?: string;
+  } | null;
+}
+
+export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [profile, setProfile] = useState<any>(null);
-
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const res = await api.get("/user/profile");
-        if (res.data) {
-          setProfile(res.data);
-        }
-      } catch (err) {
-        // fallback to session
-      }
-    }
-    loadProfile();
-  }, []);
 
   const user = session?.user;
   const userName = profile?.name || user?.name || "Candidate";

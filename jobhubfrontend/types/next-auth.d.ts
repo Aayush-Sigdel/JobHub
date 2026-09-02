@@ -10,6 +10,7 @@ declare module "next-auth" {
       imageUrl?: string;
       onboardingCompleted?: boolean;
       verified?: boolean;
+      employer?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -19,6 +20,7 @@ declare module "next-auth" {
     imageUrl?: string;
     onboardingCompleted?: boolean;
     verified?: boolean;
+    employer?: boolean;
   }
 }
 
@@ -36,6 +38,7 @@ declare module "next-auth/jwt" {
       imageUrl?: string | null;
       onboardingCompleted?: boolean;
       verified?: boolean;
+      employer?: boolean;
     };
   }
 }

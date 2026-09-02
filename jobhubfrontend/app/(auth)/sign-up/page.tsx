@@ -60,6 +60,7 @@ export default function SignUpPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting, isSubmitted, touchedFields },
   } = useForm<RegisterFormInput>({
     resolver: zodResolver(registerSchema),
@@ -188,13 +189,31 @@ export default function SignUpPage() {
           </div>
 
           {/* Header */}
-          <div className="text-center mb-7">
+          <div className="text-center mb-6">
             <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight text-neutral-900 mb-2">
               Create an account
             </h1>
             <p className="text-base text-neutral-500 font-medium">
-              Start finding your dream job with JobHub
+              Join JobHub to {watch("employer") ? "hire top talent" : "find your dream job"}
             </p>
+          </div>
+          
+          {/* Account Type Toggle */}
+          <div className="flex bg-neutral-100 p-1 rounded-xl mb-6 font-semibold text-sm">
+            <button
+              type="button"
+              onClick={() => setValue("employer", false)}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${!watch("employer") ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+            >
+              Candidate
+            </button>
+            <button
+              type="button"
+              onClick={() => setValue("employer", true)}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${watch("employer") ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+            >
+              Employer
+            </button>
           </div>
 
           {/* Form */}

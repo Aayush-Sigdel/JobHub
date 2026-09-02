@@ -1,3 +1,7 @@
+// lib/api.ts
+// WARNING: Only use this for CLIENT-SIDE real-time operations (e.g., tab-switch telemetry).
+// For all other API calls, use fetchWithAuth (reads) or Server Actions (writes).
+
 import axios from "axios";
 import { getSession } from "next-auth/react";
 

@@ -117,6 +117,7 @@ export const authOptions: NextAuthOptions = {
               name: user.name,
               imageUrl: (user as any).imageUrl || user.image,
               onboardingCompleted: (user as any).onboardingCompleted ?? false,
+              employer: (user as any).employer ?? false,
               verified: (user as any).verified ?? (user as any).isVerified ?? false,
             },
           };
@@ -133,6 +134,7 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             imageUrl: user.image,
             onboardingCompleted: (user as any).onboardingCompleted ?? false,
+            employer: (user as any).employer ?? false,
             verified: true, // Google emails are pre-verified
           },
         };

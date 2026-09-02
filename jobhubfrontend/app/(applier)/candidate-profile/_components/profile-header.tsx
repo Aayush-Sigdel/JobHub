@@ -3,12 +3,13 @@
 import { Share, Eye, Pencil, Check, Loader2 } from "lucide-react";
 import { User, Language, Location } from "@/types/user";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { ImagePopover } from "./image-popover";
 import { LocationPopover } from "./location-popover";
 import { LanguagesPopover } from "./languages-popover";
-import { api } from "@/lib/api";
+import { updateProfileAction } from "@/lib/actions/user";
 
 interface ProfileHeaderProps {
   userId?: string;
@@ -19,7 +20,6 @@ interface ProfileHeaderProps {
   location?: Location;
   languages?: Language[];
   isVerified?: boolean;
-  onProfileUpdated?: () => void;
 }
 
 export function ProfileHeader({
@@ -31,8 +31,8 @@ export function ProfileHeader({
   location,
   languages,
   isVerified,
-  onProfileUpdated,
 }: ProfileHeaderProps) {
+  const router = useRouter();
   const [profileImage, setProfileImage] = useState(imageUrl || "");
   const [profileName, setProfileName] = useState(name);
   const [profileUsername, setProfileUsername] = useState(username);
@@ -86,16 +86,14 @@ export function ProfileHeader({
           ? `${profileLocation.city}${profileLocation.country ? ", " + profileLocation.country : ""}`
           : undefined;
 
-      await api.put("/user/profile", {
+      await updateProfileAction({
         name: updates.name !== undefined ? updates.name : profileName,
         title: updates.title !== undefined ? updates.title : profileTitle,
         imageUrl: updates.imageUrl !== undefined ? updates.imageUrl : profileImage,
         location: locString,
       });
 
-      if (onProfileUpdated) {
-        onProfileUpdated();
-      }
+      router.refresh();
     } catch (err) {
       console.error("Failed to save profile header changes:", err);
     } finally {
@@ -203,37 +201,6 @@ export function ProfileHeader({
                 <Pencil className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </h1>
             )}
-
-            {/* Username (commented out for now) */}
-            {/*
-            {isEditingUsername ? (
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground font-medium">@</span>
-                <Input
-                  autoFocus
-                  value={tempUsername}
-                  onChange={(e) => setTempUsername(e.target.value)}
-                  onBlur={() => {
-                    setProfileUsername(tempUsername);
-                    setIsEditingUsername(false);
-                  }}
-                  onKeyDown={handleUsernameKeyDown}
-                  className="h-7 w-32 text-sm bg-card border-input focus-visible:ring-ring px-2"
-                />
-              </div>
-            ) : (
-              <span
-                className="text-muted-foreground font-medium text-sm ml-2 flex items-center gap-1 group cursor-pointer"
-                onClick={() => {
-                  setTempUsername(profileUsername);
-                  setIsEditingUsername(true);
-                }}
-              >
-                @{profileUsername}
-                <Pencil className="w-3 h-3 text-muted-foreground/50 group-hover:text-muted-foreground opacity-0 group-hover:opacity-100 transition-all" />
-              </span>
-            )}
-            */}
           </div>
 
           <div className="h-6 flex items-center">
