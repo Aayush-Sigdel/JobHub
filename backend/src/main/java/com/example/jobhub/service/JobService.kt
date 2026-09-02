@@ -395,6 +395,9 @@ class JobService(
             throw ApiException("You have already applied for this job", HttpStatus.CONFLICT)
         }
 
+        if (job.designTask != null && request.designSubmissionId == null) {
+            throw ApiException("Design task submission is required for this job", HttpStatus.BAD_REQUEST)
+        }
         val designSubmission = request.designSubmissionId?.let { submissionId ->
             val submission = taskSubmissionRepository.findById(submissionId).orElseThrow {
                 ApiException("Design submission not found: $submissionId", HttpStatus.BAD_REQUEST)
@@ -408,6 +411,9 @@ class JobService(
             submission
         }
 
+        if (job.programmingTask != null && request.programmingSubmissionId == null) {
+            throw ApiException("Programming task submission is required for this job", HttpStatus.BAD_REQUEST)
+        }
         val programmingSubmission = request.programmingSubmissionId?.let { submissionId ->
             val submission = taskSubmissionRepository.findById(submissionId).orElseThrow {
                 ApiException("Programming submission not found: $submissionId", HttpStatus.BAD_REQUEST)
@@ -421,6 +427,9 @@ class JobService(
             submission
         }
 
+        if (job.sqlTask != null && request.sqlSubmissionId == null) {
+            throw ApiException("SQL task submission is required for this job", HttpStatus.BAD_REQUEST)
+        }
         val sqlSubmission = request.sqlSubmissionId?.let { submissionId ->
             val submission = taskSubmissionRepository.findById(submissionId).orElseThrow {
                 ApiException("SQL submission not found: $submissionId", HttpStatus.BAD_REQUEST)
