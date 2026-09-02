@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    turbopackMemoryLimit: 2048,
+    webpackMemoryOptimizations: true,
+    preloadEntriesOnStart: false,
+  },
 };
 
 export default nextConfig;

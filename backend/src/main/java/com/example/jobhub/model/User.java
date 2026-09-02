@@ -40,12 +40,15 @@ public class User {
     @Column(nullable = false)
     private boolean onboardingCompleted = false;
 
+    @Column(length = 500)
     private String title;
 
     private boolean verified = false;
 
+    @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(length = 500)
     private String location;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -57,6 +60,7 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialLink> socialLinks = new ArrayList<>();
 
+    @Column(length = 1000)
     private String imageUrl;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -21,7 +21,7 @@ import {
 import { AuthCharacters, AuthFieldType } from "@/components/auth/auth-characters";
 import { Location } from "@/types/user";
 import { LocationPopover } from "@/app/(applier)/candidate-profile/_components/location-popover";
-import { api } from "@/lib/api";
+import { updateProfileAction, completeOnboardingAction } from "@/lib/actions/user";
 import { getSession, useSession } from "next-auth/react";
 
 const GithubIcon = () => (
@@ -263,8 +263,8 @@ function OnboardingContent() {
       const contactNumbers = contactNumber.trim() ? [contactNumber.trim()] : undefined;
 
       // 1. Update user profile with real bio and full name from signup
-      await api.put("/user/profile", {
-        name: fullName.trim() || initialName || session?.user?.name,
+      await updateProfileAction({
+        name: fullName.trim() || initialName || session?.user?.name || undefined,
         title: title.trim() || undefined,
         bio: bio.trim() || undefined,
         location: profileLocation ? `${profileLocation.city}, ${profileLocation.country}` : undefined,
@@ -274,7 +274,7 @@ function OnboardingContent() {
       });
 
       // 2. Mark onboarding completed in database
-      await api.post("/user/profile/complete-onboarding");
+      await completeOnboardingAction();
 
       // 3. Update local session token so middleware allows /home
       if (update) {
@@ -286,14 +286,23 @@ function OnboardingContent() {
         });
       }
 
-      // 4. Directly navigate to /home dashboard
-      window.location.href = "/home";
+      // 4. Directly navigate to appropriate dashboard
+      if (currentSession?.user?.employer) {
+        window.location.href = "/dashboard";
+      } else {
+        window.location.href = "/home";
+      }
     } catch (error: any) {
       console.error("Failed to complete onboarding:", error);
-      if (
-        error.response?.status === 401 ||
-        error.response?.status === 403
-      ) {
+      const errorMessage = error?.message || "";
+      const isAuthError =
+        errorMessage.includes("401") ||
+        errorMessage.includes("403") ||
+        errorMessage.includes("Unauthorized") ||
+        error?.response?.status === 401 ||
+        error?.response?.status === 403;
+
+      if (isAuthError) {
         setAuthError(
           "Your session has expired. Redirecting to sign in...",
         );
@@ -302,10 +311,7 @@ function OnboardingContent() {
         }, 1500);
         return;
       }
-      setAuthError(
-        error.response?.data?.message ||
-          "Failed to save profile. Please check your connection and try again.",
-      );
+      setAuthError("Failed to save profile. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

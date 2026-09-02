@@ -18,7 +18,11 @@ const links = [
   { name: "Applications", href: "#" },
 ];
 
-const NavigationBar = () => {
+interface NavigationBarProps {
+  profile?: any;
+}
+
+const NavigationBar = ({ profile }: NavigationBarProps) => {
   const { data: session, status } = useSession();
   const isUserLoggedIn = status === "authenticated";
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -56,7 +60,7 @@ const NavigationBar = () => {
           <div className="flex items-center gap-3 border-l border-border dark:border-slate-800 pl-4">
             <ThemeToggle variant="circle" />
             {isUserLoggedIn ? (
-              <DropdownMenuProfileIcons />
+              <DropdownMenuProfileIcons profile={profile} />
             ) : (
               <div className="flex items-center justify-center gap-2">
                 <Link href="/sign-in">

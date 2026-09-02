@@ -8,5 +8,6 @@ data class LoginResponse(
     val id: UUID,
     val name: String,
     val imageUrl: String,
-    val onboardingCompleted: Boolean
+    val onboardingCompleted: Boolean,
+    val employer: Boolean
 )

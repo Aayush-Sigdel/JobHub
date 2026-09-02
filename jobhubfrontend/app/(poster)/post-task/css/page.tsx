@@ -17,6 +17,7 @@ import TargetDefinitionForm, {
   CreationMode,
 } from "@/components/task/post/TargetDefinitionForm";
 import CandidateLiveSimulation from "@/components/task/post/CandidateLiveSimulation";
+import { createDesignTaskAction } from "@/lib/actions/tasks";
 
 export default function PostCssTaskPage() {
   const router = useRouter();
@@ -215,7 +216,6 @@ export default function PostCssTaskPage() {
     }
   };
 
-  // UI-only publish handler
   const handlePublish = async () => {
     if (!title.trim()) {
       toast.error("Please enter a challenge title.");
@@ -250,11 +250,23 @@ export default function PostCssTaskPage() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.set("title", title.trim());
+      formData.set("image", fileToSubmit);
+      formData.set("minimumMatchingScore", String(minimumMatchingScore));
+      formData.set("instructions", instructions.trim());
+      formData.set("skillLevel", skillLevel);
+      formData.set("scope", scope);
+
+      await createDesignTaskAction(formData);
       setIsSubmitting(false);
       toast.success(`CSS Battle Challenge "${title}" published successfully!`);
       router.push("/manage-jobs");
-    }, 600);
+    } catch (error) {
+      setIsSubmitting(false);
+      toast.error(error instanceof Error ? error.message : "Unable to publish the challenge.");
+    }
   };
 
   return (

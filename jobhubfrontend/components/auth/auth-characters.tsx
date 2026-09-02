@@ -529,7 +529,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
             {/* Left Eye */}
             <g>
               <circle cx="138" cy="120" r="10" fill="#FFFFFF" />
-              <motion.circle
+              <motion.circle cx={138} cy={120} r={4.8}
                 animate={{
                   cx: isBlinking || isCovering ? 138 : 138 + pupil.x,
                   cy: isBlinking || isCovering ? 120 : 120 + pupil.y,
@@ -543,7 +543,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
             {/* Right Eye */}
             <g>
               <circle cx="206" cy="120" r="10" fill="#FFFFFF" />
-              <motion.circle
+              <motion.circle cx={206} cy={120} r={4.8}
                 animate={{
                   cx: isBlinking || isCovering ? 206 : 206 + pupil.x,
                   cy: isBlinking || isCovering ? 120 : 120 + pupil.y,
@@ -648,7 +648,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
                   strokeLinecap="round"
                 />
               ) : (
-                <motion.circle
+                <motion.circle cx={270} cy={205} r={5.2}
                   animate={{
                     cx: isBlinking ? 270 : 270 + pupil.x,
                     cy: isBlinking ? 205 : 205 + pupil.y,
@@ -674,7 +674,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
                   strokeLinecap="round"
                 />
               ) : (
-                <motion.circle
+                <motion.circle cx={304} cy={205} r={5.2}
                   animate={{
                     cx: isBlinking ? 304 : 304 + pupil.x,
                     cy: isBlinking ? 205 : 205 + pupil.y,
@@ -712,7 +712,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
 
             {/* Left Eye */}
             <g>
-              <motion.circle
+              <motion.circle cx={150} cy={418} r={6}
                 animate={{
                   cx: isCovering ? 150 : 150 + pupil.x * 0.75,
                   cy: isCovering ? 418 : 418 + pupil.y * 0.75,
@@ -748,7 +748,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
 
             {/* Right Eye */}
             <g>
-              <motion.circle
+              <motion.circle cx={220} cy={418} r={6}
                 animate={{
                   cx: isCovering ? 220 : 220 + pupil.x * 0.75,
                   cy: isCovering ? 418 : 418 + pupil.y * 0.75,
@@ -842,7 +842,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
                 />
               ) : (
                 <>
-                  <motion.circle
+                  <motion.circle cx={349} cy={310} r={5.2}
                     animate={{
                       cx: isBlinking ? 349 : 349 + pupil.x * 0.6,
                       cy: isBlinking ? 310 : 310 + pupil.y * 0.6,

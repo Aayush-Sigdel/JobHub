@@ -13,9 +13,15 @@ import {
   BookOpen,
   Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "motion/react";
-import { api } from "@/lib/api";
+import {
+  addContactNumberAction,
+  deleteContactNumberAction,
+  addSocialLinkAction,
+  deleteSocialLinkAction,
+} from "@/lib/actions/user";
 
 interface SocialLinkItem {
   id?: string;
@@ -27,15 +33,14 @@ interface ProfileContactProps {
   initialEmails?: string[];
   initialPhones?: string[];
   initialSocialLinks?: SocialLinkItem[];
-  onContactUpdated?: () => void;
 }
 
 export function ProfileContact({
   initialEmails,
   initialPhones,
   initialSocialLinks,
-  onContactUpdated,
 }: ProfileContactProps) {
+  const router = useRouter();
   const [emails, setEmails] = useState<string[]>(initialEmails || []);
   const [phones, setPhones] = useState<string[]>(initialPhones || []);
   const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(
@@ -67,11 +72,11 @@ export function ProfileContact({
 
     try {
       setIsLoading(true);
-      await api.post("/user/profile/contact-number", { contactNumber: trimmed });
+      await addContactNumberAction(trimmed);
       setPhones([...phones, trimmed]);
       setNewPhone("");
       setIsAddPhoneOpen(false);
-      if (onContactUpdated) onContactUpdated();
+      router.refresh();
     } catch (err) {
       console.error("Failed to add contact number:", err);
     } finally {
@@ -81,11 +86,9 @@ export function ProfileContact({
 
   const removePhone = async (phoneToDelete: string) => {
     try {
-      await api.delete("/user/profile/contact-number", {
-        data: { contactNumber: phoneToDelete },
-      });
+      await deleteContactNumberAction(phoneToDelete);
       setPhones(phones.filter((p) => p !== phoneToDelete));
-      if (onContactUpdated) onContactUpdated();
+      router.refresh();
     } catch (err) {
       console.error("Failed to remove contact number:", err);
     }
@@ -98,19 +101,21 @@ export function ProfileContact({
     try {
       setIsLoading(true);
       const platformKey = newPlatform.toUpperCase();
-      const res = await api.post("/user/profile/social-links", {
+      const created = await addSocialLinkAction({
         platform: platformKey,
         url: trimmedUrl,
       });
-      const created = res.data || {
-        id: Math.random().toString(),
-        platform: newPlatform,
-        url: trimmedUrl,
-      };
-      setSocialLinks([...socialLinks, created]);
+      const finalLink = created?.id
+        ? created
+        : {
+            id: Math.random().toString(),
+            platform: newPlatform,
+            url: trimmedUrl,
+          };
+      setSocialLinks([...socialLinks, finalLink]);
       setNewUrl("");
       setIsAddLinkOpen(false);
-      if (onContactUpdated) onContactUpdated();
+      router.refresh();
     } catch (err) {
       console.error("Failed to add social link:", err);
     } finally {
@@ -121,12 +126,12 @@ export function ProfileContact({
   const removeSocialLink = async (linkItem: SocialLinkItem, index: number) => {
     try {
       if (linkItem.id) {
-        await api.delete(`/user/profile/social-links/${linkItem.id}`);
+        await deleteSocialLinkAction(linkItem.id);
       }
       const updated = [...socialLinks];
       updated.splice(index, 1);
       setSocialLinks(updated);
-      if (onContactUpdated) onContactUpdated();
+      router.refresh();
     } catch (err) {
       console.error("Failed to delete social link:", err);
     }

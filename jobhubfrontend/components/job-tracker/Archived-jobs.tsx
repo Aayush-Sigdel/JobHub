@@ -18,7 +18,6 @@ type ArchivedProps = {
   easyApply?: boolean;
 };
 import Image from "next/image";
-import logo from "../navigation/logo";
 
 export default function Archived({
   title,

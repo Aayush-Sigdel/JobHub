@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, X, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -10,7 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { api } from "@/lib/api";
+import {
+  createSkillAction,
+  updateSkillAction,
+  deleteSkillAction,
+} from "@/lib/actions/user";
 
 interface SkillItem {
   id?: string;
@@ -20,10 +25,10 @@ interface SkillItem {
 
 interface ProfileSkillsProps {
   initialSkills?: SkillItem[];
-  onSkillsUpdated?: () => void;
 }
 
-export function ProfileSkills({ initialSkills, onSkillsUpdated }: ProfileSkillsProps) {
+export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
+  const router = useRouter();
   const [skills, setSkills] = useState<SkillItem[]>(initialSkills || []);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -62,7 +67,7 @@ export function ProfileSkills({ initialSkills, onSkillsUpdated }: ProfileSkillsP
 
       if (editIndex !== null && skills[editIndex]?.id) {
         const skillId = skills[editIndex].id;
-        await api.put(`/user/profile/skills/${skillId}`, {
+        await updateSkillAction(skillId, {
           name: formData.name.trim(),
           level: normalizedLevel,
         });
@@ -70,21 +75,23 @@ export function ProfileSkills({ initialSkills, onSkillsUpdated }: ProfileSkillsP
         updated[editIndex] = { ...formData, id: skillId };
         setSkills(updated);
       } else {
-        const res = await api.post("/user/profile/skills", {
+        const createdSkill = await createSkillAction({
           name: formData.name.trim(),
           level: normalizedLevel,
         });
-        const createdSkill = res.data || {
-          id: Math.random().toString(),
-          name: formData.name.trim(),
-          level: formData.level,
-        };
-        setSkills([createdSkill, ...skills]);
+        const finalSkill = createdSkill?.id
+          ? createdSkill
+          : {
+              id: Math.random().toString(),
+              name: formData.name.trim(),
+              level: formData.level,
+            };
+        setSkills([finalSkill, ...skills]);
       }
 
       setIsAddOpen(false);
       setEditIndex(null);
-      if (onSkillsUpdated) onSkillsUpdated();
+      router.refresh();
     } catch (err) {
       console.error("Failed to save skill:", err);
     } finally {
@@ -96,13 +103,13 @@ export function ProfileSkills({ initialSkills, onSkillsUpdated }: ProfileSkillsP
     const skillToDelete = skills[index];
     try {
       if (skillToDelete.id) {
-        await api.delete(`/user/profile/skills/${skillToDelete.id}`);
+        await deleteSkillAction(skillToDelete.id);
       }
       const updated = [...skills];
       updated.splice(index, 1);
       setSkills(updated);
       if (editIndex === index) setEditIndex(null);
-      if (onSkillsUpdated) onSkillsUpdated();
+      router.refresh();
     } catch (err) {
       console.error("Failed to delete skill:", err);
     }

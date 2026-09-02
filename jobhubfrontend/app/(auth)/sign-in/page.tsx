@@ -96,7 +96,12 @@ function SignInContent() {
       return;
     }
 
-    router.push("/home");
+    const session = await getSession();
+    if (session?.user?.employer) {
+      router.push("/dashboard");
+    } else {
+      router.push("/home");
+    }
     router.refresh();
   };
 

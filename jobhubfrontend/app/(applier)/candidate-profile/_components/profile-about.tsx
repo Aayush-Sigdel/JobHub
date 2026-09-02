@@ -1,20 +1,21 @@
 "use client";
 import { Pencil, Check, Copy, Plus, Info, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { api } from "@/lib/api";
+import { updateBioAction } from "@/lib/actions/user";
 
 interface ProfileAboutProps {
   about?: string;
-  onSaved?: (bio: string) => void;
 }
 
-export function ProfileAbout({ about = "", onSaved }: ProfileAboutProps) {
+export function ProfileAbout({ about = "" }: ProfileAboutProps) {
+  const router = useRouter();
+  const [isSaving, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [aboutText, setAboutText] = useState(about);
   const [draftText, setDraftText] = useState(aboutText);
   const [copied, setCopied] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   const MAX_CHARS = 500;
 
@@ -28,21 +29,18 @@ export function ProfileAbout({ about = "", onSaved }: ProfileAboutProps) {
     setIsEditing(true);
   };
 
-  const handleSave = async () => {
-    try {
-      setIsSaving(true);
-      const cleanBio = draftText.trim();
-      await api.put("/user/profile/bio", { bio: cleanBio });
-      setAboutText(cleanBio);
-      setIsEditing(false);
-      if (onSaved) {
-        onSaved(cleanBio);
+  const handleSave = () => {
+    const cleanBio = draftText.trim();
+    startTransition(async () => {
+      try {
+        await updateBioAction(cleanBio);
+        setAboutText(cleanBio);
+        setIsEditing(false);
+        router.refresh();
+      } catch (err) {
+        console.error("Failed to save bio:", err);
       }
-    } catch (err) {
-      console.error("Failed to save bio:", err);
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
   const handleCancel = () => {
