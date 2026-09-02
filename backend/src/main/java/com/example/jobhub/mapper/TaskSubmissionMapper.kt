@@ -9,6 +9,7 @@ class TaskSubmissionMapper {
 
     fun toTaskSubmissionResponse(taskSubmission: TaskSubmission): TaskSubmissionResponse {
         return TaskSubmissionResponse(
+            id = taskSubmission.id,
             taskId = taskSubmission.taskId,
             taskType = taskSubmission.taskType,
             passed = taskSubmission.isPassed,

@@ -98,13 +98,18 @@ class ProgrammingTaskService(
         val results = try {
             judgeService.judge(task, submitTask.code, submitTask.language, testCases)
         } catch (e: Exception) {
-            return TaskSubmissionResponse(
-                taskId = task.id,
-                taskType = taskType,
-                passed = false,
-                achievedScore = 0.0,
-                requiredScore = totalTestCases.toDouble(),
-                message = e.message
+            val taskSubmission = TaskSubmission(
+                task.id,
+                taskType,
+                submitTask.code,
+                false,
+                0.0,
+                totalTestCases.toDouble(),
+                e.message,
+                user(userId)
+            )
+            return taskSubmissionMapper.toTaskSubmissionResponse(
+                taskSubmissionRepository.save(taskSubmission)
             )
         }
         val passedCount = results.count { it.passed }
