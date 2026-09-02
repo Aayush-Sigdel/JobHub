@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Mail,
   Code,
@@ -12,6 +12,7 @@ import {
   Phone,
   BookOpen,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import {
   addContactNumberAction,
   deleteContactNumberAction,
   addSocialLinkAction,
+  updateSocialLinkAction,
   deleteSocialLinkAction,
 } from "@/lib/actions/user";
 
@@ -41,7 +43,7 @@ export function ProfileContact({
   initialSocialLinks,
 }: ProfileContactProps) {
   const router = useRouter();
-  const [emails, setEmails] = useState<string[]>(initialEmails || []);
+  const [emails] = useState<string[]>(initialEmails || []);
   const [phones, setPhones] = useState<string[]>(initialPhones || []);
   const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(
     initialSocialLinks || [],
@@ -50,21 +52,10 @@ export function ProfileContact({
   const [isAddPhoneOpen, setIsAddPhoneOpen] = useState(false);
   const [newPhone, setNewPhone] = useState("");
   const [isAddLinkOpen, setIsAddLinkOpen] = useState(false);
+  const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null);
   const [newPlatform, setNewPlatform] = useState("LinkedIn");
   const [newUrl, setNewUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (initialEmails) setEmails(initialEmails);
-  }, [initialEmails]);
-
-  useEffect(() => {
-    if (initialPhones) setPhones(initialPhones);
-  }, [initialPhones]);
-
-  useEffect(() => {
-    if (initialSocialLinks) setSocialLinks(initialSocialLinks);
-  }, [initialSocialLinks]);
 
   const addPhone = async () => {
     const trimmed = newPhone.trim();
@@ -94,33 +85,67 @@ export function ProfileContact({
     }
   };
 
-  const addSocialLink = async () => {
+  const saveSocialLink = async () => {
     const trimmedUrl = newUrl.trim();
     if (!trimmedUrl) return;
 
     try {
       setIsLoading(true);
       const platformKey = newPlatform.toUpperCase();
-      const created = await addSocialLinkAction({
-        platform: platformKey,
-        url: trimmedUrl,
-      });
-      const finalLink = created?.id
-        ? created
-        : {
-            id: Math.random().toString(),
-            platform: newPlatform,
-            url: trimmedUrl,
-          };
-      setSocialLinks([...socialLinks, finalLink]);
+      if (editingLinkIndex !== null && socialLinks[editingLinkIndex]?.id) {
+        const currentLink = socialLinks[editingLinkIndex];
+        const updatedLink = await updateSocialLinkAction(currentLink.id!, {
+          platform: platformKey,
+          url: trimmedUrl,
+        });
+        const updatedLinks = [...socialLinks];
+        updatedLinks[editingLinkIndex] = updatedLink?.id
+          ? updatedLink
+          : { ...currentLink, platform: platformKey, url: trimmedUrl };
+        setSocialLinks(updatedLinks);
+      } else {
+        const created = await addSocialLinkAction({
+          platform: platformKey,
+          url: trimmedUrl,
+        });
+        const finalLink = created?.id
+          ? created
+          : {
+              id: Math.random().toString(),
+              platform: platformKey,
+              url: trimmedUrl,
+            };
+        setSocialLinks([...socialLinks, finalLink]);
+      }
       setNewUrl("");
       setIsAddLinkOpen(false);
+      setEditingLinkIndex(null);
       router.refresh();
     } catch (err) {
       console.error("Failed to add social link:", err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const openAddSocialLink = () => {
+    setEditingLinkIndex(null);
+    setNewPlatform("LinkedIn");
+    setNewUrl("");
+    setIsAddLinkOpen(true);
+  };
+
+  const openEditSocialLink = (link: SocialLinkItem, index: number) => {
+    setEditingLinkIndex(index);
+    setNewPlatform(link.platform);
+    setNewUrl(link.url);
+    setIsAddLinkOpen(true);
+  };
+
+  const closeSocialLinkForm = () => {
+    setEditingLinkIndex(null);
+    setNewUrl("");
+    setIsAddLinkOpen(false);
   };
 
   const removeSocialLink = async (linkItem: SocialLinkItem, index: number) => {
@@ -263,7 +288,7 @@ export function ProfileContact({
           <h2 className="text-[17px] font-bold text-foreground">Social Links</h2>
           {!isAddLinkOpen && (
             <button
-              onClick={() => setIsAddLinkOpen(true)}
+              onClick={openAddSocialLink}
               className="text-primary hover:text-primary/80 p-1 rounded-md hover:bg-primary/10 transition-colors cursor-pointer"
             >
               <Plus className="w-5 h-5" />
@@ -288,6 +313,15 @@ export function ProfileContact({
               >
                 {link.platform}
               </a>
+              {link.id && (
+                <button
+                  onClick={() => openEditSocialLink(link, idx)}
+                  className="p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                  title="Edit link"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
               <button
                 onClick={() => removeSocialLink(link, idx)}
                 className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-destructive/10 text-destructive rounded-md transition-all cursor-pointer"
@@ -332,7 +366,7 @@ export function ProfileContact({
                 <button
                   type="button"
                   disabled={isLoading}
-                  onClick={() => setIsAddLinkOpen(false)}
+                  onClick={closeSocialLinkForm}
                   className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
@@ -340,11 +374,11 @@ export function ProfileContact({
                 <button
                   type="button"
                   disabled={isLoading}
-                  onClick={addSocialLink}
+                  onClick={saveSocialLink}
                   className="px-4 py-2 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Save
+                  {editingLinkIndex !== null ? "Update" : "Save"}
                 </button>
               </div>
             </motion.div>

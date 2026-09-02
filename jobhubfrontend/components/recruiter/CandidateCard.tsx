@@ -5,9 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { getSimilaritySources, semanticMatchPercentage } from "@/lib/semantic-match";
 
 export default function CandidateCard({ candidate }: { candidate: CandidateDashboardResponse }) {
-  const matchColor = candidate.matchPercentage > 75 ? "text-green-500" : candidate.matchPercentage > 50 ? "text-yellow-500" : "text-muted-foreground";
+  const matchPercentage = semanticMatchPercentage(candidate.overallSimilarity) ?? 0;
+  const evidenceSources = getSimilaritySources(candidate);
+  const matchColor = matchPercentage > 75 ? "text-green-500" : matchPercentage > 50 ? "text-yellow-500" : "text-muted-foreground";
 
   return (
     <Card className="hover:border-primary/50 transition-colors bg-card shadow-sm">
@@ -24,16 +27,21 @@ export default function CandidateCard({ candidate }: { candidate: CandidateDashb
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className={`text-sm font-bold ${matchColor}`}>{candidate.matchPercentage}%</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Match</span>
+            <span className={`text-sm font-bold ${matchColor}`}>{matchPercentage}%</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Semantic fit</span>
           </div>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between text-xs items-center">
-            <span className="text-muted-foreground">Skills Match</span>
-            <Progress value={candidate.overallSimilarity * 100} className="h-1.5 w-24" />
+            <span className="text-muted-foreground">Evidence {evidenceSources.length}/6 sources</span>
+            <Progress value={matchPercentage} className="h-1.5 w-24" />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
+            {evidenceSources.length <= 1 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                Limited evidence
+              </Badge>
+            )}
             {candidate.allTasksPassed ? (
               <Badge variant="outline" className="bg-green-50/50 text-green-700 border-green-200 hover:bg-green-50/50 text-[10px] px-1.5 py-0">
                 <CheckCircle2 className="w-3 h-3 mr-1" /> Passed All

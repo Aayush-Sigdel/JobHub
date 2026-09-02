@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
@@ -64,11 +65,16 @@ const experienceSchema = z
 
 type ExperienceFormValues = z.infer<typeof experienceSchema>;
 
+function toInstant(date: string): string {
+  return new Date(`${date}T00:00:00.000Z`).toISOString();
+}
+
 export function ProfileWorkExperience({
   experiences = [],
 }: {
   experiences?: ExperienceDto[];
 }) {
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -84,11 +90,17 @@ export function ProfileWorkExperience({
       description: "",
     },
   });
+  const isCurrentRole = useWatch({
+    control: form.control,
+    name: "isCurrentRole",
+  });
 
   const onSubmit = (data: ExperienceFormValues) => {
     const payload = {
       ...data,
-      endDate: data.isCurrentRole ? undefined : data.endDate || undefined,
+      startDate: toInstant(data.startDate),
+      endDate:
+        data.isCurrentRole || !data.endDate ? undefined : toInstant(data.endDate),
     };
 
     startTransition(async () => {
@@ -101,7 +113,8 @@ export function ProfileWorkExperience({
           toast.success("Experience added successfully");
         }
         closeDialog();
-      } catch (error) {
+        router.refresh();
+      } catch {
         toast.error("Failed to save experience");
       }
     });
@@ -126,7 +139,8 @@ export function ProfileWorkExperience({
         try {
           await deleteExperienceAction(id);
           toast.success("Experience deleted successfully");
-        } catch (error) {
+          router.refresh();
+        } catch {
           toast.error("Failed to delete experience");
         }
       });
@@ -147,9 +161,9 @@ export function ProfileWorkExperience({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="flex items-center gap-2 text-xl font-bold text-foreground">
           <Briefcase className="w-5 h-5 text-primary" />
           Work Experience
         </h2>
@@ -165,21 +179,21 @@ export function ProfileWorkExperience({
 
       <div className="space-y-6">
         {experiences.length === 0 ? (
-          <p className="text-gray-500 text-sm">No work experience added yet.</p>
+          <p className="text-sm text-muted-foreground">No work experience added yet.</p>
         ) : (
           experiences.map((exp: ExperienceDto) => (
             <div
               key={exp.id}
-              className="group relative border-l-2 border-gray-200 pl-4 pb-6 last:pb-0"
+              className="group relative border-l-2 border-border pl-4 pb-6 last:pb-0"
             >
-              <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-primary" />
+              <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 border-primary bg-card" />
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-900">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {exp.title}
                   </h3>
-                  <p className="text-gray-600 font-medium">{exp.company}</p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                  <p className="font-medium text-foreground/80">{exp.company}</p>
+                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
                     <span>
                       {exp.startDate
@@ -194,7 +208,7 @@ export function ProfileWorkExperience({
                     </span>
                   </div>
                   {exp.description && (
-                    <p className="text-gray-600 mt-3 text-sm whitespace-pre-wrap">
+                    <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
                       {exp.description}
                     </p>
                   )}
@@ -285,7 +299,7 @@ export function ProfileWorkExperience({
                         <Input
                           type="date"
                           {...field}
-                          disabled={form.watch("isCurrentRole")}
+                          disabled={isCurrentRole}
                         />
                       </FormControl>
                       <FormMessage />

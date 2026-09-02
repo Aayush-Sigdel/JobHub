@@ -1,6 +1,6 @@
 "use client";
 import { Pencil, Check, Copy, Plus, Info, Loader2 } from "lucide-react";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { updateBioAction } from "@/lib/actions/user";
@@ -18,11 +18,6 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
   const [copied, setCopied] = useState(false);
 
   const MAX_CHARS = 500;
-
-  useEffect(() => {
-    setAboutText(about);
-    setDraftText(about);
-  }, [about]);
 
   const handleEdit = () => {
     setDraftText(aboutText);

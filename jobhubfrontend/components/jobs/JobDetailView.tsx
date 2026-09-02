@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { LinkedInEasyApplyModal } from "@/components/jobs/LinkedInEasyApplyModal";
 import { getJobApplicationAvailability } from "@/lib/job-application-availability";
+import { semanticMatchPercentage } from "@/lib/semantic-match";
 import { Badge } from "@/components/ui/badge";
 import type { JobPostDetailResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
@@ -52,6 +53,7 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
   const { job } = detail;
   const hasTasks = job.hasDesignTask || job.hasProgrammingTask || job.hasSqlTask;
   const availability = getJobApplicationAvailability(job);
+  const semanticMatch = semanticMatchPercentage(job.similarityScore);
 
   return (
     <div className="mx-auto w-full max-w-6xl py-6 md:py-8">
@@ -115,12 +117,13 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
                   Applications Closed
                 </Badge>
               )}
-              {job.similarityScore !== undefined && (
+              {semanticMatch !== null && (
                 <Badge
                   variant="secondary"
+                  title="Semantic relevance between this job and your available matching data; not an acceptance probability."
                   className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs"
                 >
-                  {Math.round(job.similarityScore * 100)}% Profile Match
+                  {semanticMatch}% Semantic Match
                 </Badge>
               )}
             </div>

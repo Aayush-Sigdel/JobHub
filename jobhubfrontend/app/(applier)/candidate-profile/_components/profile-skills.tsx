@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, X, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -34,12 +34,6 @@ export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: "", level: "Intermediate" });
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (initialSkills) {
-      setSkills(initialSkills);
-    }
-  }, [initialSkills]);
 
   const accordionVariants = {
     hidden: { height: 0, opacity: 0, overflow: "hidden" },

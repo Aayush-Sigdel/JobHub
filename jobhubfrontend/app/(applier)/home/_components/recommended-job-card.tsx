@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { JobPostResponse } from "@/types/api/jobs";
+import { semanticMatchPercentage } from "@/lib/semantic-match";
 
 interface RecommendedJobCardProps {
   job: JobPostResponse;
@@ -93,10 +94,7 @@ export function RecommendedJobCard({
   };
 
   // Match percentage calculation
-  const matchPercentage =
-    job.similarityScore !== undefined
-      ? Math.round(job.similarityScore * 100)
-      : null;
+  const matchPercentage = semanticMatchPercentage(job.similarityScore);
 
   // Identify matching skills between user and job text/requirements
   const matchedSkills = userSkills.filter((skill) => {
@@ -143,9 +141,10 @@ export function RecommendedJobCard({
 
           {/* Right Top: Match Score & Bookmark */}
           <div className="flex items-center gap-2 shrink-0">
-            {matchPercentage !== null && matchPercentage > 0 ? (
+            {matchPercentage !== null ? (
               <Badge
                 variant="secondary"
+                title="Semantic relevance between this job and your available matching data; not an acceptance probability."
                 className={`font-bold text-xs px-2.5 py-1 flex items-center gap-1 rounded-lg border ${
                   matchPercentage >= 75
                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
@@ -155,7 +154,7 @@ export function RecommendedJobCard({
                 }`}
               >
                 <Sparkles className="h-3 w-3" />
-                <span>{matchPercentage}% Match</span>
+                <span>{matchPercentage}% Semantic match</span>
               </Badge>
             ) : (
               <Badge
