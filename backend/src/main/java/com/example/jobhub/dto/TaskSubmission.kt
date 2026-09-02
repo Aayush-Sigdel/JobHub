@@ -13,6 +13,7 @@ data class SubmitTask(
 )
 
 data class TaskSubmissionResponse(
+    val id: UUID? = null,
     val taskId: UUID,
     val taskType: TaskType,
     val passed: Boolean,
