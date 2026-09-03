@@ -1,6 +1,6 @@
-# ML - recommendation system
+# job embedding model
 
-This project trains a dual-encoder model for semantic matching between candidates and projects, candidates and other candidates, and candidates and jobs. It also includes a FastAPI backend that uses the model and generates embedding for given input text.
+This project trains a shared dual encoder for ATS matching. Candidate profile text and job text are independently converted to normalized 256-dimensional vectors; the JobHub backend ranks applicants with cosine similarity.
 
 ---
 
@@ -11,11 +11,11 @@ text_embedding/
 ├── api/
 │   └── main.py          # FastAPI server
 ├── model/               # Model architecture
-├── train.py             # Model training
-├── dataset.py
-├── utils.py
-├── requirements.txt
-└── ...
+├── analyze_lengths.py   # Dataset token-length audit
+├── config.py            # Shared model/preprocessing defaults
+├── dataset.py           # Dataset, dynamic collator, grouped sampler
+├── train.py             # Training, validation, and checkpointing
+└── tests/
 ```
 
 ---
@@ -50,25 +50,6 @@ pip install -r requirements.txt
 
 ---
 
-## Training
-
-Enter directory
-
-```bash
-cd text_embedding
-```
-
-
-Run the training script:
-
-```bash
-python train.py
-```
-
-The trained checkpoints will be saved inside the `checkpoints/` directory.
-
----
-
 ## Running the Embedding API
 
 
@@ -78,11 +59,13 @@ Enter directory
 cd text_embedding
 ```
 
-Start the FastAPI server:
+After training, start the FastAPI server:
 
 ```bash
 uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
 ```
+
+To serve a checkpoint elsewhere, set `EMBEDDING_MODEL_PATH=/path/to/best.pt`.
 
 The API will be available at:
 
@@ -104,6 +87,8 @@ POST /embed
 ```
 
 ### Request
+
+The API accepts any text (resume, job description, or other document).
 
 ```json
 {
@@ -149,10 +134,3 @@ curl -X POST http://localhost:8001/embed \
 - Output Embedding: **256-dimensional**
 - Similarity Metric: Cosine Similarity
 
----
-
-## Notes
-
-- The API accepts any text (resume, job description, or other document).
-- Returned embeddings are L2-normalized and can be directly used for cosine similarity.
-- For best results, compare embeddings using cosine similarity.
