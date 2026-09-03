@@ -14,7 +14,7 @@ class OrcidEmbeddingService(
 ) : EmbeddingService<OrcidProfile> {
 
     companion object {
-        private const val TOTAL_CHAR_BUDGET = 12_000
+        private const val TOTAL_CHAR_BUDGET = 8_000
     }
 
     override suspend fun generateEmbeddings(source: OrcidProfile): FloatArray {

@@ -19,7 +19,7 @@ class PortfolioEmbeddingService(
         private const val MAX_HEADINGS = 20
         private const val MAX_PARAGRAPHS = 20
         private const val MIN_PARAGRAPH_LEN = 25
-        private const val TOTAL_CHAR_BUDGET = 12_000
+        private const val TOTAL_CHAR_BUDGET = 8_000
 
         private val BOILERPLATE_REGEX = Regex(
             "cookie|privacy policy|all rights reserved|terms (of|and) (service|conditions)|" +
