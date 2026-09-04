@@ -1,9 +1,10 @@
 import type { JobPostResponse } from "@/types/api/jobs";
 
-type JobAvailabilityFields = Pick<JobPostResponse, "isActive" | "deadline">;
+type JobAvailabilityFields = Pick<JobPostResponse, "isActive" | "active" | "deadline">;
 
 export function getJobApplicationAvailability(job: JobAvailabilityFields) {
-  if (!job.isActive) {
+  const isJobActive = job.isActive ?? job.active ?? false;
+  if (!isJobActive) {
     return {
       canApply: false,
       reason: "This job is no longer accepting applications.",

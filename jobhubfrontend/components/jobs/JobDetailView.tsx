@@ -12,10 +12,11 @@ import {
 } from "lucide-react";
 import { LinkedInEasyApplyModal } from "@/components/jobs/LinkedInEasyApplyModal";
 import { getJobApplicationAvailability } from "@/lib/job-application-availability";
-import { semanticMatchPercentage } from "@/lib/semantic-match";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { JobPostDetailResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
+import { calculateSupportedOverallSimilarity } from "@/lib/semantic-match";
 
 function displayEnum(value: string) {
   return value
@@ -53,7 +54,16 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
   const { job } = detail;
   const hasTasks = job.hasDesignTask || job.hasProgrammingTask || job.hasSqlTask;
   const availability = getJobApplicationAvailability(job);
-  const semanticMatch = semanticMatchPercentage(job.similarityScore);
+  const similaritySources = [
+    ["JobHub platform", detail.platformSimilarity],
+    ["GitHub", detail.githubSimilarity],
+    ["Dev.to", detail.devtoSimilarity],
+    ["ORCID", detail.orcidSimilarity],
+    ["Stack Overflow", detail.stackoverflowSimilarity],
+  ] as const;
+  const availableSimilaritySources = similaritySources.filter(([, value]) => typeof value === "number");
+  const overallSimilarity = calculateSupportedOverallSimilarity(detail);
+  const hasMatchEvidence = overallSimilarity !== null || availableSimilaritySources.length > 0;
 
   return (
     <div className="mx-auto w-full max-w-6xl py-6 md:py-8">
@@ -117,15 +127,6 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
                   Applications Closed
                 </Badge>
               )}
-              {semanticMatch !== null && (
-                <Badge
-                  variant="secondary"
-                  title="Semantic relevance between this job and your available matching data; not an acceptance probability."
-                  className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs"
-                >
-                  {semanticMatch}% Semantic Match
-                </Badge>
-              )}
             </div>
           </header>
 
@@ -153,6 +154,48 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
 
         {/* Right Sidebar */}
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-4">
+          <section className="rounded-3xl border border-primary/25 bg-primary/[0.04] p-6" aria-labelledby="match-evidence-title">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p id="match-evidence-title" className="text-sm font-semibold text-foreground">Match evidence</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Raw cosine similarity from each available professional source. Values range from 0.000 to 1.000.
+                </p>
+              </div>
+              <Sparkles className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            </div>
+            {hasMatchEvidence ? (
+              <div className="mt-5 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <span className="text-sm font-semibold">Overall similarity</span>
+                  <span className="font-mono text-base font-bold tabular-nums">{overallSimilarity?.toFixed(3) ?? "N/A"}</span>
+                </div>
+                <dl className="space-y-2.5">
+                  {similaritySources.map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between gap-4 text-sm">
+                      <dt className="text-muted-foreground">{label}</dt>
+                      <dd className="font-mono font-medium tabular-nums">{typeof value === "number" ? value.toFixed(3) : "Not available"}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {detail.hasApplied && typeof detail.allTasksPassed === "boolean" && (
+                  <div className="flex items-center justify-between border-t border-border/70 pt-3 text-sm">
+                    <span className="text-muted-foreground">All required tasks passed</span>
+                    <span className="font-semibold">{detail.allTasksPassed ? "Yes" : "No"}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-5">
+                <p className="text-sm font-semibold text-foreground">No matching evidence available</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Add professional details or supported profile links, then refresh matching data.</p>
+                <Button variant="outline" size="sm" className="mt-4" asChild>
+                  <Link href="/candidate-profile">Update profile</Link>
+                </Button>
+              </div>
+            )}
+          </section>
+
           <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Offered Compensation

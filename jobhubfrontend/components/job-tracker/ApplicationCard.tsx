@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { semanticMatchPercentage } from '@/lib/semantic-match';
 
 interface TaskSubmissionResponse {
   taskId: string;
@@ -47,7 +46,6 @@ const statusConfig: Record<ApplicationStatus, { label: string; color: string }> 
 export const ApplicationCard: React.FC<{ application: JobApplicationResponse }> = ({ application }) => {
   const config = statusConfig[application.status];
   const appliedDate = format(new Date(application.createdAt), 'MMM dd, yyyy');
-  const semanticMatch = semanticMatchPercentage(application.similarityScore);
 
   return (
     <Card className="w-full flex flex-col hover:shadow-md transition-shadow">
@@ -63,10 +61,10 @@ export const ApplicationCard: React.FC<{ application: JobApplicationResponse }> 
       <CardContent className="flex-grow">
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">Applied on: {appliedDate}</p>
-          {semanticMatch !== null && (
+          {typeof application.similarityScore === 'number' && (
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">Semantic match:</span>
-              <Badge variant="outline" title="Relevance at the time you applied; not an acceptance probability.">{semanticMatch}%</Badge>
+              <span className="text-sm font-semibold">Overall similarity:</span>
+              <Badge variant="outline" className="font-mono" title="Raw cosine similarity recorded when you applied.">{application.similarityScore.toFixed(3)}</Badge>
             </div>
           )}
           <div className="flex flex-wrap gap-2 mt-2">

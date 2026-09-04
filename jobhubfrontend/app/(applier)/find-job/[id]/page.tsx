@@ -13,7 +13,9 @@ export default async function JobDetailPage({
 
   try {
     const [detail, profile] = await Promise.all([
-      fetchWithAuth<JobPostDetailResponse>(`/jobs/${id}`, { cache: "no-store" }),
+      fetchWithAuth<JobPostDetailResponse>(`/jobs/${id}`, {
+        cache: "no-store",
+      }),
       fetchWithAuth<UserProfileResponse>("/user/profile").catch(() => null),
     ]);
     return <JobDetailView detail={detail} profile={profile} />;

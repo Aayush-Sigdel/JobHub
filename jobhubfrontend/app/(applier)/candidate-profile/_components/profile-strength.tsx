@@ -13,7 +13,6 @@ import {
 import { toast } from "sonner";
 import { syncAllEmbeddingsAction } from "@/lib/actions/embeddings";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 interface MatchProfileData {
   title?: string;
@@ -28,7 +27,6 @@ interface MatchProfileData {
 interface ReadinessItem {
   label: string;
   complete: boolean;
-  weight: number;
 }
 
 const embeddableSocialPlatforms = new Set([
@@ -36,8 +34,6 @@ const embeddableSocialPlatforms = new Set([
   "DEV_TO",
   "ORCID",
   "STACKOVERFLOW",
-  "PORTFOLIO",
-  "WEBSITE",
 ]);
 
 export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
@@ -50,18 +46,15 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
     (link) => link.platform.toUpperCase() === "LINKEDIN",
   );
   const readinessItems: ReadinessItem[] = [
-    { label: "Professional title", complete: Boolean(profile.title?.trim()), weight: 15 },
-    { label: "About summary", complete: Boolean(profile.bio?.trim()), weight: 15 },
-    { label: "At least 3 skills", complete: (profile.skills?.length ?? 0) >= 3, weight: 20 },
-    { label: "Work experience", complete: (profile.experiences?.length ?? 0) > 0, weight: 20 },
-    { label: "Education", complete: (profile.educations?.length ?? 0) > 0, weight: 10 },
-    { label: "Location", complete: Boolean(profile.location?.trim()), weight: 5 },
-    { label: "Matching data source", complete: matchingSources.length > 0, weight: 15 },
+    { label: "Professional title", complete: Boolean(profile.title?.trim()) },
+    { label: "About summary", complete: Boolean(profile.bio?.trim()) },
+    { label: "At least 3 skills", complete: (profile.skills?.length ?? 0) >= 3 },
+    { label: "Work experience", complete: (profile.experiences?.length ?? 0) > 0 },
+    { label: "Education", complete: (profile.educations?.length ?? 0) > 0 },
+    { label: "Location", complete: Boolean(profile.location?.trim()) },
+    { label: "Matching data source", complete: matchingSources.length > 0 },
   ];
-  const readiness = readinessItems.reduce(
-    (score, item) => score + (item.complete ? item.weight : 0),
-    0,
-  );
+  const completedItems = readinessItems.filter((item) => item.complete).length;
 
   const handleRefresh = () => {
     startTransition(async () => {
@@ -84,17 +77,12 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Matching readiness
+              Matching data
             </p>
-            <h2 className="mt-1 text-lg font-bold">Profile completeness</h2>
+            <h2 className="mt-1 text-lg font-bold">Evidence checklist</h2>
           </div>
-          <span className="text-2xl font-black tabular-nums">{readiness}%</span>
+          <span className="text-sm font-semibold tabular-nums">{completedItems} of {readinessItems.length}</span>
         </div>
-
-        <Progress value={readiness} className="mt-5 h-2" />
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          This measures profile completeness, not your score for a specific job.
-        </p>
 
         <div className="mt-5 space-y-2.5">
           {readinessItems.map((item) => (
@@ -125,12 +113,12 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-base font-bold">Matching evidence</h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Job relevance uses your JobHub profile and supported professional sources.
+          Job relevance uses JobHub platform data, GitHub, Dev.to, Stack Overflow, and ORCID.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="rounded-full border bg-muted/50 px-2.5 py-1 text-xs font-medium">
-            JobHub profile
+            JobHub platform
           </span>
           {matchingSources.map((source) => (
             <span
@@ -144,11 +132,11 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
 
         {hasLinkedIn && (
           <p className="mt-4 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
-            LinkedIn is saved as a profile link but is not currently included in semantic matching.
+            LinkedIn remains visible on your profile, but it is not included in job matching.
           </p>
         )}
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          Resume matching will appear here when resume ingestion is available in the API.
+          Portfolio, website, and other profile links remain available to recruiters without affecting similarity.
         </p>
       </section>
 

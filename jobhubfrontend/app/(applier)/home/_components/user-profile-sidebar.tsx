@@ -40,23 +40,8 @@ export function UserProfileSidebar({
   const userLocation = profile?.location;
   const isVerified = profile?.isVerified ?? true;
   const skillsCount = profile?.skills?.length || 0;
+  const experienceCount = profile?.experiences?.length || 0;
   const applicationsCount = applications.length;
-
-  // Calculate profile completeness score
-  const calculateCompleteness = () => {
-    let score = 20; // Base for account creation
-    if (profile?.name && profile?.email) score += 10;
-    if (profile?.title) score += 15;
-    if (profile?.bio) score += 15;
-    if (profile?.location) score += 10;
-    if (profile?.imageUrl) score += 10;
-    if (profile?.skills && profile.skills.length > 0) score += 10;
-    if (profile?.experiences && profile.experiences.length > 0) score += 5;
-    if (profile?.educations && profile.educations.length > 0) score += 5;
-    return Math.min(score, 100);
-  };
-
-  const completeness = calculateCompleteness();
 
   const getInitials = (name: string) => {
     if (!name) return "U";
@@ -119,10 +104,8 @@ export function UserProfileSidebar({
                 <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Skills</p>
               </div>
               <div className="text-center px-1">
-                <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                  {completeness}%
-                </p>
-                <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Profile</p>
+                <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">{experienceCount}</p>
+                <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Roles</p>
               </div>
             </div>
 

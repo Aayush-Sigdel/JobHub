@@ -1,4 +1,4 @@
-import { fetchWithAuth } from "@/lib/service-api";
+import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
 import { ProfileHeader } from "./_components/profile-header";
 import { ProfileAbout } from "./_components/profile-about";
 import { ProfileSkills } from "./_components/profile-skills";
@@ -7,9 +7,18 @@ import { ProfileContact } from "./_components/profile-contact";
 import { ProfileWorkExperience } from "@/components/profile/profile-work-experience";
 import { ProfileEducation } from "@/components/profile/profile-education";
 import type { UserProfileResponse } from "@/types/api/user";
+import { ProfileAccessError } from "./_components/profile-access-error";
 
 export default async function CandidateProfilePage() {
-  const profile = await fetchWithAuth<UserProfileResponse>("/user/profile");
+  let profile: UserProfileResponse;
+  try {
+    profile = await fetchWithAuth<UserProfileResponse>("/user/profile");
+  } catch (error) {
+    if (error instanceof ServiceApiError && (error.status === 401 || error.status === 403)) {
+      return <ProfileAccessError />;
+    }
+    throw error;
+  }
 
   const locationObj = profile?.location
     ? {
@@ -19,7 +28,7 @@ export default async function CandidateProfilePage() {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12 font-sans text-foreground">
+    <div className="min-h-[100dvh] bg-background p-6 font-sans text-foreground md:p-8 lg:p-12">
       <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row gap-8">
         <div className="flex-1 flex flex-col gap-6">
           <ProfileHeader

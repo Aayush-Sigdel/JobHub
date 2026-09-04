@@ -4,6 +4,16 @@ import { authOptions } from "./auth-option";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
+export class ServiceApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly detail: string,
+  ) {
+    super(`API Error (${status}): ${detail || "Request was rejected."}`);
+    this.name = "ServiceApiError";
+  }
+}
+
 export async function fetchWithAuth<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -11,7 +21,7 @@ export async function fetchWithAuth<T>(
   const session = await getServerSession(authOptions);
 
   if (!session?.accessToken) {
-    throw new Error("Unauthorized: Please log in.");
+    throw new ServiceApiError(401, "Please sign in again.");
   }
 
   const headers = new Headers(options.headers);
@@ -27,7 +37,7 @@ export async function fetchWithAuth<T>(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`API Error (${response.status}): ${error}`);
+    throw new ServiceApiError(response.status, error);
   }
 
   if (response.status === 204) {

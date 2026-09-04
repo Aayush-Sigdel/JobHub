@@ -5,20 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Briefcase, DollarSign, Calendar, Target, Code, PenTool, Database } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { semanticMatchPercentage } from '@/lib/semantic-match';
 
 interface JobCardProps {
   job: JobPostResponse;
 }
 
 export function JobCard({ job }: JobCardProps) {
-  const matchPercentage = semanticMatchPercentage(job.similarityScore);
-  const getMatchColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-500 bg-green-50';
-    if (percentage >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-gray-500 bg-gray-50';
-  };
-
   return (
     <Card className="hover:border-primary/50 transition-colors duration-200">
       <Link href={`/find-job/${job.id}`} className="block h-full flex flex-col">
@@ -28,15 +20,6 @@ export function JobCard({ job }: JobCardProps) {
               <CardTitle className="text-xl font-bold line-clamp-1">{job.title}</CardTitle>
               <div className="text-muted-foreground mt-1 text-sm font-medium">{job.companyName}</div>
             </div>
-            {matchPercentage !== null && (
-              <Badge
-                variant="secondary"
-                title="Semantic relevance between this job and your available matching data; not an acceptance probability."
-                className={`font-semibold ${getMatchColor(matchPercentage)}`}
-              >
-                {matchPercentage}% Semantic match
-              </Badge>
-            )}
           </div>
         </CardHeader>
         <CardContent className="flex-grow pb-4">

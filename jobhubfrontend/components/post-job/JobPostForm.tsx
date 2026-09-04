@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, ClipboardCheck, CircleCheck } from "lucide-react";
 import { toast } from "sonner";
-import { createJobAction } from "@/lib/actions/jobs";
+import { createJobAction, updateJobAction } from "@/lib/actions/jobs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { CreateJobPostRequest, JobType, WorkplaceType } from "@/types/api/jobs";
+import type { CreateJobPostRequest, JobPostResponse, JobType, UpdateJobPostRequest, WorkplaceType } from "@/types/api/jobs";
 
 interface TaskOption {
   id: string;
@@ -21,6 +21,7 @@ interface JobPostFormProps {
   designTasks: TaskOption[];
   programmingTasks: TaskOption[];
   sqlTasks: TaskOption[];
+  initialJob?: JobPostResponse;
 }
 
 const jobTypes: { value: JobType; label: string }[] = [
@@ -40,6 +41,14 @@ function optionalNumber(value: string) {
   if (!value.trim()) return undefined;
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
+}
+
+function toDateTimeLocal(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
 }
 
 function TaskSelect({ label, tasks, value, onChange, createHref }: {
@@ -69,26 +78,27 @@ function TaskSelect({ label, tasks, value, onChange, createHref }: {
   );
 }
 
-export function JobPostForm({ designTasks, programmingTasks, sqlTasks }: JobPostFormProps) {
+export function JobPostForm({ designTasks, programmingTasks, sqlTasks, initialJob }: JobPostFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [title, setTitle] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [location, setLocation] = useState("");
-  const [jobType, setJobType] = useState<JobType>("FULL_TIME");
-  const [workplaceType, setWorkplaceType] = useState<WorkplaceType>("REMOTE");
-  const [experienceLevel, setExperienceLevel] = useState<CreateJobPostRequest["experienceLevel"]>("BEGINNER");
-  const [description, setDescription] = useState("");
-  const [requirements, setRequirements] = useState("");
-  const [salaryMin, setSalaryMin] = useState("");
-  const [salaryMax, setSalaryMax] = useState("");
-  const [salaryCurrency, setSalaryCurrency] = useState("USD");
-  const [deadline, setDeadline] = useState("");
-  const [tabLock, setTabLock] = useState(false);
-  const [tabLockWarningLimit, setTabLockWarningLimit] = useState("3");
-  const [designTaskId, setDesignTaskId] = useState("");
-  const [programmingTaskId, setProgrammingTaskId] = useState("");
-  const [sqlTaskId, setSqlTaskId] = useState("");
+  const isEditing = Boolean(initialJob);
+  const [title, setTitle] = useState(initialJob?.title ?? "");
+  const [companyName, setCompanyName] = useState(initialJob?.companyName ?? "");
+  const [location, setLocation] = useState(initialJob?.location ?? "");
+  const [jobType, setJobType] = useState<JobType>(initialJob?.jobType ?? "FULL_TIME");
+  const [workplaceType, setWorkplaceType] = useState<WorkplaceType>(initialJob?.workplaceType ?? "REMOTE");
+  const [experienceLevel, setExperienceLevel] = useState<CreateJobPostRequest["experienceLevel"]>(initialJob?.experienceLevel ?? "BEGINNER");
+  const [description, setDescription] = useState(initialJob?.description ?? "");
+  const [requirements, setRequirements] = useState(initialJob?.requirements ?? "");
+  const [salaryMin, setSalaryMin] = useState(initialJob?.salaryMin?.toString() ?? "");
+  const [salaryMax, setSalaryMax] = useState(initialJob?.salaryMax?.toString() ?? "");
+  const [salaryCurrency, setSalaryCurrency] = useState(initialJob?.salaryCurrency ?? "USD");
+  const [deadline, setDeadline] = useState(toDateTimeLocal(initialJob?.deadline));
+  const [tabLock, setTabLock] = useState(initialJob?.tabLock ?? false);
+  const [tabLockWarningLimit, setTabLockWarningLimit] = useState(initialJob?.tabLockWarningLimit?.toString() ?? "3");
+  const [designTaskId, setDesignTaskId] = useState(initialJob?.designTaskId ?? "");
+  const [programmingTaskId, setProgrammingTaskId] = useState(initialJob?.programmingTaskId ?? "");
+  const [sqlTaskId, setSqlTaskId] = useState(initialJob?.sqlTaskId ?? "");
 
   const submit = () => {
     const minSalary = optionalNumber(salaryMin);
@@ -130,11 +140,28 @@ export function JobPostForm({ designTasks, programmingTasks, sqlTasks }: JobPost
 
     startTransition(async () => {
       try {
-        await createJobAction(payload);
-        toast.success("Job published.");
+        if (initialJob) {
+          const updatePayload: UpdateJobPostRequest = {
+            ...payload,
+            removeRequirements: Boolean(initialJob.requirements && !requirements.trim()),
+            removeLocation: Boolean(initialJob.location && !location.trim()),
+            removeSalaryMin: initialJob.salaryMin !== undefined && minSalary === undefined,
+            removeSalaryMax: initialJob.salaryMax !== undefined && maxSalary === undefined,
+            removeDeadline: Boolean(initialJob.deadline && !deadline),
+            removeDesignTask: Boolean(initialJob.designTaskId && !designTaskId),
+            removeProgrammingTask: Boolean(initialJob.programmingTaskId && !programmingTaskId),
+            removeSqlTask: Boolean(initialJob.sqlTaskId && !sqlTaskId),
+          };
+          await updateJobAction(initialJob.id, updatePayload);
+          toast.success("Job changes saved.");
+        } else {
+          await createJobAction(payload);
+          toast.success("Job published.");
+        }
         router.push("/manage-jobs");
+        router.refresh();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Unable to publish this job.");
+        toast.error(error instanceof Error ? error.message : `Unable to ${isEditing ? "save" : "publish"} this job.`);
       }
     });
   };
@@ -143,8 +170,8 @@ export function JobPostForm({ designTasks, programmingTasks, sqlTasks }: JobPost
     <div className="mx-auto w-full max-w-5xl py-6 md:py-10">
       <header className="mb-8 border-b pb-6">
         <p className="text-sm font-medium text-primary">Employer workspace</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Create a job post</h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">Give candidates the information they need, then add assessments only when they help evaluate the role.</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{isEditing ? "Edit job post" : "Create a job post"}</h1>
+        <p className="mt-2 max-w-2xl text-muted-foreground">{isEditing ? "Update the listing details candidates use to evaluate this role." : "Give candidates the information they need, then add assessments only when they help evaluate the role."}</p>
       </header>
 
       <div className="space-y-8">
@@ -195,8 +222,11 @@ export function JobPostForm({ designTasks, programmingTasks, sqlTasks }: JobPost
         </section>
 
         <section className="flex flex-col gap-4 rounded-lg border bg-card p-5 md:flex-row md:items-center md:justify-between md:p-7">
-          <div className="flex gap-3"><CircleCheck className="mt-0.5 size-5 text-primary" /><div><h2 className="font-semibold">Ready to publish?</h2><p className="mt-1 text-sm text-muted-foreground">Publishing makes this role visible in candidate search immediately.</p></div></div>
-          <Button size="lg" disabled={isPending} onClick={submit}>{isPending ? "Publishing..." : "Publish job"}<ArrowRight /></Button>
+          <div className="flex gap-3"><CircleCheck className="mt-0.5 size-5 text-primary" /><div><h2 className="font-semibold">{isEditing ? "Save these changes?" : "Ready to publish?"}</h2><p className="mt-1 text-sm text-muted-foreground">{isEditing ? "Embedding-relevant changes automatically refresh this job's match vector." : "Publishing makes this role visible in candidate search immediately."}</p></div></div>
+          <div className="flex items-center gap-3">
+            {isEditing && <Button variant="outline" asChild><Link href="/manage-jobs">Cancel</Link></Button>}
+            <Button size="lg" disabled={isPending} onClick={submit}>{isPending ? (isEditing ? "Saving..." : "Publishing...") : (isEditing ? "Save changes" : "Publish job")}<ArrowRight /></Button>
+          </div>
         </section>
       </div>
     </div>

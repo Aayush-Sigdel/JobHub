@@ -15,6 +15,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -37,6 +38,17 @@ interface ProfileContactProps {
   initialSocialLinks?: SocialLinkItem[];
 }
 
+const SOCIAL_PLATFORMS = [
+  { value: "LINKEDIN", label: "LinkedIn" },
+  { value: "GITHUB", label: "GitHub" },
+  { value: "PORTFOLIO", label: "Portfolio" },
+  { value: "WEBSITE", label: "Website" },
+  { value: "ORCID", label: "ORCID" },
+  { value: "STACKOVERFLOW", label: "Stack Overflow" },
+  { value: "DEV_TO", label: "Dev.to" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
 export function ProfileContact({
   initialEmails,
   initialPhones,
@@ -53,9 +65,18 @@ export function ProfileContact({
   const [newPhone, setNewPhone] = useState("");
   const [isAddLinkOpen, setIsAddLinkOpen] = useState(false);
   const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null);
-  const [newPlatform, setNewPlatform] = useState("LinkedIn");
+  const [newPlatform, setNewPlatform] = useState("LINKEDIN");
   const [newUrl, setNewUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const usedPlatforms = new Set(
+    socialLinks.map((link, index) =>
+      index === editingLinkIndex ? "" : link.platform.toUpperCase(),
+    ),
+  );
+  const firstAvailablePlatform = SOCIAL_PLATFORMS.find(
+    ({ value }) => !usedPlatforms.has(value),
+  )?.value;
 
   const addPhone = async () => {
     const trimmed = newPhone.trim();
@@ -89,9 +110,18 @@ export function ProfileContact({
     const trimmedUrl = newUrl.trim();
     if (!trimmedUrl) return;
 
+    const platformKey = newPlatform.toUpperCase();
+    const duplicatePlatform = socialLinks.some(
+      (link, index) =>
+        index !== editingLinkIndex && link.platform.toUpperCase() === platformKey,
+    );
+    if (duplicatePlatform) {
+      toast.error("Only one link can be added for each social platform.");
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const platformKey = newPlatform.toUpperCase();
       if (editingLinkIndex !== null && socialLinks[editingLinkIndex]?.id) {
         const currentLink = socialLinks[editingLinkIndex];
         const updatedLink = await updateSocialLinkAction(currentLink.id!, {
@@ -123,21 +153,23 @@ export function ProfileContact({
       router.refresh();
     } catch (err) {
       console.error("Failed to add social link:", err);
+      toast.error(err instanceof Error ? err.message : "Unable to save this social link.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const openAddSocialLink = () => {
+    if (!firstAvailablePlatform) return;
     setEditingLinkIndex(null);
-    setNewPlatform("LinkedIn");
+    setNewPlatform(firstAvailablePlatform);
     setNewUrl("");
     setIsAddLinkOpen(true);
   };
 
   const openEditSocialLink = (link: SocialLinkItem, index: number) => {
     setEditingLinkIndex(index);
-    setNewPlatform(link.platform);
+    setNewPlatform(link.platform.toUpperCase());
     setNewUrl(link.url);
     setIsAddLinkOpen(true);
   };
@@ -286,8 +318,9 @@ export function ProfileContact({
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[17px] font-bold text-foreground">Social Links</h2>
-          {!isAddLinkOpen && (
+          {!isAddLinkOpen && firstAvailablePlatform && (
             <button
+              type="button"
               onClick={openAddSocialLink}
               className="text-primary hover:text-primary/80 p-1 rounded-md hover:bg-primary/10 transition-colors cursor-pointer"
             >
@@ -346,15 +379,15 @@ export function ProfileContact({
             >
               <select
                 className="w-full h-10 bg-card border border-input rounded-lg px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                aria-label="Social platform"
                 value={newPlatform}
                 onChange={(e) => setNewPlatform(e.target.value)}
               >
-                <option value="LinkedIn">LinkedIn</option>
-                <option value="GitHub">GitHub</option>
-                <option value="Portfolio">Portfolio</option>
-                <option value="Website">Website</option>
-                <option value="ORCID">ORCID</option>
-                <option value="Other">Other</option>
+                {SOCIAL_PLATFORMS.map(({ value, label }) => (
+                  <option key={value} value={value} disabled={usedPlatforms.has(value)}>
+                    {label}{usedPlatforms.has(value) ? " (already added)" : ""}
+                  </option>
+                ))}
               </select>
               <Input
                 placeholder="https://"

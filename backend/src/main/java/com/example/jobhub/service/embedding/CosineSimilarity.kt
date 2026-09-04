@@ -1,8 +1,15 @@
 package com.example.jobhub.service.embedding
 
 import kotlin.math.sqrt
+import kotlin.math.roundToInt
 
 object CosineSimilarity {
+
+    fun toPercentage(similarity: Double?): Int? =
+        similarity?.takeIf { it.isFinite() }
+            ?.coerceIn(0.0, 1.0)
+            ?.times(100)
+            ?.roundToInt()
 
     fun compute(a: FloatArray, b: FloatArray): Double {
         require(a.size == b.size) {

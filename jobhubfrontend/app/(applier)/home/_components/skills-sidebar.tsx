@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { Zap, Plus, Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { UserProfileResponse } from "@/types/api/user";
 
@@ -30,52 +29,37 @@ const TRENDING_IN_DEMAND_SKILLS = [
 export function SkillsSidebar({ profile }: SkillsSidebarProps) {
   const userSkills = profile?.skills || [];
 
-  // Calculate completeness & identify missing pieces
+  // Identify missing professional evidence without inventing a percentage score.
   const missingItems: string[] = [];
-  let completeness = 20;
-
-  if (profile?.name && profile?.email) completeness += 10;
-  if (profile?.title) {
-    completeness += 15;
-  } else {
+  if (!profile?.title) {
     missingItems.push("Add professional title");
   }
 
-  if (profile?.bio) {
-    completeness += 15;
-  } else {
+  if (!profile?.bio) {
     missingItems.push("Write a short bio");
   }
 
-  if (profile?.location) {
-    completeness += 10;
-  } else {
+  if (!profile?.location) {
     missingItems.push("Set your location");
   }
 
-  if (profile?.imageUrl) {
-    completeness += 10;
-  } else {
+  if (!profile?.imageUrl) {
     missingItems.push("Upload profile avatar");
   }
 
-  if (userSkills.length > 0) {
-    completeness += 10;
-  } else {
+  if (userSkills.length === 0) {
     missingItems.push("Add at least 3 skills");
   }
 
-  if (profile?.experiences && profile.experiences.length > 0) {
-    completeness += 5;
-  } else {
+  if (!profile?.experiences?.length) {
     missingItems.push("Add work experience");
   }
 
-  if (profile?.educations && profile.educations.length > 0) {
-    completeness += 5;
+  if (!profile?.educations?.length) {
+    missingItems.push("Add education");
   }
-
-  completeness = Math.min(completeness, 100);
+  const evidenceItemCount = 7;
+  const completedEvidenceItems = evidenceItemCount - missingItems.length;
 
   const formatLevel = (lvl: string) => {
     switch (lvl?.toUpperCase()) {
@@ -175,7 +159,7 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
           </div>
         </div>
 
-        {/* Profile Completeness Card */}
+        {/* Matching evidence checklist */}
         <div className="border border-border bg-card rounded-2xl shadow-sm p-5 transition-all hover:shadow-md">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -184,17 +168,13 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
               </div>
               <div>
                 <h3 className="font-bold text-[14px] text-foreground">
-                  Profile Strength
+                  Matching data
                 </h3>
               </div>
             </div>
             <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-              {completeness}%
+              {completedEvidenceItems} of {evidenceItemCount}
             </span>
-          </div>
-
-          <div className="mt-2">
-            <Progress value={completeness} className="h-2 bg-muted rounded-full" />
           </div>
 
           {missingItems.length > 0 ? (

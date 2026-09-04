@@ -11,7 +11,6 @@ import {
   Briefcase,
   DollarSign,
   Clock,
-  Sparkles,
   Bookmark,
   BookmarkCheck,
   CheckCircle,
@@ -23,7 +22,6 @@ import {
   Zap,
 } from "lucide-react";
 import type { JobPostResponse } from "@/types/api/jobs";
-import { semanticMatchPercentage } from "@/lib/semantic-match";
 
 interface RecommendedJobCardProps {
   job: JobPostResponse;
@@ -93,9 +91,6 @@ export function RecommendedJobCard({
     }
   };
 
-  // Match percentage calculation
-  const matchPercentage = semanticMatchPercentage(job.similarityScore);
-
   // Identify matching skills between user and job text/requirements
   const matchedSkills = userSkills.filter((skill) => {
     const text = `${job.title} ${job.description} ${job.requirements || ""}`.toLowerCase();
@@ -139,32 +134,8 @@ export function RecommendedJobCard({
             </div>
           </div>
 
-          {/* Right Top: Match Score & Bookmark */}
+          {/* Right Top: Bookmark */}
           <div className="flex items-center gap-2 shrink-0">
-            {matchPercentage !== null ? (
-              <Badge
-                variant="secondary"
-                title="Semantic relevance between this job and your available matching data; not an acceptance probability."
-                className={`font-bold text-xs px-2.5 py-1 flex items-center gap-1 rounded-lg border ${
-                  matchPercentage >= 75
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                    : matchPercentage >= 50
-                      ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                      : "bg-muted text-muted-foreground border-border"
-                }`}
-              >
-                <Sparkles className="h-3 w-3" />
-                <span>{matchPercentage}% Semantic match</span>
-              </Badge>
-            ) : (
-              <Badge
-                variant="secondary"
-                className="bg-primary/10 text-primary border border-primary/20 font-semibold text-xs px-2 py-0.5 rounded-lg"
-              >
-                Featured
-              </Badge>
-            )}
-
             <Button
               variant="ghost"
               size="icon"

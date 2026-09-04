@@ -1,6 +1,7 @@
 package com.example.jobhub.controllers
 
 import com.example.jobhub.dto.job.JobApplicationResponse
+import com.example.jobhub.dto.job.JobPostResponse
 import com.example.jobhub.dto.recruiter.CandidateDashboardResponse
 import com.example.jobhub.dto.recruiter.CandidateFilterRequest
 import com.example.jobhub.dto.recruiter.RecruiterJobSummaryResponse
@@ -29,6 +30,14 @@ class RecruiterController(
     ): ResponseEntity<List<RecruiterJobSummaryResponse>> {
         val jobs = recruiterDashboardService.getEmployerJobs(userDetails.id)
         return ResponseEntity.ok(jobs)
+    }
+
+    @GetMapping("/jobs/{jobId}")
+    fun getMyJobPosting(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @PathVariable jobId: UUID
+    ): ResponseEntity<JobPostResponse> {
+        return ResponseEntity.ok(recruiterDashboardService.getEmployerJob(userDetails.id, jobId))
     }
 
     @GetMapping("/jobs/{jobId}/candidates")
