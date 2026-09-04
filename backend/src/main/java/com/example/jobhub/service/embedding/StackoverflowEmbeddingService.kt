@@ -14,7 +14,7 @@ class StackoverflowEmbeddingService(
 ) : EmbeddingService<StackoverflowProfile> {
 
     companion object {
-        private const val TOTAL_CHAR_BUDGET = 12_000
+        private const val TOTAL_CHAR_BUDGET = 8_000
         private const val EXPERT_THRESHOLD = 1_000
         private const val INTERMEDIATE_THRESHOLD = 200
     }

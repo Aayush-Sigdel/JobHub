@@ -354,7 +354,7 @@ class UserEmbeddingService(
             }
         }
 
-        return FormatUtil.truncate(sb.toString().trim(), 12_000)
+        return FormatUtil.truncate(sb.toString().trim(), 8_000)
     }
 
     fun extractIdentifier(platform: SocialPlatform, raw: String): String {

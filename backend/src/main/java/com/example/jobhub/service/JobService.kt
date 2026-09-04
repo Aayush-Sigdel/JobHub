@@ -602,7 +602,7 @@ class JobService(
             }
         }
 
-        val truncated = FormatUtil.truncate(text.trim(), 12_000)
+        val truncated = FormatUtil.truncate(text.trim(), 8_000)
         return try {
             embeddingApiClient.embed(truncated)
         } catch (e: Exception) {

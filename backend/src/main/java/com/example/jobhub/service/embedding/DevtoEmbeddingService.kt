@@ -16,7 +16,7 @@ class DevtoEmbeddingService(
     companion object {
         private const val SUMMARY_CHAR_BUDGET = 500
         private const val ARTICLE_BODY_CHAR_BUDGET = 500
-        private const val TOTAL_CHAR_BUDGET = 12_000
+        private const val TOTAL_CHAR_BUDGET = 8_000
     }
 
     override suspend fun generateEmbeddings(

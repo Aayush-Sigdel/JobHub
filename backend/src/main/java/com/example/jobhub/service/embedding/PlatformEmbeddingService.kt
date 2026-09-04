@@ -18,7 +18,7 @@ class PlatformEmbeddingService(
     companion object {
         private const val EXPERIENCE_DESC_CHAR_BUDGET = 300
         private const val EDUCATION_DESC_CHAR_BUDGET = 200
-        private const val TOTAL_CHAR_BUDGET = 12_000
+        private const val TOTAL_CHAR_BUDGET = 8_000
     }
 
 

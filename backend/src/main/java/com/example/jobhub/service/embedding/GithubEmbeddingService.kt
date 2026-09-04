@@ -16,7 +16,7 @@ class GithubEmbeddingService(
     companion object {
         private const val PINNED_README_CHAR_BUDGET = 800
         private const val OTHER_README_CHAR_BUDGET = 400
-        private const val TOTAL_CHAR_BUDGET = 12_000
+        private const val TOTAL_CHAR_BUDGET = 8_000
     }
 
     override suspend fun generateEmbeddings(source: GithubProfile): FloatArray {

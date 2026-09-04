@@ -1,22 +1,42 @@
+import os
+from pathlib import Path
+
+import torch
 from fastapi import FastAPI
 from pydantic import BaseModel
-import torch
 from transformers import AutoTokenizer
 
+from config import EMBEDDING_DIM
 from model.job_match import JobMatchModel
 
-MODEL = "checkpoints/epoch2/job_matchepoch2.pt"
-MAX_LEN = 1024
+MODEL = Path(os.getenv("EMBEDDING_MODEL_PATH", "checkpoints/retrained/best.pt"))
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-tokenizer = AutoTokenizer.from_pretrained("allenai/longformer-base-4096")
+checkpoint = torch.load(MODEL, map_location=device, weights_only=True)
+if checkpoint.get("format_version") != 2:
+    raise ValueError("Unsupported checkpoint; train a new model with text_embedding/train.py")
 
-model = JobMatchModel().to(device)
-model.load_state_dict(torch.load(MODEL, map_location=device))
+checkpoint_config = checkpoint["config"]
+state_dict = checkpoint["model_state_dict"]
+model_name = checkpoint_config["model_name"]
+max_length = int(checkpoint_config["max_length"])
+embedding_dim = int(checkpoint_config["embedding_dim"])
+if embedding_dim != EMBEDDING_DIM:
+    raise ValueError(
+        f"Checkpoint embedding_dim={embedding_dim}; API contract requires {EMBEDDING_DIM}"
+    )
+
+tokenizer_path = MODEL.parent / "tokenizer"
+tokenizer_source = tokenizer_path if tokenizer_path.exists() else model_name
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_source)
+
+model = JobMatchModel(model_name=model_name, embedding_dim=embedding_dim).to(device)
+model.load_state_dict(state_dict)
 model.eval()
 
 app = FastAPI()
+
 
 class EmbeddingRequest(BaseModel):
     text: str
@@ -25,9 +45,9 @@ class EmbeddingRequest(BaseModel):
 def encode(text):
     tokens = tokenizer(
         text,
-        padding="max_length",
+        padding=False,
         truncation=True,
-        max_length=MAX_LEN,
+        max_length=max_length,
         return_tensors="pt",
     )
 
@@ -43,6 +63,7 @@ def embed(request: EmbeddingRequest):
     with torch.no_grad():
         embedding = model.encoder(input_ids, attention_mask)
 
-    return {
-        "embedding": embedding.squeeze(0).cpu().tolist()
-    }
+    if embedding.shape != (1, EMBEDDING_DIM):
+        raise RuntimeError(f"Model returned unexpected shape: {tuple(embedding.shape)}")
+
+    return {"embedding": embedding.squeeze(0).cpu().tolist()}
