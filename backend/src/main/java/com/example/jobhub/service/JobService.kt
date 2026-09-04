@@ -17,6 +17,8 @@ import com.example.jobhub.model.task.SQLTask
 import com.example.jobhub.model.task.TaskScope
 import com.example.jobhub.repository.*
 import com.example.jobhub.service.embedding.CosineSimilarity
+import com.example.jobhub.service.embedding.JobMatchBreakdown
+import com.example.jobhub.service.embedding.JobMatchService
 import com.example.jobhub.util.FormatUtil
 import jakarta.persistence.criteria.Predicate
 import org.slf4j.LoggerFactory
@@ -40,6 +42,7 @@ class JobService(
     private val sqlTaskRepository: SQLTaskRepository,
     private val taskSubmissionRepository: TaskSubmissionRepository,
     private val embeddingApiClient: EmbeddingApiClient,
+    private val jobMatchService: JobMatchService,
     private val redisTemplate: StringRedisTemplate,
     private val jobMapper: JobMapper,
     private val objectMapper: ObjectMapper
@@ -107,7 +110,7 @@ class JobService(
         designTask: DesignTask?,
         programmingTask: ProgrammingTask?,
         sqlTask: SQLTask?,
-        embedding: FloatArray?
+        embedding: FloatArray
     ): JobPostResponse {
         val jobPost = jobMapper.toJobPost(
             request = request,
@@ -125,6 +128,16 @@ class JobService(
     fun updateJobPost(employerId: UUID, jobId: UUID, request: UpdateJobPostRequest): JobPostResponse {
         val jobPost = jobPostRepository.findByIdAndPostedById(jobId, employerId).orElseThrow {
             ApiException("Job post not found or you are not authorized to edit it", HttpStatus.NOT_FOUND)
+        }
+
+        if (request.title?.isBlank() == true) {
+            throw ApiException("Title cannot be blank", HttpStatus.BAD_REQUEST)
+        }
+        if (request.companyName?.isBlank() == true) {
+            throw ApiException("Company name cannot be blank", HttpStatus.BAD_REQUEST)
+        }
+        if (request.description?.isBlank() == true) {
+            throw ApiException("Description cannot be blank", HttpStatus.BAD_REQUEST)
         }
 
         if (request.designTaskId != null && request.removeDesignTask != true) {
@@ -155,13 +168,24 @@ class JobService(
         }
 
         var updatedEmbedding: FloatArray? = null
-        if (request.title != null || request.description != null || request.requirements != null) {
+        if (
+            request.title != null ||
+            request.companyName != null ||
+            request.description != null ||
+            request.requirements != null ||
+            request.removeRequirements == true ||
+            request.location != null ||
+            request.removeLocation == true ||
+            request.jobType != null ||
+            request.workplaceType != null ||
+            request.experienceLevel != null
+        ) {
             updatedEmbedding = generateJobEmbedding(
                 title = request.title ?: jobPost.title,
                 companyName = request.companyName ?: jobPost.companyName,
                 description = request.description ?: jobPost.description,
-                requirements = request.requirements ?: jobPost.requirements,
-                location = request.location ?: jobPost.location,
+                requirements = if (request.removeRequirements == true) null else request.requirements ?: jobPost.requirements,
+                location = if (request.removeLocation == true) null else request.location ?: jobPost.location,
                 jobType = (request.jobType ?: jobPost.jobType).name,
                 workplaceType = (request.workplaceType ?: jobPost.workplaceType).name,
                 experienceLevel = (request.experienceLevel ?: jobPost.experienceLevel).name
@@ -185,17 +209,37 @@ class JobService(
         request.title?.let { jobPost.title = it }
         request.companyName?.let { jobPost.companyName = it }
         request.description?.let { jobPost.description = it }
-        request.requirements?.let { jobPost.requirements = it }
-        request.location?.let { jobPost.location = it }
+        if (request.removeRequirements == true) {
+            jobPost.requirements = null
+        } else {
+            request.requirements?.let { jobPost.requirements = it }
+        }
+        if (request.removeLocation == true) {
+            jobPost.location = null
+        } else {
+            request.location?.let { jobPost.location = it }
+        }
         request.jobType?.let { jobPost.jobType = it }
         request.workplaceType?.let { jobPost.workplaceType = it }
         request.experienceLevel?.let { jobPost.experienceLevel = it }
-        request.salaryMin?.let { jobPost.salaryMin = it }
-        request.salaryMax?.let { jobPost.salaryMax = it }
+        if (request.removeSalaryMin == true) {
+            jobPost.salaryMin = null
+        } else {
+            request.salaryMin?.let { jobPost.salaryMin = it }
+        }
+        if (request.removeSalaryMax == true) {
+            jobPost.salaryMax = null
+        } else {
+            request.salaryMax?.let { jobPost.salaryMax = it }
+        }
         request.salaryCurrency?.let { jobPost.salaryCurrency = it }
         request.tabLock?.let { jobPost.tabLock = it }
         request.tabLockWarningLimit?.let { jobPost.tabLockWarningLimit = it }
-        request.deadline?.let { jobPost.deadline = it }
+        if (request.removeDeadline == true) {
+            jobPost.deadline = null
+        } else {
+            request.deadline?.let { jobPost.deadline = it }
+        }
         request.isActive?.let { jobPost.isActive = it }
 
         if (request.removeDesignTask == true) {
@@ -242,23 +286,20 @@ class JobService(
 
         var hasApplied = false
         var myApplicationId: UUID? = null
-        var similarityScore: Double? = null
+        var allTasksPassed: Boolean? = null
+        var matchBreakdown: JobMatchBreakdown? = null
 
         if (currentUserId != null) {
+            val currentUser = userRepository.findById(currentUserId).orElse(null)
             val appOpt = jobApplicationRepository.findByJobPostIdAndCandidateId(jobId, currentUserId)
             if (appOpt.isPresent) {
                 hasApplied = true
                 myApplicationId = appOpt.get().id
-                similarityScore = appOpt.get().similarityScore
-            } else if (job.embedding != null) {
-                val userOpt = userRepository.findById(currentUserId)
-                if (userOpt.isPresent && userOpt.get().profileEmbedding != null) {
-                    try {
-                        similarityScore = CosineSimilarity.compute(job.embedding!!, userOpt.get().profileEmbedding!!)
-                    } catch (e: Exception) {
-                        logger.warn("Could not compute similarity: ${e.message}")
-                    }
-                }
+                allTasksPassed = allRequiredTasksPassed(job, appOpt.get())
+            }
+
+            if (currentUser != null && !currentUser.isEmployer) {
+                matchBreakdown = jobMatchService.calculate(job.embedding, currentUser)
             }
         }
 
@@ -267,8 +308,20 @@ class JobService(
             applicantCount = applicantCount,
             hasApplied = hasApplied,
             myApplicationId = myApplicationId,
-            similarityScore = similarityScore
+            matchBreakdown = matchBreakdown,
+            allTasksPassed = allTasksPassed
         )
+    }
+
+    private fun allRequiredTasksPassed(job: JobPost, application: JobApplication): Boolean {
+        val required = listOfNotNull(job.designTask, job.programmingTask, job.sqlTask).size
+        if (required == 0) return true
+        val passed = listOfNotNull(
+            application.designSubmission?.takeIf { it.isPassed },
+            application.programmingSubmission?.takeIf { it.isPassed },
+            application.sqlSubmission?.takeIf { it.isPassed }
+        ).size
+        return passed == required
     }
 
     @Transactional(readOnly = true)
@@ -464,14 +517,7 @@ class JobService(
             logger.debug("Could not clean up tab switch redis keys: ${e.message}")
         }
 
-        var similarityScore: Double? = null
-        if (job.embedding != null && candidate.profileEmbedding != null) {
-            try {
-                similarityScore = CosineSimilarity.compute(job.embedding!!, candidate.profileEmbedding!!)
-            } catch (e: Exception) {
-                logger.warn("Could not compute similarity: ${e.message}")
-            }
-        }
+        val similarityScore = jobMatchService.calculate(job.embedding, candidate).overall
 
         val tabSwitchEventsJson = if (allEvents.isNotEmpty()) {
             try {
@@ -590,7 +636,7 @@ class JobService(
         jobType: String,
         workplaceType: String,
         experienceLevel: String
-    ): FloatArray? {
+    ): FloatArray {
         val text = buildString {
             appendLine("Job Title: $title")
             appendLine("Company: $companyName")
@@ -603,11 +649,24 @@ class JobService(
         }
 
         val truncated = FormatUtil.truncate(text.trim(), 8_000)
-        return try {
+        val embedding = try {
             embeddingApiClient.embed(truncated)
         } catch (e: Exception) {
-            logger.warn("Failed to generate job embedding via EmbeddingApiClient: ${e.message}")
-            null
+            logger.error("Failed to generate job embedding via EmbeddingApiClient", e)
+            throw ApiException(
+                "Job embedding service is unavailable; the job post was not saved",
+                HttpStatus.SERVICE_UNAVAILABLE
+            )
         }
+
+        if (embedding.size != 256) {
+            logger.error("Embedding API returned {} dimensions for a job; expected 256", embedding.size)
+            throw ApiException(
+                "Job embedding service returned an invalid response; the job post was not saved",
+                HttpStatus.BAD_GATEWAY
+            )
+        }
+
+        return embedding
     }
 }

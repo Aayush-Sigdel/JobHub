@@ -1,9 +1,10 @@
 "use client";
 import { Pencil, Check, Copy, Plus, Info, Loader2 } from "lucide-react";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { updateBioAction } from "@/lib/actions/user";
+import { toast } from "sonner";
 
 interface ProfileAboutProps {
   about?: string;
@@ -17,12 +18,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
   const [draftText, setDraftText] = useState(aboutText);
   const [copied, setCopied] = useState(false);
 
-  const MAX_CHARS = 500;
-
-  useEffect(() => {
-    setAboutText(about);
-    setDraftText(about);
-  }, [about]);
+  const MAX_CHARS = 255;
 
   const handleEdit = () => {
     setDraftText(aboutText);
@@ -36,9 +32,11 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
         await updateBioAction(cleanBio);
         setAboutText(cleanBio);
         setIsEditing(false);
+        toast.success("About section updated.");
         router.refresh();
       } catch (err) {
         console.error("Failed to save bio:", err);
+        toast.error(err instanceof Error ? err.message : "Unable to update your About section.");
       }
     });
   };
@@ -72,6 +70,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
+              type="button"
               onClick={handleEdit}
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors cursor-pointer"
               aria-label="Edit about section"
@@ -103,6 +102,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
 
               <div className="border border-border rounded-lg focus-within:border-ring focus-within:ring-1 focus-within:ring-inset focus-within:ring-ring transition-shadow bg-background overflow-hidden">
                 <textarea
+                  aria-label="About"
                   value={draftText}
                   onChange={(e) =>
                     setDraftText(e.target.value.slice(0, MAX_CHARS))
@@ -113,6 +113,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
 
                 <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-transparent">
                   <button
+                    type="button"
                     onClick={handleCopy}
                     disabled={!draftText}
                     className="p-1.5 text-muted-foreground hover:text-foreground rounded-md transition-colors disabled:opacity-50 cursor-pointer"
@@ -132,6 +133,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
 
               <div className="flex gap-3 justify-end pt-2">
                 <button
+                  type="button"
                   onClick={handleCancel}
                   disabled={isSaving}
                   className="px-5 py-2 text-[14px] font-medium text-foreground/80 border border-border bg-transparent hover:bg-muted rounded-lg transition-colors cursor-pointer"
@@ -139,6 +141,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleSave}
                   disabled={isSaving}
                   className="px-5 py-2 text-[14px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
@@ -182,6 +185,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                 Introduce yourself to clients by adding a quick summary of your expertise and background.
               </p>
               <button
+                type="button"
                 onClick={handleEdit}
                 className="flex items-center gap-2 px-4 py-2 text-[14px] font-medium text-foreground border border-border hover:bg-muted rounded-lg transition-colors cursor-pointer"
               >

@@ -6,6 +6,7 @@ import type {
   ApplyJobRequest,
   CreateJobPostRequest,
   JobApplicationResponse,
+  JobPostDetailResponse,
   JobPostResponse,
   RecordTabSwitchRequest,
   RecordTabSwitchResponse,
@@ -44,14 +45,25 @@ export async function applyJobAction(jobId: string, payload: ApplyJobRequest) {
   try {
     const result = await fetchWithAuth<JobApplicationResponse>(`/jobs/${jobId}/apply`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        tabSwitchCount: payload.tabSwitchCount ?? 0,
+        tabSwitchEvents: payload.tabSwitchEvents ?? [],
+      }),
     });
     revalidatePath(`/find-job/${jobId}`);
     revalidatePath("/job-tracker");
     return { success: true, data: result };
   } catch (error) {
+    if (error instanceof Error && error.message.toLowerCase().includes("already applied")) {
+      return { success: true, alreadyApplied: true };
+    }
     return { success: false, error: error instanceof Error ? error.message : "Unable to submit your application." };
   }
+}
+
+export async function getJobDetailAction(jobId: string): Promise<JobPostDetailResponse> {
+  return fetchWithAuth<JobPostDetailResponse>(`/jobs/${jobId}`, { cache: "no-store" });
 }
 
 export async function recordTabSwitchAction(jobId: string, data: RecordTabSwitchRequest): Promise<RecordTabSwitchResponse> {

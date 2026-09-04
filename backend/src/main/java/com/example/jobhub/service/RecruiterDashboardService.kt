@@ -15,7 +15,8 @@ import com.example.jobhub.model.job.TabSwitchEvent
 import com.example.jobhub.repository.JobApplicationRepository
 import com.example.jobhub.repository.JobPostRepository
 import com.example.jobhub.repository.UserRepository
-import com.example.jobhub.service.embedding.CosineSimilarity
+import com.example.jobhub.service.embedding.JobMatchBreakdown
+import com.example.jobhub.service.embedding.JobMatchService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -24,7 +25,6 @@ import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.util.UUID
-import kotlin.math.roundToInt
 
 @Service
 class RecruiterDashboardService(
@@ -32,19 +32,12 @@ class RecruiterDashboardService(
     private val jobApplicationRepository: JobApplicationRepository,
     private val userRepository: UserRepository,
     private val userSocialSnapshotService: UserSocialSnapshotService,
+    private val jobMatchService: JobMatchService,
     private val userMapper: UserMapper,
     private val taskSubmissionMapper: TaskSubmissionMapper,
     private val jobMapper: JobMapper,
     private val objectMapper: ObjectMapper
 ) {
-
-    companion object {
-        private const val WEIGHT_PLATFORM = 0.50
-        private const val WEIGHT_GITHUB = 0.30
-        private const val WEIGHT_STACKOVERFLOW = 0.10
-        private const val WEIGHT_DEVTO = 0.05
-        private const val WEIGHT_ORCID = 0.05
-    }
 
     private val logger = LoggerFactory.getLogger(RecruiterDashboardService::class.java)
 
@@ -82,6 +75,14 @@ class RecruiterDashboardService(
             )
         }
     }
+
+    @Transactional(readOnly = true)
+    fun getEmployerJob(employerId: UUID, jobId: UUID) =
+        jobPostRepository.findByIdAndPostedById(jobId, employerId)
+            .map(jobMapper::toJobPostResponse)
+            .orElseThrow {
+                ApiException("Job post not found or not owned by recruiter", HttpStatus.NOT_FOUND)
+            }
 
     @Transactional(readOnly = true)
     fun getCandidatesForJob(
@@ -122,10 +123,10 @@ class RecruiterDashboardService(
             }
 
             val jobEmbedding = job.embedding
-            val simScores = computeSimilarityBreakdown(jobEmbedding, candidate)
+            val simScores = jobMatchService.calculate(jobEmbedding, candidate)
             val overallSim = simScores.overall
 
-            if (filter.minSimilarity != null && overallSim < filter.minSimilarity) {
+            if (filter.minSimilarity != null && (overallSim == null || overallSim < filter.minSimilarity)) {
                 return@mapNotNull null
             }
 
@@ -147,7 +148,7 @@ class RecruiterDashboardService(
                 scoreSum
             }
             "name" -> candidateResponses.sortedBy { it.name.lowercase() }
-            else -> candidateResponses.sortedByDescending { it.overallSimilarity }
+            else -> candidateResponses.sortedByDescending { it.overallSimilarity ?: -1.0 }
         }
     }
 
@@ -189,60 +190,11 @@ class RecruiterDashboardService(
         return jobMapper.toJobApplicationResponse(updated)
     }
 
-    private data class SimilarityBreakdown(
-        val overall: Double,
-        val platform: Double?,
-        val github: Double?,
-        val devto: Double?,
-        val orcid: Double?,
-        val stackoverflow: Double?,
-        val portfolio: Double?
-    )
-
-    private fun computeSimilarityBreakdown(jobEmbedding: FloatArray?, candidate: User): SimilarityBreakdown {
-        if (jobEmbedding == null) {
-            return SimilarityBreakdown(0.0, null, null, null, null, null, null)
-        }
-
-        val profileSim = candidate.profileEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-        val platformSim = candidate.platformEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-        val githubSim = candidate.githubEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-        val devtoSim = candidate.devtoEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-        val orcidSim = candidate.orcidEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-        val stackoverflowSim = candidate.stackoverflowEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-        val portfolioSim = candidate.portfolioEmbedding?.let { CosineSimilarity.compute(jobEmbedding, it) }
-
-        val weightedScores = listOfNotNull(
-            platformSim?.let { it to WEIGHT_PLATFORM },
-            githubSim?.let { it to WEIGHT_GITHUB },
-            stackoverflowSim?.let { it to WEIGHT_STACKOVERFLOW },
-            devtoSim?.let { it to WEIGHT_DEVTO },
-            orcidSim?.let { it to WEIGHT_ORCID }
-        )
-
-        val totalWeight = weightedScores.sumOf { it.second }
-        val overall = if (totalWeight > 0.0) {
-            weightedScores.sumOf { it.first * it.second } / totalWeight
-        } else {
-            0.0
-        }
-
-        return SimilarityBreakdown(
-            overall = (overall.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0,
-            platform = platformSim?.let { (it.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0 },
-            github = githubSim?.let { (it.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0 },
-            devto = devtoSim?.let { (it.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0 },
-            orcid = orcidSim?.let { (it.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0 },
-            stackoverflow = stackoverflowSim?.let { (it.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0 },
-            portfolio = portfolioSim?.let { (it.coerceIn(0.0, 1.0) * 1000.0).roundToInt() / 1000.0 }
-        )
-    }
-
     private fun buildCandidateDashboardResponse(
         candidate: User,
         job: JobPost,
         application: JobApplication,
-        simScores: SimilarityBreakdown
+        simScores: JobMatchBreakdown
     ): CandidateDashboardResponse {
         val tabSwitchEvents: List<TabSwitchEvent>? = application.tabSwitchEventsJson?.let {
             try {
@@ -294,7 +246,7 @@ class RecruiterDashboardService(
             sqlSubmission = sqlSub,
             allTasksPassed = allTasksPassed,
             overallSimilarity = simScores.overall,
-            matchPercentage = (simScores.overall * 100).toInt(),
+            matchPercentage = simScores.percentage,
             platformSimilarity = simScores.platform,
             githubSimilarity = simScores.github,
             devtoSimilarity = simScores.devto,

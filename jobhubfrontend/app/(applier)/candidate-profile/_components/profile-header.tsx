@@ -1,24 +1,21 @@
 "use client";
 
-import { Share, Eye, Pencil, Check, Loader2 } from "lucide-react";
-import { User, Language, Location } from "@/types/user";
-import { useState, useEffect } from "react";
+import { Share, Eye, Pencil } from "lucide-react";
+import { Location } from "@/types/user";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { ImagePopover } from "./image-popover";
 import { LocationPopover } from "./location-popover";
-import { LanguagesPopover } from "./languages-popover";
 import { updateProfileAction } from "@/lib/actions/user";
 
 interface ProfileHeaderProps {
   userId?: string;
   imageUrl?: string;
   name: string;
-  username: string;
   title?: string;
   location?: Location;
-  languages?: Language[];
   isVerified?: boolean;
 }
 
@@ -26,51 +23,22 @@ export function ProfileHeader({
   userId,
   imageUrl,
   name,
-  username,
   title,
   location,
-  languages,
   isVerified,
 }: ProfileHeaderProps) {
   const router = useRouter();
   const [profileImage, setProfileImage] = useState(imageUrl || "");
   const [profileName, setProfileName] = useState(name);
-  const [profileUsername, setProfileUsername] = useState(username);
   const [profileTitle, setProfileTitle] = useState(title || "");
   const [profileLocation, setProfileLocation] = useState<Location | null>(
     location || null,
   );
-  const [profileLanguages, setProfileLanguages] = useState<Language[]>(
-    languages || [],
-  );
-
   const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
   const [tempName, setTempName] = useState(profileName);
-  const [tempUsername, setTempUsername] = useState(profileUsername);
   const [tempTitle, setTempTitle] = useState(profileTitle);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setProfileName(name);
-    setTempName(name);
-  }, [name]);
-
-  useEffect(() => {
-    setProfileTitle(title || "");
-    setTempTitle(title || "");
-  }, [title]);
-
-  useEffect(() => {
-    setProfileImage(imageUrl || "");
-  }, [imageUrl]);
-
-  useEffect(() => {
-    setProfileLocation(location || null);
-  }, [location]);
 
   const saveHeaderChanges = async (updates: {
     name?: string;
@@ -79,7 +47,6 @@ export function ProfileHeader({
     imageUrl?: string;
   }) => {
     try {
-      setIsSaving(true);
       const locString = updates.location
         ? `${updates.location.city}${updates.location.country ? ", " + updates.location.country : ""}`
         : profileLocation
@@ -96,8 +63,6 @@ export function ProfileHeader({
       router.refresh();
     } catch (err) {
       console.error("Failed to save profile header changes:", err);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -109,16 +74,6 @@ export function ProfileHeader({
     } else if (e.key === "Escape") {
       setTempName(profileName);
       setIsEditingName(false);
-    }
-  };
-
-  const handleUsernameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      setProfileUsername(tempUsername);
-      setIsEditingUsername(false);
-    } else if (e.key === "Escape") {
-      setTempUsername(profileUsername);
-      setIsEditingUsername(false);
     }
   };
 
@@ -143,14 +98,14 @@ export function ProfileHeader({
     await saveHeaderChanges({ imageUrl: newImgUrl });
   };
 
-  const previewId = userId || profileUsername || "me";
+  const previewId = userId || "me";
 
   return (
     <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
       <div className="flex items-center gap-6">
         <ImagePopover
           profileImage={profileImage}
-          profileUsername={profileUsername}
+          profileName={profileName}
           onImageUpdate={handleImageUpdate}
         />
 
@@ -241,11 +196,7 @@ export function ProfileHeader({
               profileLocation={profileLocation}
               setProfileLocation={handleLocationChange}
             />
-
-            <LanguagesPopover
-              profileLanguages={profileLanguages}
-              setProfileLanguages={setProfileLanguages}
-            />
+            {/* Languages are hidden until profile language endpoints are available. */}
           </div>
         </div>
       </div>

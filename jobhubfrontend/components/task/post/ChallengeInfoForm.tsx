@@ -13,6 +13,8 @@ interface ChallengeInfoFormProps {
   onSkillLevelChange: (level: SkillLevel) => void;
   scope: TaskScope;
   onScopeChange: (scope: TaskScope) => void;
+  assessmentType?: "design" | "programming";
+  titleError?: string;
 }
 
 export const ChallengeInfoForm = memo(
@@ -23,33 +25,59 @@ export const ChallengeInfoForm = memo(
     onSkillLevelChange,
     scope,
     onScopeChange,
+    assessmentType = "design",
+    titleError,
   }: ChallengeInfoFormProps) => {
+    const isProgramming = assessmentType === "programming";
+    const levelDescriptions = isProgramming
+      ? [
+          "Basic syntax and logic",
+          "Algorithms and data handling",
+          "Advanced problem solving",
+        ]
+      : [
+          "Basic shapes & layout",
+          "Complex positioning",
+          "Tricky clip-paths & math",
+        ];
+
     return (
       <div className="bg-card border border-border rounded-2xl p-6 shadow-2xs space-y-5">
         <div className="flex items-center gap-2 border-b border-border pb-3">
           <span className="text-xs font-mono font-bold text-foreground uppercase tracking-wider">
-            1. Challenge Information
+            1. {isProgramming ? "Task Information" : "Challenge Information"}
           </span>
         </div>
 
         {/* Title */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+          <label
+            htmlFor="assessment-title"
+            className="text-xs font-semibold text-foreground flex items-center justify-between"
+          >
             <span>
-              Challenge Title <span className="text-destructive">*</span>
+              {isProgramming ? "Task Title" : "Challenge Title"}{" "}
+              <span className="text-destructive">*</span>
             </span>
             <span className="font-mono text-[11px] text-muted-foreground font-normal">
               {title.length}/60 chars
             </span>
           </label>
           <input
+            id="assessment-title"
             type="text"
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
             maxLength={60}
-            placeholder="e.g., Target #1: Simply Square"
+            placeholder={
+              isProgramming ? "e.g., Two Sum" : "e.g., Target #1: Simply Square"
+            }
             className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-tomato-500/20 focus:border-tomato-500 transition-all font-sans"
+            aria-invalid={Boolean(titleError)}
           />
+          {titleError && (
+            <p className="text-xs font-medium text-destructive">{titleError}</p>
+          )}
         </div>
 
         {/* Skill Level Selection */}
@@ -62,26 +90,24 @@ export const ChallengeInfoForm = memo(
               {
                 id: "BEGINNER",
                 label: "Beginner",
-                desc: "Basic shapes & layout",
-                color: "text-emerald-500",
+                desc: levelDescriptions[0],
               },
               {
                 id: "INTERMEDIATE",
                 label: "Intermediate",
-                desc: "Complex positioning",
-                color: "text-amber-500",
+                desc: levelDescriptions[1],
               },
               {
                 id: "EXPERT",
                 label: "Expert",
-                desc: "Tricky clip-paths & math",
-                color: "text-tomato-500",
+                desc: levelDescriptions[2],
               },
             ].map((lvl) => (
               <button
                 key={lvl.id}
                 type="button"
                 onClick={() => onSkillLevelChange(lvl.id as SkillLevel)}
+                aria-pressed={skillLevel === lvl.id}
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                   skillLevel === lvl.id
                     ? "border-tomato-500 bg-card shadow-2xs ring-1 ring-tomato-500/30"
@@ -94,9 +120,7 @@ export const ChallengeInfoForm = memo(
                   </span>
                   {skillLevel === lvl.id ? (
                     <Check className="w-3.5 h-3.5 text-tomato-500" />
-                  ) : (
-                    <span className={`text-[10px] font-bold ${lvl.color}`}>●</span>
-                  )}
+                  ) : null}
                 </div>
                 <span className="text-[11px] text-muted-foreground leading-tight">
                   {lvl.desc}
@@ -109,7 +133,8 @@ export const ChallengeInfoForm = memo(
         {/* Visibility / Scope Selection */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-foreground block">
-            Challenge Scope <span className="text-destructive">*</span>
+            {isProgramming ? "Task Scope" : "Challenge Scope"}{" "}
+            <span className="text-destructive">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -132,6 +157,7 @@ export const ChallengeInfoForm = memo(
                   key={s.id}
                   type="button"
                   onClick={() => onScopeChange(s.id as TaskScope)}
+                  aria-pressed={scope === s.id}
                   className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                     scope === s.id
                       ? "border-tomato-500 bg-card shadow-2xs ring-1 ring-tomato-500/30"
@@ -162,7 +188,7 @@ export const ChallengeInfoForm = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 ChallengeInfoForm.displayName = "ChallengeInfoForm";
