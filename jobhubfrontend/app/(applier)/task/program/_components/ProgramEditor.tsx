@@ -1,33 +1,69 @@
 "use client";
-import React, { useEffect } from "react";
-import CodeMirror from "@uiw/react-codemirror";
-import { java } from "@codemirror/lang-java";
-import { python } from "@codemirror/lang-python";
-import type { ProgrammingTaskDto, DataType } from "../page";
 
-const mapJavaType = (type: DataType) => ({ INT: "int", INT_ARRAY: "int[]", STRING: "String", STRING_ARRAY: "String[]", DOUBLE: "double", BOOLEAN: "boolean" }[type] || "void");
-const mapPythonType = (type: DataType) => ({ INT: "int", INT_ARRAY: "List[int]", STRING: "str", STRING_ARRAY: "List[str]", DOUBLE: "float", BOOLEAN: "bool" }[type] || "None");
+import { useEffect } from "react";
+import { CodeEditor } from "@/components/task/CodeEditor";
+import type { DataType, ProgrammingTaskDto } from "../page";
 
-export default function ProgramEditor({ task, language, code, setCode }: { task: ProgrammingTaskDto; language: "JAVA" | "PYTHON"; code: string; setCode: (c: string) => void }) {
+const JAVA_TYPES: Record<DataType, string> = {
+  INT: "int",
+  INT_ARRAY: "int[]",
+  STRING: "String",
+  STRING_ARRAY: "String[]",
+  DOUBLE: "double",
+  BOOLEAN: "boolean",
+};
+
+const PYTHON_TYPES: Record<DataType, string> = {
+  INT: "int",
+  INT_ARRAY: "List[int]",
+  STRING: "str",
+  STRING_ARRAY: "List[str]",
+  DOUBLE: "float",
+  BOOLEAN: "bool",
+};
+
+function createStarterCode(
+  task: ProgrammingTaskDto,
+  language: "JAVA" | "PYTHON",
+) {
+  if (language === "JAVA") {
+    const parameters = task.parameters
+      .map((parameter) => `${JAVA_TYPES[parameter.type]} ${parameter.name}`)
+      .join(", ");
+    return `class Solution {\n    public ${JAVA_TYPES[task.returnType]} ${task.methodName}(${parameters}) {\n        // Write your solution here\n    }\n}`;
+  }
+
+  const parameters = task.parameters
+    .map((parameter) => `${parameter.name}: ${PYTHON_TYPES[parameter.type]}`)
+    .join(", ");
+  const signatureParameters = parameters ? `, ${parameters}` : "";
+  return `from typing import List\n\nclass Solution:\n    def ${task.methodName}(self${signatureParameters}) -> ${PYTHON_TYPES[task.returnType]}:\n        # Write your solution here\n        pass`;
+}
+
+export default function ProgramEditor({
+  task,
+  language,
+  setCode,
+}: {
+  task: ProgrammingTaskDto;
+  language: "JAVA" | "PYTHON";
+  setCode: (code: string) => void;
+}) {
+  const starterCode = createStarterCode(task, language);
+
   useEffect(() => {
-    let template = "";
-    if (language === "JAVA") {
-      const params = task.parameters.map(p => `${mapJavaType(p.type)} ${p.name}`).join(", ");
-      template = `class Solution {\n    public ${mapJavaType(task.returnType)} ${task.methodName}(${params}) {\n        // your code here\n    }\n}`;
-    } else {
-      const params = task.parameters.map(p => `${p.name}: ${mapPythonType(p.type)}`).join(", ");
-      const p = params ? `, ${params}` : "";
-      template = `from typing import List\n\nclass Solution:\n    def ${task.methodName}(self${p}) -> ${mapPythonType(task.returnType)}:\n        # your code here\n        pass`;
-    }
-    setCode(template);
-  }, [task, language, setCode]);
+    setCode(starterCode);
+  }, [starterCode, setCode]);
 
   return (
-    <div className="h-full flex flex-col border rounded overflow-hidden">
-      <div className="bg-gray-100 p-2 text-sm font-semibold border-b">Code Editor ({language})</div>
-      <div className="flex-1 overflow-auto bg-white">
-        <CodeMirror value={code} height="100%" extensions={[language === "JAVA" ? java() : python()]} onChange={(val) => setCode(val)} className="h-full" />
-      </div>
-    </div>
+    <CodeEditor
+      key={`${task.id}-${language}`}
+      initialCode={starterCode}
+      onChange={setCode}
+      fileName={language === "JAVA" ? "Solution.java" : "Solution.py"}
+      editorLabel={`Code Editor (${language === "JAVA" ? "Java 17" : "Python 3"})`}
+      language={language}
+      showActionBar={false}
+    />
   );
 }

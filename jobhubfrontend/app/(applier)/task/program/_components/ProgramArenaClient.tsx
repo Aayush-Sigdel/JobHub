@@ -3,7 +3,12 @@
 import React, { useEffect, useState, useTransition } from "react";
 import { submitTaskAction } from "@/lib/actions/tasks";
 import { applyJobAction } from "@/lib/actions/jobs";
-import { buildVerifiedApplicationRequest, clearJobApplicationDraft, loadJobAssessmentSubmission, saveJobAssessmentSubmission } from "@/lib/job-assessment-submissions";
+import {
+  buildVerifiedApplicationRequest,
+  clearJobApplicationDraft,
+  loadJobAssessmentSubmission,
+  saveJobAssessmentSubmission,
+} from "@/lib/job-assessment-submissions";
 import { useTabLock } from "@/lib/hooks/use-tab-lock";
 import type { ProgrammingTaskDto } from "../page";
 import type { TaskSubmissionResponse, TaskType } from "@/types/api/tasks";
@@ -14,12 +19,7 @@ import ProgramArenaHeader from "./ProgramArenaHeader";
 import SubmissionResultModal from "./SubmissionResultModal";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  FileText,
-  ListFilter,
-  Sparkles,
-  Code2,
-} from "lucide-react";
+import { FileText, ListFilter, Sparkles, Code2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProgramArenaClientProps {
@@ -32,6 +32,24 @@ interface ProgramArenaClientProps {
   requiredTaskTypes: TaskType[];
 }
 
+const RUNNER_INFRASTRUCTURE_ERRORS = [
+  "error: file not found: Solution.java",
+  "error: file not found: Driver.java",
+  "Cannot connect to the Docker daemon",
+  "Failed to relax sandbox work directory permissions",
+];
+
+function isRunnerInfrastructureFailure(message?: string) {
+  return Boolean(
+    message &&
+    (RUNNER_INFRASTRUCTURE_ERRORS.some((errorText) =>
+      message.includes(errorText),
+    ) ||
+      (message.includes("Docker image '") &&
+        message.includes("' does not exist"))),
+  );
+}
+
 export default function ProgramArenaClient({
   tasks,
   initialTaskId,
@@ -42,7 +60,7 @@ export default function ProgramArenaClient({
   requiredTaskTypes,
 }: ProgramArenaClientProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
-    initialTaskId || (tasks.length > 0 ? tasks[0].id : null)
+    initialTaskId || (tasks.length > 0 ? tasks[0].id : null),
   );
   const [code, setCode] = useState<string>("");
   const [language, setLanguage] = useState<"JAVA" | "PYTHON">("JAVA");
@@ -63,14 +81,20 @@ export default function ProgramArenaClient({
   useEffect(() => {
     if (!jobId || !selectedTask?.id) return;
     const refreshTimer = window.setTimeout(() => {
-      setHasRecordedSubmission(Boolean(loadJobAssessmentSubmission(jobId, "PROGRAMMING", selectedTask.id)));
+      setHasRecordedSubmission(
+        Boolean(
+          loadJobAssessmentSubmission(jobId, "PROGRAMMING", selectedTask.id),
+        ),
+      );
     }, 0);
     return () => window.clearTimeout(refreshTimer);
   }, [jobId, selectedTask?.id]);
 
   const handleSubmit = () => {
     if (hasRecordedSubmission) {
-      toast.info("This assessment is already recorded. Return to the job to continue your application.");
+      toast.info(
+        "This assessment is already recorded. Return to the job to continue your application.",
+      );
       return;
     }
     if (!selectedTask?.id) return;
@@ -89,8 +113,17 @@ export default function ProgramArenaClient({
         });
         setResult(res);
 
+        if (isRunnerInfrastructureFailure(res.message)) {
+          toast.error(
+            "The code runner is unavailable. Your editor remains unlocked so you can try again after it is restored.",
+          );
+          return;
+        }
+
         if (!res.id) {
-          toast.error("The server verified the task but returned no submission ID. Restart the backend with the latest task-submission fix, then submit again.");
+          toast.error(
+            "The server verified the task but returned no submission ID. Restart the backend with the latest task-submission fix, then submit again.",
+          );
           return;
         }
         setHasRecordedSubmission(true);
@@ -100,14 +133,22 @@ export default function ProgramArenaClient({
             taskId: selectedTask.id,
             taskType: "PROGRAMMING",
           });
-          const applicationRequest = buildVerifiedApplicationRequest(jobId, requiredTaskTypes);
+          const applicationRequest = buildVerifiedApplicationRequest(
+            jobId,
+            requiredTaskTypes,
+          );
           if (applicationRequest) {
             const application = await applyJobAction(jobId, applicationRequest);
             if (application.success) {
               clearJobApplicationDraft(jobId);
-              toast.success("All assessments are verified. Your application has been submitted.");
+              toast.success(
+                "All assessments are verified. Your application has been submitted.",
+              );
             } else {
-              toast.error(application.error || "Assessment recorded, but the application could not be submitted.");
+              toast.error(
+                application.error ||
+                  "Assessment recorded, but the application could not be submitted.",
+              );
             }
           }
         }
@@ -253,13 +294,17 @@ export default function ProgramArenaClient({
                               Example {idx + 1}
                             </span>
                             <div>
-                              <strong className="text-muted-foreground">Input: </strong>
+                              <strong className="text-muted-foreground">
+                                Input:{" "}
+                              </strong>
                               <span className="text-foreground">
                                 {JSON.stringify(tc.input)}
                               </span>
                             </div>
                             <div>
-                              <strong className="text-muted-foreground">Expected: </strong>
+                              <strong className="text-muted-foreground">
+                                Expected:{" "}
+                              </strong>
                               <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                                 {JSON.stringify(tc.expectedOutput)}
                               </span>
@@ -273,14 +318,19 @@ export default function ProgramArenaClient({
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                   <Code2 className="size-8 mb-2 opacity-50" />
-                  <p className="text-xs font-medium">Select a task to view description</p>
+                  <p className="text-xs font-medium">
+                    Select a task to view description
+                  </p>
                 </div>
               )}
             </TabsContent>
 
             {/* Task List Tab */}
             {tasks.length > 1 && (
-              <TabsContent value="tasks" className="flex-1 overflow-y-auto p-3 m-0">
+              <TabsContent
+                value="tasks"
+                className="flex-1 overflow-y-auto p-3 m-0"
+              >
                 <ProgramTaskSelector
                   tasks={tasks}
                   selectedTaskId={selectedTaskId}
@@ -300,14 +350,15 @@ export default function ProgramArenaClient({
                 <ProgramEditor
                   task={selectedTask}
                   language={language}
-                  code={code}
                   setCode={setCode}
                 />
               </div>
 
               {/* Bottom Test Case Panel */}
               <div className="h-[220px] shrink-0 border-t border-border bg-muted/20 overflow-hidden flex flex-col">
-                <TestCasePanel testCases={selectedTask.exampleTestCases || []} />
+                <TestCasePanel
+                  testCases={selectedTask.exampleTestCases || []}
+                />
               </div>
             </>
           ) : (
