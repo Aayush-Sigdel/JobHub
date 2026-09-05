@@ -120,7 +120,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                     title="Copy to clipboard"
                   >
                     {copied ? (
-                      <Check size={16} className="text-primary" />
+                      <Check size={16} className="text-emerald-700 dark:text-emerald-400" />
                     ) : (
                       <Copy size={16} />
                     )}
@@ -144,12 +144,12 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-5 py-2 text-[14px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSaving ? (
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin text-black" />
                   ) : (
-                    <Check size={16} />
+                    <Check size={16} className="text-black stroke-[3]" />
                   )}
                   Save
                 </button>

@@ -32,6 +32,10 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
   const { data: session, status } = useSession();
   const isUserLoggedIn = status === "authenticated";
 
+  // Hide the navbar search bar when the current page already contains an in-page search bar
+  const hasInPageSearch =
+    pathname === "/home" || pathname === "/find-job" || pathname === "/job-tracker";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
@@ -74,10 +78,12 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
           )}
         </div>
 
-        {/* Center: Compact Search Bar */}
-        <div className="flex-1 max-w-md hidden sm:block">
-          <SearchBar />
-        </div>
+        {/* Center: Compact Search Bar (only shown when page does not already have an in-page search bar) */}
+        {!hasInPageSearch && (
+          <div className="flex-1 max-w-md hidden sm:block">
+            <SearchBar />
+          </div>
+        )}
 
         {/* Right: Actions, Theme, & Profile / Auth */}
         <div className="flex shrink-0 items-center gap-1.5">

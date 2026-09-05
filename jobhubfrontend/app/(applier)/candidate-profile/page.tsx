@@ -4,8 +4,8 @@ import { ProfileAbout } from "./_components/profile-about";
 import { ProfileSkills } from "./_components/profile-skills";
 import { ProfileStrength } from "./_components/profile-strength";
 import { ProfileContact } from "./_components/profile-contact";
-import { ProfileWorkExperience } from "@/components/profile/profile-work-experience";
-import { ProfileEducation } from "@/components/profile/profile-education";
+import { ProfileWorkExperience } from "./_components/profile-work-experience";
+import { ProfileEducation } from "./_components/profile-education";
 import type { UserProfileResponse } from "@/types/api/user";
 import { ProfileAccessError } from "./_components/profile-access-error";
 
@@ -42,14 +42,19 @@ export default async function CandidateProfilePage() {
           />
           {/* Preferred roles are hidden until profile preference endpoints are available. */}
           <ProfileAbout key={`about-${profile.updatedAt}`} about={profile?.bio || ""} />
-          {/* Portfolio projects and intro video are hidden until their endpoints are available. */}
-          <ProfileWorkExperience experiences={profile?.experiences || []} />
+          <ProfileWorkExperience
+            key={`exp-${profile.updatedAt}`}
+            experiences={profile?.experiences || []}
+          />
           <ProfileSkills
             key={`skills-${profile.updatedAt}`}
             initialSkills={profile?.skills || []}
           />
 
-          <ProfileEducation educations={profile?.educations || []} />
+          <ProfileEducation
+            key={`edu-${profile.updatedAt}`}
+            educations={profile?.educations || []}
+          />
           {/* Certifications and languages are hidden until their endpoints are available. */}
         </div>
 

@@ -139,7 +139,7 @@ export function ProfileHeader({
                     title="Verified Professional"
                   >
                     <svg
-                      className="w-3.5 h-3.5 text-primary-foreground"
+                      className="w-3.5 h-3.5 text-black"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"

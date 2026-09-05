@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin,
@@ -16,9 +15,8 @@ import {
   Code,
   PenTool,
   Database,
-  Building2,
   ArrowRight,
-  Zap,
+  Sparkles,
 } from "lucide-react";
 import { formatSkillName, stripHtml } from "@/lib/utils";
 import { useLocalSavedJobs } from "@/lib/hooks/use-local-jobs";
@@ -64,7 +62,6 @@ export function RecommendedJobCard({
     }
   };
 
-  // Format Workplace Type
   const formatWorkplace = (type: string) => {
     switch (type) {
       case "REMOTE":
@@ -72,13 +69,12 @@ export function RecommendedJobCard({
       case "HYBRID":
         return "Hybrid";
       case "ON_SITE":
-        return "On-Site";
+        return "On-site";
       default:
         return type?.replace("_", " ") || "Full-time";
     }
   };
 
-  // Format Job Type
   const formatJobType = (type: string) => {
     switch (type) {
       case "FULL_TIME":
@@ -94,95 +90,90 @@ export function RecommendedJobCard({
     }
   };
 
-  // Format Experience Level
   const formatExpLevel = (level: string) => {
     switch (level) {
       case "BEGINNER":
-        return "Junior / Entry";
+        return "Junior";
       case "INTERMEDIATE":
         return "Mid-Level";
       case "EXPERT":
-        return "Senior / Lead";
+        return "Senior";
       default:
         return level || "Mid-Level";
     }
   };
 
-  // Identify matching skills between user and job text/requirements
+  // Identify matching skills cleanly (top 3)
   const matchedSkills = userSkills
     .filter((skill) => {
       const text = `${job.title} ${job.description} ${job.requirements || ""}`.toLowerCase();
       return text.includes(skill.toLowerCase());
     })
-    .map(formatSkillName);
+    .map(formatSkillName)
+    .slice(0, 3);
 
   return (
     <div className="group relative rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-200 hover:border-foreground/20 hover:shadow-md flex flex-col justify-between">
       <div>
-        {/* Top Header Row - Title & Company on Left, Bookmark on Right */}
-        <div className="flex items-start justify-between gap-4">
+        {/* Header: Title, Company Name, Location & Bookmark */}
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <Link
               href={`/find-job/${job.id}`}
-              className="font-bold text-[17px] sm:text-[18px] leading-snug text-foreground hover:underline line-clamp-1 block"
+              className="font-bold text-lg sm:text-[19px] leading-snug text-foreground hover:underline line-clamp-1 block"
             >
               {job.title}
             </Link>
-            <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground mt-1">
-              <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-              <span className="truncate font-semibold text-foreground/85">
+
+            {/* Company & Location sub-row */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+              <span className="font-semibold text-foreground/90 truncate max-w-[200px] sm:max-w-[260px]">
                 {job.companyName}
               </span>
+              {job.location && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="inline-flex items-center gap-1 text-muted-foreground truncate max-w-[180px]">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                    <span className="truncate">{job.location}</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Right Top: Bookmark */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleBookmarkClick}
-              className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
-                bookmarked
-                  ? "bg-primary text-black border-primary shadow-xs"
-                  : "border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-              aria-label={bookmarked ? "Remove bookmark" : "Save job"}
-              title={bookmarked ? "Bookmarked (saved to tracker)" : "Bookmark job"}
-            >
-              {bookmarked ? (
-                <BookmarkCheck className="h-4 w-4 text-black" />
-              ) : (
-                <Bookmark className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+          {/* Bookmark Button */}
+          <button
+            type="button"
+            onClick={handleBookmarkClick}
+            className={`h-8.5 w-8.5 rounded-xl flex items-center justify-center transition-all cursor-pointer border shrink-0 ${
+              bookmarked
+                ? "bg-primary text-black border-primary shadow-xs"
+                : "border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+            aria-label={bookmarked ? "Remove bookmark" : "Save job"}
+            title={bookmarked ? "Bookmarked (saved to tracker)" : "Bookmark job"}
+          >
+            {bookmarked ? (
+              <BookmarkCheck className="h-4.5 w-4.5 text-black" />
+            ) : (
+              <Bookmark className="h-4.5 w-4.5" />
+            )}
+          </button>
         </div>
 
-        {/* Job Tags Row */}
-        <div className="flex flex-wrap items-center gap-2 mt-4 text-xs font-medium text-muted-foreground">
-          {job.location && (
-            <span className="inline-flex items-center gap-1 bg-muted/60 px-2.5 py-1 rounded-md text-foreground border border-border/50">
-              <MapPin className="h-3 w-3 text-muted-foreground" />
-              <span className="truncate max-w-[130px]">{job.location}</span>
+        {/* Clean Attributes Row: Match Score, Salary & Essential Badges */}
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          {job.matchPercentage && job.matchPercentage >= 40 && (
+            <span className="inline-flex items-center gap-1.5 bg-primary text-black font-bold px-2.5 py-1 rounded-lg text-xs shadow-xs">
+              <Sparkles className="h-3.5 w-3.5 text-black" />
+              <span>{Math.round(job.matchPercentage)}% Match</span>
             </span>
           )}
 
-          <span className="inline-flex items-center gap-1 bg-muted/60 px-2.5 py-1 rounded-md text-foreground border border-border/50">
-            <Briefcase className="h-3 w-3 text-muted-foreground" />
-            <span>{formatJobType(job.jobType)}</span>
-          </span>
-
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/60 text-foreground font-medium border border-border/50">
-            {formatWorkplace(job.workplaceType)}
-          </span>
-
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/60 text-foreground font-medium border border-border/50">
-            {formatExpLevel(job.experienceLevel)}
-          </span>
-
-          {job.salaryMin && (
-            <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-md border border-emerald-500/25">
-              <DollarSign className="h-3 w-3" />
+          {job.salaryMin && job.salaryMin > 0 && (
+            <span className="inline-flex items-center gap-1 bg-muted/80 text-foreground font-bold px-3 py-1 rounded-lg border border-border text-xs sm:text-sm">
+              <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
               <span>
                 {job.salaryCurrency || "$"}
                 {job.salaryMin.toLocaleString()}
@@ -190,83 +181,77 @@ export function RecommendedJobCard({
               </span>
             </span>
           )}
+
+          <span className="inline-flex items-center gap-1 bg-muted/50 px-2.5 py-1 rounded-lg text-foreground border border-border/50 text-xs font-medium">
+            <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{formatJobType(job.jobType)}</span>
+          </span>
+
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-muted/50 text-foreground border border-border/50 text-xs font-medium">
+            {formatWorkplace(job.workplaceType)}
+          </span>
+
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-muted/50 text-foreground border border-border/50 text-xs font-medium">
+            {formatExpLevel(job.experienceLevel)}
+          </span>
         </div>
 
-        {/* Description Snippet */}
-        <p className="text-[13px] text-muted-foreground mt-3.5 line-clamp-2 leading-relaxed">
+        {/* Description Snippet: Readable text-sm with comfortable line-height */}
+        <p className="text-sm text-muted-foreground mt-3.5 line-clamp-2 leading-relaxed font-normal">
           {stripHtml(job.description)}
         </p>
 
-        {/* Matched Skills / Badges - Clean Neutral Pills without greenish tint */}
+        {/* Matched Skills - Clean Neutral Badges without clutter */}
         {matchedSkills.length > 0 && (
-          <div className="mt-3.5 pt-3 border-t border-border/50 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-muted-foreground mr-1">
-              Matching skills:
-            </span>
-            {matchedSkills.slice(0, 4).map((skill) => (
+          <div className="mt-3.5 flex items-center gap-1.5 flex-wrap">
+            {matchedSkills.map((skill) => (
               <span
                 key={skill}
-                className="text-[11px] font-medium bg-muted text-foreground px-2.5 py-0.5 rounded-md border border-border/80"
+                className="text-xs font-medium bg-muted/70 text-foreground px-2.5 py-0.5 rounded-md border border-border/70"
               >
                 {skill}
               </span>
             ))}
-            {matchedSkills.length > 4 && (
-              <span className="text-[10px] text-muted-foreground font-medium">
-                +{matchedSkills.length - 4} more
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Assessment Badges */}
-        {(job.hasProgrammingTask || job.hasDesignTask || job.hasSqlTask) && (
-          <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px]">
-            <span className="font-semibold text-muted-foreground">Assessments:</span>
-            {job.hasProgrammingTask && (
-              <span className="inline-flex items-center gap-1 bg-muted/60 text-foreground font-medium px-2 py-0.5 rounded-md border border-border/50">
-                <Code className="h-3 w-3 text-muted-foreground" /> Coding
-              </span>
-            )}
-            {job.hasDesignTask && (
-              <span className="inline-flex items-center gap-1 bg-muted/60 text-foreground font-medium px-2 py-0.5 rounded-md border border-border/50">
-                <PenTool className="h-3 w-3 text-muted-foreground" /> UI/Design
-              </span>
-            )}
-            {job.hasSqlTask && (
-              <span className="inline-flex items-center gap-1 bg-muted/60 text-foreground font-medium px-2 py-0.5 rounded-md border border-border/50">
-                <Database className="h-3 w-3 text-muted-foreground" /> SQL
-              </span>
-            )}
           </div>
         )}
       </div>
 
-      {/* Card Footer */}
-      <div className="mt-5 pt-3.5 border-t border-border/60 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-          <Clock className="h-3.5 w-3.5" />
-          <span>
-            {job.createdAt
-              ? formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })
-              : "Recently"}
+      {/* Card Footer: Timestamp, Assessments & CTA */}
+      <div className="mt-5 pt-4 border-t border-border/60 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground/70" />
+            <span>
+              {job.createdAt
+                ? formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })
+                : "Recently"}
+            </span>
           </span>
+
+          {(job.hasProgrammingTask || job.hasDesignTask || job.hasSqlTask) && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium bg-muted/60 text-foreground px-2.5 py-0.5 rounded-md border border-border/60">
+              <span>Assessment</span>
+              {job.hasProgrammingTask && <Code className="h-3 w-3 ml-0.5 text-muted-foreground" />}
+              {job.hasDesignTask && <PenTool className="h-3 w-3 ml-0.5 text-muted-foreground" />}
+              {job.hasSqlTask && <Database className="h-3 w-3 ml-0.5 text-muted-foreground" />}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           {isApplied ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/25 shadow-xs">
-              <CheckCircle className="h-3.5 w-3.5" /> Applied
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted px-3 py-1.5 rounded-xl border border-border shadow-xs">
+              <CheckCircle className="h-4 w-4 text-foreground" /> Applied
             </span>
           ) : (
             <Button
               asChild
               size="sm"
-              className="h-9 px-4 rounded-xl font-bold text-xs gap-1.5 bg-primary text-black hover:bg-primary/90 shadow-xs transition-all duration-200 cursor-pointer"
+              className="h-9 px-4 rounded-xl font-bold text-sm gap-1.5 bg-primary text-black hover:bg-primary/90 shadow-xs transition-all duration-200 cursor-pointer"
             >
               <Link href={`/find-job/${job.id}`}>
                 <span>View Details</span>
-                <ArrowRight className="h-3.5 w-3.5 text-black" />
+                <ArrowRight className="h-4 w-4 text-black" />
               </Link>
             </Button>
           )}

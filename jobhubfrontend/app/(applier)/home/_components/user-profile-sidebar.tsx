@@ -76,39 +76,39 @@ export function UserProfileSidebar({
             <div className="flex items-center justify-center gap-1.5">
               <Link
                 href="/candidate-profile"
-                className="font-bold text-[16px] hover:underline transition-colors text-foreground truncate max-w-[200px]"
+                className="font-bold text-[17px] hover:underline transition-colors text-foreground truncate max-w-[200px]"
               >
                 {userName}
               </Link>
               {isVerified && (
-                <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-primary shrink-0" />
+                <ShieldCheck className="h-4.5 w-4.5 text-emerald-600 dark:text-primary shrink-0" />
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground font-normal mt-0.5 line-clamp-1">
+            <p className="text-sm text-muted-foreground font-normal mt-0.5 line-clamp-1">
               {userTitle}
             </p>
 
             {userLocation && (
-              <p className="text-[12px] text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
-                <MapPin className="h-3 w-3 text-muted-foreground/70" />
+              <p className="text-sm text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground/70" />
                 <span className="truncate">{userLocation}</span>
               </p>
             )}
 
             {/* Profile Stats Matrix */}
-            <div className="mt-5 py-3 border-y border-border/60 grid grid-cols-3 divide-x divide-border/60 bg-muted/20 rounded-xl">
+            <div className="mt-5 py-3.5 border-y border-border/60 grid grid-cols-3 divide-x divide-border/60 bg-muted/20 rounded-xl">
               <div className="text-center px-1">
-                <p className="text-sm font-bold text-foreground">{applicationsCount}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Applied</p>
+                <p className="text-base font-bold text-foreground">{applicationsCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Applied</p>
               </div>
               <div className="text-center px-1">
-                <p className="text-sm font-bold text-foreground">{skillsCount}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Skills</p>
+                <p className="text-base font-bold text-foreground">{skillsCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Skills</p>
               </div>
               <div className="text-center px-1">
-                <p className="text-sm font-bold text-foreground">{experienceCount}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Roles</p>
+                <p className="text-base font-bold text-foreground">{experienceCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Roles</p>
               </div>
             </div>
 
@@ -118,14 +118,14 @@ export function UserProfileSidebar({
                 asChild
                 variant="outline"
                 size="sm"
-                className="w-full text-xs font-semibold justify-between h-9 rounded-xl border-border/80 hover:bg-muted text-foreground transition-all"
+                className="w-full text-sm font-semibold justify-between h-10 rounded-xl border-border/80 hover:bg-muted text-foreground transition-all"
               >
                 <Link href="/candidate-profile">
-                  <span className="flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                     Edit Profile & Resume
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </Link>
               </Button>
 
@@ -133,14 +133,14 @@ export function UserProfileSidebar({
                 asChild
                 variant="ghost"
                 size="sm"
-                className="w-full text-xs font-semibold justify-between h-9 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
+                className="w-full text-sm font-semibold justify-between h-10 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
               >
                 <Link href="/job-tracker">
-                  <span className="flex items-center gap-1.5">
-                    <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex items-center gap-2">
+                    <Bookmark className="h-4 w-4 text-muted-foreground" />
                     My Applications & Tracker
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-black">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-black">
                     {applicationsCount}
                   </span>
                 </Link>
@@ -151,19 +151,19 @@ export function UserProfileSidebar({
 
         {/* Quick Navigation / Discovery Card */}
         <div className="border border-border bg-card rounded-2xl shadow-xs overflow-hidden p-3.5 hover:border-primary/30 transition-all duration-300">
-          <h3 className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground/80 mb-2 px-2.5">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground/80 mb-2.5 px-2.5">
             Discover & Explore
           </h3>
           <nav className="flex flex-col gap-1.5">
             <button
               onClick={() => onTabChange?.("recommended")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
                 activeTab === "recommended"
                   ? "bg-primary text-black font-bold shadow-xs border border-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <Sparkles className="h-4 w-4" />
                 Recommended Matches
               </span>
@@ -171,18 +171,18 @@ export function UserProfileSidebar({
 
             <button
               onClick={() => onTabChange?.("collaboration")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
                 activeTab === "collaboration"
                   ? "bg-primary text-black font-bold shadow-xs border border-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <Users className="h-4 w-4" />
                 Collaboration Hub
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                   activeTab === "collaboration"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground border border-border"
@@ -194,18 +194,18 @@ export function UserProfileSidebar({
 
             <button
               onClick={() => onTabChange?.("saved")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
                 activeTab === "saved"
                   ? "bg-primary text-black font-bold shadow-xs border border-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <Bookmark className="h-4 w-4" />
                 Saved Jobs
               </span>
               <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                   activeTab === "saved"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground border border-border"
@@ -217,9 +217,9 @@ export function UserProfileSidebar({
 
             <Link
               href="/find-job"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <Briefcase className="h-4 w-4" />
                 Explore All Jobs
               </span>
@@ -227,13 +227,13 @@ export function UserProfileSidebar({
 
             <button
               onClick={() => onTabChange?.("tasks")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
                 activeTab === "tasks"
                   ? "bg-primary text-black font-bold shadow-xs border border-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <Code2 className="h-4 w-4" />
                 Assessment Challenges
               </span>
@@ -241,13 +241,13 @@ export function UserProfileSidebar({
 
             <button
               onClick={() => onTabChange?.("recent")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
                 activeTab === "recent"
                   ? "bg-primary text-black font-bold shadow-xs border border-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <TrendingUp className="h-4 w-4" />
                 Recently Posted
               </span>

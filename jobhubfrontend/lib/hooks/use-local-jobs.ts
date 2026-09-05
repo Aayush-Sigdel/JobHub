@@ -18,7 +18,7 @@ export interface LocalInProgressJob {
   jobId: string;
   jobTitle: string;
   companyName: string;
-  draftData: any;
+  draftData: Record<string, unknown> | null;
   updatedAt: string;
 }
 
@@ -43,8 +43,8 @@ export const useLocalSavedJobs = () => {
   }, []);
 
   useEffect(() => {
-    loadFromStorage();
     const handleStorageChange = () => loadFromStorage();
+    queueMicrotask(handleStorageChange);
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener(SAVED_JOBS_EVENT, handleStorageChange);
     return () => {
@@ -87,15 +87,51 @@ export const useLocalSavedJobs = () => {
   return { savedJobs, toggleSaveJob, isSaved };
 };
 
+const IN_PROGRESS_JOBS_KEY = 'jobhub_in_progress_jobs';
+const IN_PROGRESS_JOBS_EVENT = 'jobhub_in_progress_jobs_changed';
+
 export const useLocalInProgressJobs = () => {
   const [inProgressJobs, setInProgressJobs] = useState<LocalInProgressJob[]>([]);
 
-  useEffect(() => {
+  const loadFromStorage = useCallback(() => {
+    if (typeof window === 'undefined') return;
     try {
-      const stored = localStorage.getItem('jobhub_in_progress_jobs');
-      if (stored) setInProgressJobs(JSON.parse(stored));
-    } catch (e) { console.error('Failed to parse in progress jobs from local storage', e); }
+      const stored = localStorage.getItem(IN_PROGRESS_JOBS_KEY);
+      if (stored) {
+        setInProgressJobs(JSON.parse(stored));
+      } else {
+        setInProgressJobs([]);
+      }
+    } catch (e) {
+      console.error('Failed to parse in progress jobs from local storage', e);
+    }
   }, []);
 
-  return { inProgressJobs };
+  useEffect(() => {
+    const handleStorageChange = () => loadFromStorage();
+    queueMicrotask(handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener(IN_PROGRESS_JOBS_EVENT, handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener(IN_PROGRESS_JOBS_EVENT, handleStorageChange);
+    };
+  }, [loadFromStorage]);
+
+  const removeInProgressJob = useCallback((jobId: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem(IN_PROGRESS_JOBS_KEY);
+      const currentList: LocalInProgressJob[] = stored ? JSON.parse(stored) : [];
+      const updated = currentList.filter((j) => j.jobId !== jobId);
+      localStorage.setItem(IN_PROGRESS_JOBS_KEY, JSON.stringify(updated));
+      setInProgressJobs(updated);
+      window.dispatchEvent(new Event(IN_PROGRESS_JOBS_EVENT));
+      toast.info('Draft removed');
+    } catch (e) {
+      console.error('Failed to remove in progress job', e);
+    }
+  }, []);
+
+  return { inProgressJobs, removeInProgressJob };
 };

@@ -104,19 +104,19 @@ export function CompanySpotlight() {
       {/* Header */}
       <div className="flex items-end justify-between px-0.5">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-foreground">
+          <h2 className="text-xl font-bold tracking-tight text-foreground">
             Featured Companies
           </h2>
-          <p className="text-xs text-muted-foreground font-normal mt-0.5">
+          <p className="text-sm text-muted-foreground font-normal mt-0.5">
             Discover active engineering teams hiring now.
           </p>
         </div>
 
         <Link
           href="/find-job"
-          className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0 transition-colors"
+          className="text-sm font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0 transition-colors"
         >
-          View all <ArrowRight className="h-3 w-3" />
+          View all <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -148,29 +148,29 @@ export function CompanySpotlight() {
             <div className="pt-5 pb-4 px-4 flex-1 flex flex-col justify-between">
               <div>
                 <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="font-bold text-sm text-foreground group-hover:underline transition-colors truncate">
+                  <h3 className="font-bold text-base text-foreground group-hover:underline transition-colors truncate">
                     {company.name}
                   </h3>
-                  <span className="text-[10px] font-bold bg-primary text-black px-2.5 py-0.5 rounded-full shadow-xs shrink-0">
+                  <span className="text-xs font-bold bg-primary text-black px-2.5 py-0.5 rounded-full shadow-xs shrink-0">
                     {company.openJobs} Roles
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1">
-                  <MapPin className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                   <span className="truncate">{company.location}</span>
                 </div>
 
-                <p className="text-[12px] text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
                   {company.description}
                 </p>
 
                 {/* Tech tags - neutral without greenish tint */}
-                <div className="flex flex-wrap gap-1 mt-3">
+                <div className="flex flex-wrap gap-1.5 mt-3">
                   {company.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[10px] font-semibold bg-muted text-foreground px-2 py-0.5 rounded-md border border-border/60 transition-colors"
+                      className="text-xs font-medium bg-muted text-foreground px-2.5 py-0.5 rounded-md border border-border/60 transition-colors"
                     >
                       {formatSkillName(tag)}
                     </span>
@@ -183,11 +183,11 @@ export function CompanySpotlight() {
                 <Button
                   asChild
                   size="sm"
-                  className="w-full text-xs font-bold justify-between h-8 px-3 rounded-xl bg-primary text-black hover:bg-primary/90 shadow-xs transition-all cursor-pointer"
+                  className="w-full text-sm font-bold justify-between h-9 px-3.5 rounded-xl bg-primary text-black hover:bg-primary/90 shadow-xs transition-all cursor-pointer"
                 >
                   <Link href={`/find-job?query=${encodeURIComponent(company.name)}`}>
                     <span>View Roles</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </div>

@@ -246,12 +246,12 @@ export function PersonalizedFeed({
       {/* Personalized Welcome Banner & Discovery Hub */}
       <div className="rounded-2xl border border-border bg-card p-6 sm:p-7 shadow-xs">
         {/* Top Row: Greeting & Clean Context */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Welcome back, {firstName}
           </h1>
 
-          <p className="text-xs sm:text-sm text-muted-foreground font-normal leading-relaxed">
+          <p className="text-sm sm:text-base text-muted-foreground font-normal leading-relaxed">
             {userSkills.length > 0
               ? "Recommended opportunities matched with your verified background and hiring preferences."
               : "Explore curated positions or add skills to personalize your job recommendations."}
@@ -259,29 +259,29 @@ export function PersonalizedFeed({
 
           {/* Interactive Matched Skills Chips */}
           {userSkills.length > 0 && (
-            <div className="flex items-center flex-wrap gap-1.5 mt-2">
-              <span className="text-xs text-muted-foreground font-medium mr-0.5">Matched skills:</span>
-              {userSkills.slice(0, 5).map((skill) => {
+            <div className="flex items-center flex-wrap gap-2 mt-1">
+              <span className="text-xs sm:text-sm text-muted-foreground font-medium mr-0.5">Matched skills:</span>
+              {userSkills.slice(0, 4).map((skill) => {
                 const isSkillActive = selectedSkill?.toLowerCase() === skill.toLowerCase();
                 return (
                   <button
                     key={skill}
                     type="button"
                     onClick={() => setSelectedSkill(isSkillActive ? null : skill)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       isSkillActive
                         ? "bg-primary text-black border border-primary font-bold shadow-xs"
                         : "bg-muted text-foreground hover:bg-muted/80 border border-border"
                     }`}
                   >
                     <span>{skill}</span>
-                    {isSkillActive && <X className="h-3 w-3 text-black" />}
+                    {isSkillActive && <X className="h-3.5 w-3.5 text-black" />}
                   </button>
                 );
               })}
-              {userSkills.length > 5 && (
-                <span className="text-[11px] text-muted-foreground font-medium self-center">
-                  +{userSkills.length - 5} more
+              {userSkills.length > 4 && (
+                <span className="text-xs text-muted-foreground font-medium self-center">
+                  +{userSkills.length - 4} more
                 </span>
               )}
             </div>
@@ -298,19 +298,19 @@ export function PersonalizedFeed({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search feed by title, skill, company, or location..."
-                className="pl-10 pr-14 sm:pr-16 h-10 rounded-xl bg-background border border-border text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
+                className="pl-10 pr-14 sm:pr-16 h-11 rounded-xl bg-background border border-border text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
               />
               {searchQuery ? (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
                   aria-label="Clear search"
                 >
                   <X className="h-4 w-4" />
                 </button>
               ) : (
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/70 font-mono bg-muted px-1.5 py-0.5 rounded border border-border/60 select-none">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/70 font-mono bg-muted px-1.5 py-0.5 rounded border border-border/60 select-none">
                   <span>⌘</span>
                   <span>K</span>
                 </div>
@@ -320,10 +320,10 @@ export function PersonalizedFeed({
             <Button
               asChild
               variant="outline"
-              className="w-full sm:w-auto h-10 px-4 rounded-xl text-xs font-semibold shrink-0 gap-2 border-border text-foreground hover:bg-muted/80 hover:border-foreground/30 cursor-pointer"
+              className="w-full sm:w-auto h-11 px-4 rounded-xl text-sm font-semibold shrink-0 gap-2 border-border text-foreground hover:bg-muted/80 hover:border-foreground/30 cursor-pointer"
             >
               <Link href="/find-job">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <SlidersHorizontal className="h-4 w-4" />
                 <span>Advanced Filters</span>
               </Link>
             </Button>
@@ -331,14 +331,14 @@ export function PersonalizedFeed({
 
           {/* Quick Filter discovery toggles */}
           <div className="flex items-center flex-wrap justify-between gap-2 pt-0.5">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-              <span className="text-xs text-muted-foreground font-medium mr-1 shrink-0">Quick filter:</span>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+              <span className="text-xs sm:text-sm text-muted-foreground font-medium mr-0.5 shrink-0">Quick filter:</span>
               <button
                 type="button"
                 onClick={() => setQuickFilter("all")}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all ${
                   quickFilter === "all"
-                    ? "bg-foreground text-background"
+                    ? "bg-foreground text-background font-bold"
                     : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
                 }`}
               >
@@ -347,7 +347,7 @@ export function PersonalizedFeed({
               <button
                 type="button"
                 onClick={() => setQuickFilter(quickFilter === "remote" ? "all" : "remote")}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all ${
                   quickFilter === "remote"
                     ? "bg-primary text-black font-bold border border-primary shadow-xs"
                     : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
@@ -358,7 +358,7 @@ export function PersonalizedFeed({
               <button
                 type="button"
                 onClick={() => setQuickFilter(quickFilter === "tasks" ? "all" : "tasks")}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all ${
                   quickFilter === "tasks"
                     ? "bg-primary text-black font-bold border border-primary shadow-xs"
                     : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
@@ -369,7 +369,7 @@ export function PersonalizedFeed({
               <button
                 type="button"
                 onClick={() => setQuickFilter(quickFilter === "salary" ? "all" : "salary")}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all ${
                   quickFilter === "salary"
                     ? "bg-primary text-black font-bold border border-primary shadow-xs"
                     : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
@@ -381,7 +381,7 @@ export function PersonalizedFeed({
 
             {(searchQuery || selectedSkill || quickFilter !== "all") && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-medium">
+                <span className="text-xs sm:text-sm text-muted-foreground font-medium">
                   Showing {filteredJobs.length} {filteredJobs.length === 1 ? "role" : "roles"}
                 </span>
                 <button
@@ -391,7 +391,7 @@ export function PersonalizedFeed({
                     setSelectedSkill(null);
                     setQuickFilter("all");
                   }}
-                  className="text-xs text-foreground font-semibold underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                  className="text-xs sm:text-sm text-foreground font-semibold underline underline-offset-4 hover:opacity-80 cursor-pointer"
                 >
                   Reset filters
                 </button>
@@ -401,7 +401,7 @@ export function PersonalizedFeed({
         </div>
       </div>
 
-      {/* Feed Navigation Tabs - Fully scrollable with mouse wheel, touch & arrow controls */}
+      {/* Feed Navigation Tabs */}
       <div className="relative flex items-center justify-between gap-3 border-b border-border/60 pb-2">
         <div className="relative flex-1 min-w-0 flex items-center gap-1.5">
           {/* Scroll Left Chevron Button */}
@@ -409,7 +409,7 @@ export function PersonalizedFeed({
             <button
               type="button"
               onClick={() => scrollTabs("left")}
-              className="shrink-0 h-7 w-7 rounded-full bg-card border border-border shadow-xs flex items-center justify-center text-foreground hover:bg-muted cursor-pointer transition-all"
+              className="shrink-0 h-8 w-8 rounded-full bg-card border border-border shadow-xs flex items-center justify-center text-foreground hover:bg-muted cursor-pointer transition-all"
               aria-label="Scroll tabs left"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -424,16 +424,16 @@ export function PersonalizedFeed({
             <button
               data-tab="recommended"
               onClick={() => onTabChange("recommended")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === "recommended"
                   ? "bg-primary text-black shadow-xs border border-primary"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
               }`}
             >
-              <Sparkles className="h-3.5 w-3.5" />
+              <Sparkles className="h-4 w-4" />
               <span>Recommended</span>
               <span
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                className={`text-xs font-black px-2 py-0.5 rounded-full ${
                   activeTab === "recommended"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground"
@@ -446,16 +446,16 @@ export function PersonalizedFeed({
             <button
               data-tab="collaboration"
               onClick={() => onTabChange("collaboration")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === "collaboration"
                   ? "bg-primary text-black shadow-xs border border-primary"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
               }`}
             >
-              <Users className="h-3.5 w-3.5" />
+              <Users className="h-4 w-4" />
               <span>Collaboration</span>
               <span
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                className={`text-xs font-black px-2 py-0.5 rounded-full ${
                   activeTab === "collaboration"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground"
@@ -468,16 +468,16 @@ export function PersonalizedFeed({
             <button
               data-tab="saved"
               onClick={() => onTabChange("saved")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === "saved"
                   ? "bg-primary text-black shadow-xs border border-primary"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
               }`}
             >
-              <Bookmark className="h-3.5 w-3.5" />
+              <Bookmark className="h-4 w-4" />
               <span>Saved</span>
               <span
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                className={`text-xs font-black px-2 py-0.5 rounded-full ${
                   activeTab === "saved"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground"
@@ -490,16 +490,16 @@ export function PersonalizedFeed({
             <button
               data-tab="tasks"
               onClick={() => onTabChange("tasks")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === "tasks"
                   ? "bg-primary text-black shadow-xs border border-primary"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
               }`}
             >
-              <Code2 className="h-3.5 w-3.5" />
+              <Code2 className="h-4 w-4" />
               <span>Assessments</span>
               <span
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                className={`text-xs font-black px-2 py-0.5 rounded-full ${
                   activeTab === "tasks"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground"
@@ -512,16 +512,16 @@ export function PersonalizedFeed({
             <button
               data-tab="recent"
               onClick={() => onTabChange("recent")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === "recent"
                   ? "bg-primary text-black shadow-xs border border-primary"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
               }`}
             >
-              <TrendingUp className="h-3.5 w-3.5" />
+              <TrendingUp className="h-4 w-4" />
               <span>Recently Posted</span>
               <span
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                className={`text-xs font-black px-2 py-0.5 rounded-full ${
                   activeTab === "recent"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground"
@@ -534,16 +534,16 @@ export function PersonalizedFeed({
             <button
               data-tab="remote"
               onClick={() => onTabChange("remote")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === "remote"
                   ? "bg-primary text-black shadow-xs border border-primary"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
               }`}
             >
-              <Building2 className="h-3.5 w-3.5" />
+              <Building2 className="h-4 w-4" />
               <span>Remote</span>
               <span
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                className={`text-xs font-black px-2 py-0.5 rounded-full ${
                   activeTab === "remote"
                     ? "bg-black text-white"
                     : "bg-muted text-foreground"
@@ -559,7 +559,7 @@ export function PersonalizedFeed({
             <button
               type="button"
               onClick={() => scrollTabs("right")}
-              className="shrink-0 h-7 w-7 rounded-full bg-card border border-border shadow-xs flex items-center justify-center text-foreground hover:bg-muted cursor-pointer transition-all"
+              className="shrink-0 h-8 w-8 rounded-full bg-card border border-border shadow-xs flex items-center justify-center text-foreground hover:bg-muted cursor-pointer transition-all"
               aria-label="Scroll tabs right"
             >
               <ChevronRight className="h-4 w-4" />
@@ -567,7 +567,7 @@ export function PersonalizedFeed({
           )}
         </div>
 
-        <span className="text-xs text-muted-foreground font-medium hidden xl:inline shrink-0">
+        <span className="text-sm text-muted-foreground font-medium hidden xl:inline shrink-0">
           {activeTab === "collaboration" ? "4 active rooms" : `${filteredJobs.length} roles`}
         </span>
       </div>
