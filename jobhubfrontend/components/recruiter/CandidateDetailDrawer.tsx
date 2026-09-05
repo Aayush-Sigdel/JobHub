@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Briefcase, ExternalLink, GraduationCap, ShieldAlert, CheckCircle, XCircle, Info } from "lucide-react";
+import Link from "next/link";
+import { Briefcase, ExternalLink, Eye, GraduationCap, ShieldAlert, CheckCircle, XCircle, Info } from "lucide-react";
 import { calculateSupportedOverallSimilarity, getSimilaritySources } from "@/lib/semantic-match";
 
 interface Props {
@@ -77,9 +78,25 @@ export default function CandidateDetailDrawer({ candidate, jobId, open, onOpenCh
               <div>
                 <SheetTitle className="text-2xl">{candidate.name}</SheetTitle>
                 <SheetDescription className="text-base">{candidate.title || "Applicant"}</SheetDescription>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                   <Badge variant="secondary">{candidate.status || "APPLIED"}</Badge>
                   <Badge variant="outline" className="font-mono font-semibold border-primary/50 text-primary">Overall {overallSimilarity?.toFixed(3) ?? "N/A"}</Badge>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="h-6.5 text-[11px] font-semibold rounded-md px-2.5 gap-1 text-foreground hover:bg-muted"
+                  >
+                    <Link
+                      href={`/preview/${candidate.candidateId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Eye className="size-3 text-muted-foreground" />
+                      <span>Preview Profile</span>
+                      <ExternalLink className="size-2.5 text-muted-foreground" />
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -104,6 +121,20 @@ export default function CandidateDetailDrawer({ candidate, jobId, open, onOpenCh
           <ScrollArea className="flex-1">
             <div className="p-6">
               <TabsContent value="profile" className="mt-0 space-y-6">
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/20">
+                  <div className="space-y-0.5">
+                    <h4 className="text-sm font-semibold text-foreground">Candidate Public Profile</h4>
+                    <p className="text-xs text-muted-foreground">View complete resume timeline, verified credentials, and skills preview</p>
+                  </div>
+                  <Button asChild size="sm" className="h-8 rounded-lg font-bold text-xs bg-primary text-black hover:bg-primary/90 shadow-xs gap-1.5 shrink-0 cursor-pointer">
+                    <Link href={`/preview/${candidate.candidateId}`} target="_blank" rel="noopener noreferrer">
+                      <Eye className="size-3.5 text-black" />
+                      <span>Open Preview</span>
+                      <ExternalLink className="size-3 text-black" />
+                    </Link>
+                  </Button>
+                </div>
+
                 <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 text-sm sm:grid-cols-2">
                   <div><p className="text-xs text-muted-foreground">Email</p><p className="mt-1 break-all font-medium">{candidate.email}</p></div>
                   <div><p className="text-xs text-muted-foreground">Location</p><p className="mt-1 font-medium">{candidate.location || "Not provided"}</p></div>

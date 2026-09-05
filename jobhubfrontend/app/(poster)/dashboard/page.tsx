@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Check,
   Layers,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -488,16 +489,36 @@ export default async function EmployerDashboardPage() {
                       </div>
                     </div>
 
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 rounded-xl text-xs font-semibold cursor-pointer shrink-0"
-                    >
-                      <Link href={`/candidates?jobId=${cand.jobId || ""}`}>
-                        Review
-                      </Link>
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {cand.candidateId && (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer gap-1"
+                          title="Preview candidate profile in new tab"
+                        >
+                          <Link
+                            href={`/preview/${cand.candidateId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Preview</span>
+                          </Link>
+                        </Button>
+                      )}
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 rounded-xl text-xs font-semibold cursor-pointer"
+                      >
+                        <Link href={`/candidates?jobId=${cand.jobId || ""}`}>
+                          Review
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

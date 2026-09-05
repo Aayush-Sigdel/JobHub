@@ -21,6 +21,7 @@ import {
   Link as LinkIcon,
   Copy,
   ArrowLeft,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,6 +31,7 @@ import type { UserProfileResponse } from '@/types/api/user';
 interface ProfilePreviewViewProps {
   profile: UserProfileResponse;
   isOwner: boolean;
+  viewerIsEmployer?: boolean;
 }
 
 function getInitials(name: string) {
@@ -116,7 +118,7 @@ function formatPlatformLabel(platform: string): string {
   }
 }
 
-export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewViewProps) {
+export default function ProfilePreviewView({ profile, isOwner, viewerIsEmployer }: ProfilePreviewViewProps) {
   const [copied, setCopied] = useState(false);
 
   const experiences = profile.experiences || [];
@@ -141,11 +143,11 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border/70">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <Link
-              href={profile.employer ? "/dashboard" : "/find-job"}
+              href={viewerIsEmployer ? "/candidates" : profile.employer ? "/dashboard" : "/find-job"}
               className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>{profile.employer ? "Dashboard" : "Jobs"}</span>
+              <span>{viewerIsEmployer ? "Candidates" : profile.employer ? "Dashboard" : "Jobs"}</span>
             </Link>
             <span>/</span>
             <span>{profile.employer ? 'Employers' : 'Candidates'}</span>
@@ -164,6 +166,20 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
               {copied ? <Check className="w-4 h-4 text-foreground" /> : <Share2 className="w-4 h-4 text-muted-foreground" />}
               <span>{copied ? 'Copied Link!' : 'Share Profile'}</span>
             </Button>
+
+            {viewerIsEmployer && !isOwner && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-xl text-xs font-semibold h-9 px-3.5 cursor-pointer shadow-2xs gap-1.5"
+              >
+                <Link href="/candidates">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span>Pipeline</span>
+                </Link>
+              </Button>
+            )}
 
             {isOwner ? (
               <Button

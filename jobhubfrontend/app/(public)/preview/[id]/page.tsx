@@ -60,5 +60,11 @@ export default async function ProfilePreviewPage({
     id === "me" || (currentUser?.id && profile.id && currentUser.id === profile.id)
   );
 
-  return <ProfilePreviewView profile={profile} isOwner={isOwner} />;
+  return (
+    <ProfilePreviewView
+      profile={profile}
+      isOwner={isOwner}
+      viewerIsEmployer={Boolean(currentUser?.employer)}
+    />
+  );
 }
