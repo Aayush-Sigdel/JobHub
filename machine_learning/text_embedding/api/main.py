@@ -9,9 +9,13 @@ from transformers import AutoTokenizer
 from config import EMBEDDING_DIM
 from model.job_match import JobMatchModel
 
-MODEL = Path(os.getenv("EMBEDDING_MODEL_PATH", "checkpoints/retrained/best.pt"))
+BASE_DIR = Path(__file__).resolve().parents[1]
+MODEL = Path(
+    os.getenv("EMBEDDING_MODEL_PATH", BASE_DIR / "checkpoints" / "retrained" / "best.pt")
+)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+default_device = "cuda" if torch.cuda.is_available() else "cpu"
+device = torch.device(os.getenv("DEVICE", default_device))
 
 checkpoint = torch.load(MODEL, map_location=device, weights_only=True)
 if checkpoint.get("format_version") != 2:
@@ -35,11 +39,25 @@ model = JobMatchModel(model_name=model_name, embedding_dim=embedding_dim).to(dev
 model.load_state_dict(state_dict)
 model.eval()
 
-app = FastAPI()
+app = FastAPI(title="JobHub Text Embedding API")
 
 
 class EmbeddingRequest(BaseModel):
     text: str
+
+
+@app.get("/")
+def health_check():
+    return {
+        "status": "ok",
+        "model": "JobMatchModel",
+        "device": str(device),
+        "dimensions": EMBEDDING_DIM,
+    }
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 def encode(text):

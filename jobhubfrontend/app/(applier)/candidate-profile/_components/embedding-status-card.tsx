@@ -20,11 +20,11 @@ interface SyncStatus {
 }
 
 interface EmbeddingStatusCardProps {
-  strengthPercentage: number;
+  readinessPercentage: number;
   statuses: SyncStatus[];
 }
 
-export function EmbeddingStatusCard({ strengthPercentage, statuses }: EmbeddingStatusCardProps) {
+export function EmbeddingStatusCard({ readinessPercentage, statuses }: EmbeddingStatusCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -32,10 +32,10 @@ export function EmbeddingStatusCard({ strengthPercentage, statuses }: EmbeddingS
     startTransition(async () => {
       try {
         await syncAllEmbeddingsAction();
-        toast.success('AI Profile fully synced successfully!');
+        toast.success('Matching data refreshed successfully.');
         router.refresh();
-      } catch (error: any) {
-        toast.error(error.message || 'Failed to sync AI profile.');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to refresh matching data.');
       }
     });
   };
@@ -45,14 +45,14 @@ export function EmbeddingStatusCard({ strengthPercentage, statuses }: EmbeddingS
       try {
         if (source === 'PLATFORM') {
           await syncPlatformEmbeddingAction();
-          toast.success('AI platform profile updated');
+          toast.success('JobHub profile matching data updated');
         } else {
           await syncSocialEmbeddingAction(source);
           toast.success(`${source} synced successfully`);
         }
         router.refresh();
-      } catch (error: any) {
-        toast.error(error.message || `Failed to sync ${source}.`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : `Failed to sync ${source}.`);
       }
     });
   };
@@ -61,8 +61,8 @@ export function EmbeddingStatusCard({ strengthPercentage, statuses }: EmbeddingS
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-xl">AI Profile Strength</CardTitle>
-          <CardDescription>Keep your data synced for better AI job matching</CardDescription>
+          <CardTitle className="text-xl">Matching Data Readiness</CardTitle>
+          <CardDescription>Keep supported profile sources current for semantic job matching</CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={isPending}>
           <RefreshCw className={cn("mr-2 h-4 w-4", isPending && "animate-spin")} />
@@ -72,10 +72,10 @@ export function EmbeddingStatusCard({ strengthPercentage, statuses }: EmbeddingS
       <CardContent className="space-y-6 mt-4">
         <div className="space-y-2">
           <div className="flex justify-between text-sm font-medium">
-            <span>Overall Strength</span>
-            <span>{strengthPercentage}%</span>
+            <span>Data readiness</span>
+            <span>{readinessPercentage}%</span>
           </div>
-          <Progress value={strengthPercentage} className="h-2" />
+          <Progress value={readinessPercentage} className="h-2" />
         </div>
         <div className="space-y-4">
           <h4 className="text-sm font-semibold">Data Sources</h4>

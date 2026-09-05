@@ -21,9 +21,15 @@ export default async function CandidatesPage({
   const search = valueOf(params.search);
   const sortBy = valueOf(params.sortBy);
   const status = valueOf(params.status);
+  const minSimilarity = valueOf(params.minSimilarity);
+  const fromDateTime = valueOf(params.fromDateTime);
+  const toDateTime = valueOf(params.toDateTime);
   if (search) query.set("search", search);
   if (sortBy) query.set("sortBy", sortBy);
   if (status) query.set("status", status);
+  if (minSimilarity) query.set("minSimilarity", minSimilarity);
+  if (fromDateTime) query.set("fromDateTime", fromDateTime);
+  if (toDateTime) query.set("toDateTime", toDateTime);
 
   const candidates = selectedJobId
     ? await fetchWithAuth<CandidateDashboardResponse[]>(`/recruiter/jobs/${selectedJobId}/candidates?${query}`, { cache: "no-store" })

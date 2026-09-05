@@ -18,7 +18,7 @@ export default async function ApplierLayout({
     <div>
       <NavigationBar profile={profile} />
       <NavigationBarBottom />
-      <div className="px-16 py-2">{children}</div>
+      <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-2">{children}</div>
     </div>
   );
 }

@@ -15,11 +15,18 @@ import { RangeSlider } from "@/components/motion/range-slider";
 import { DesignTask, ScoreResult, PASSING_TOLERANCE } from "@/lib/task/css_data";
 
 interface CodeOutputCanvasProps {
-  task: DesignTask;
+  task: DesignTask & {
+    imageBytes?: string;
+    imageContentType?: string;
+  };
   debouncedPreviewCode: string;
   lastScore: ScoreResult | null;
   highScore: ScoreResult | null;
   isTargetScoreMet: boolean;
+}
+
+function imageDataUrl(imageBytes: string, contentType?: string) {
+  return `data:${contentType || "image/png"};base64,${imageBytes}`;
 }
 
 export const CodeOutputCanvas = memo(
@@ -113,14 +120,20 @@ export const CodeOutputCanvas = memo(
             className="w-[400px] h-[300px] bg-white rounded-2xl shadow-xs overflow-hidden relative border border-border select-none shrink-0"
           >
             {/* Target Layer Underneath (rendered for Slide and/or Diff comparison) */}
-            {(slideCompare || diffMode) && (
+            {(slideCompare || diffMode) && (task.imageBytes ? (
+              <img
+                src={imageDataUrl(task.imageBytes, task.imageContentType)}
+                alt="Target comparison"
+                className="absolute inset-0 h-[300px] w-[400px] bg-white object-contain pointer-events-none"
+              />
+            ) : (
               <iframe
                 title="Target Underneath"
                 srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>* { box-sizing: border-box; } html, body { margin: 0; padding: 0; width: 400px; height: 300px; overflow: hidden; background: #ffffff; }</style></head><body>${task.targetHtml}</body></html>`}
                 className="w-[400px] h-[300px] border-0 pointer-events-none absolute inset-0 bg-white"
                 loading="eager"
               />
-            )}
+            ))}
 
             {/* User Live Output Canvas (Hardware-accelerated clipPath & opacity) */}
             <div

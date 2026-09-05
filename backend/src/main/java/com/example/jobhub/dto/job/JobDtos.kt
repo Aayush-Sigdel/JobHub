@@ -41,10 +41,10 @@ data class CreateJobPostRequest(
     @field:Size(max = 10, message = "Salary currency code too long")
     val salaryCurrency: String? = "USD",
 
-    val tabLock: Boolean = false,
+    val tabLock: Boolean? = false,
 
     @field:Min(value = 1, message = "Tab lock warning limit must be at least 1")
-    val tabLockWarningLimit: Int = 3,
+    val tabLockWarningLimit: Int? = 3,
 
     val deadline: Instant? = null,
 
@@ -85,7 +85,12 @@ data class UpdateJobPostRequest(
     val sqlTaskId: UUID? = null,
     val removeDesignTask: Boolean? = false,
     val removeProgrammingTask: Boolean? = false,
-    val removeSqlTask: Boolean? = false
+    val removeSqlTask: Boolean? = false,
+    val removeRequirements: Boolean? = false,
+    val removeLocation: Boolean? = false,
+    val removeSalaryMin: Boolean? = false,
+    val removeSalaryMax: Boolean? = false,
+    val removeDeadline: Boolean? = false
 )
 
 data class JobPostResponse(
@@ -114,6 +119,7 @@ data class JobPostResponse(
     val programmingTaskId: UUID?,
     val sqlTaskId: UUID?,
     val similarityScore: Double? = null,
+    val matchPercentage: Int? = null,
     val createdAt: Instant?,
     val updatedAt: Instant?
 )
@@ -125,7 +131,16 @@ data class JobPostDetailResponse(
     val sqlTask: SQLTaskDto? = null,
     val applicantCount: Long = 0,
     val hasApplied: Boolean = false,
-    val myApplicationId: UUID? = null
+    val myApplicationId: UUID? = null,
+    val allTasksPassed: Boolean? = null,
+    val overallSimilarity: Double? = null,
+    val matchPercentage: Int? = null,
+    val platformSimilarity: Double? = null,
+    val githubSimilarity: Double? = null,
+    val devtoSimilarity: Double? = null,
+    val orcidSimilarity: Double? = null,
+    val stackoverflowSimilarity: Double? = null,
+    val portfolioSimilarity: Double? = null
 )
 
 data class ApplyJobRequest(

@@ -17,7 +17,7 @@ export interface ProgrammingTestCase {
 export interface DesignTaskDto {
   id: string;
   title: string;
-  imageBytes: number[];
+  imageBytes: string;
   imageContentType: string;
   minimumMatchingScore: number;
   instructions: string;
@@ -57,6 +57,7 @@ export interface SubmitTaskRequest {
 }
 
 export interface TaskSubmissionResponse {
+  id: string;
   taskId: string;
   taskType: TaskType;
   passed: boolean;

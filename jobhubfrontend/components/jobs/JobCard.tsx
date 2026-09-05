@@ -11,12 +11,6 @@ interface JobCardProps {
 }
 
 export function JobCard({ job }: JobCardProps) {
-  const getMatchColor = (score: number) => {
-    if (score >= 80) return 'text-green-500 bg-green-50';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-gray-500 bg-gray-50';
-  };
-
   return (
     <Card className="hover:border-primary/50 transition-colors duration-200">
       <Link href={`/find-job/${job.id}`} className="block h-full flex flex-col">
@@ -26,11 +20,6 @@ export function JobCard({ job }: JobCardProps) {
               <CardTitle className="text-xl font-bold line-clamp-1">{job.title}</CardTitle>
               <div className="text-muted-foreground mt-1 text-sm font-medium">{job.companyName}</div>
             </div>
-            {job.similarityScore !== undefined && (
-              <Badge variant="secondary" className={`font-semibold ${getMatchColor(job.similarityScore)}`}>
-                {Math.round(job.similarityScore * 100)}% Match
-              </Badge>
-            )}
           </div>
         </CardHeader>
         <CardContent className="flex-grow pb-4">

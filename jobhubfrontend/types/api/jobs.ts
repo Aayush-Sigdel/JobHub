@@ -27,7 +27,8 @@ export interface JobPostResponse {
   tabLock: boolean;
   tabLockWarningLimit: number;
   deadline?: string;
-  isActive: boolean;
+  isActive?: boolean;
+  active?: boolean;
   postedById: string;
   postedByName: string;
   hasDesignTask: boolean;
@@ -37,6 +38,7 @@ export interface JobPostResponse {
   programmingTaskId?: string;
   sqlTaskId?: string;
   similarityScore?: number;
+  matchPercentage?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,6 +51,15 @@ export interface JobPostDetailResponse {
   applicantCount: number;
   hasApplied: boolean;
   myApplicationId?: string;
+  allTasksPassed?: boolean;
+  overallSimilarity?: number;
+  matchPercentage?: number;
+  platformSimilarity?: number;
+  githubSimilarity?: number;
+  devtoSimilarity?: number;
+  orcidSimilarity?: number;
+  stackoverflowSimilarity?: number;
+  portfolioSimilarity?: number;
 }
 
 export interface CreateJobPostRequest {
@@ -73,9 +84,15 @@ export interface CreateJobPostRequest {
 
 export interface UpdateJobPostRequest extends Partial<CreateJobPostRequest> {
   isActive?: boolean;
+  active?: boolean;
   removeDesignTask?: boolean;
   removeProgrammingTask?: boolean;
   removeSqlTask?: boolean;
+  removeRequirements?: boolean;
+  removeLocation?: boolean;
+  removeSalaryMin?: boolean;
+  removeSalaryMax?: boolean;
+  removeDeadline?: boolean;
 }
 
 export interface ApplyJobRequest {

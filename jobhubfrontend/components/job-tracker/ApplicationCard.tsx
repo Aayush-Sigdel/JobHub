@@ -61,10 +61,10 @@ export const ApplicationCard: React.FC<{ application: JobApplicationResponse }> 
       <CardContent className="flex-grow">
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">Applied on: {appliedDate}</p>
-          {application.similarityScore !== null && (
+          {typeof application.similarityScore === 'number' && (
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">Match Score:</span>
-              <Badge variant="outline">{(application.similarityScore * 100).toFixed(0)}%</Badge>
+              <span className="text-sm font-semibold">Overall similarity:</span>
+              <Badge variant="outline" className="font-mono" title="Raw cosine similarity recorded when you applied.">{application.similarityScore.toFixed(3)}</Badge>
             </div>
           )}
           <div className="flex flex-wrap gap-2 mt-2">

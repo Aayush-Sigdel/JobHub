@@ -1,57 +1,40 @@
-import React from 'react';
-import { fetchWithAuth } from '@/lib/service-api';
-import { HomeFeed } from './_components/home-feed';
-
-interface JobPostResponse {
-  id: string;
-  title: string;
-  companyName: string;
-  description: string;
-  requirements?: string;
-  location?: string;
-  jobType: string;
-  workplaceType: string;
-  experienceLevel: string;
-  salaryMin?: number;
-  salaryMax?: number;
-  salaryCurrency?: string;
-  tabLock: boolean;
-  tabLockWarningLimit: number;
-  deadline?: string;
-  isActive: boolean;
-  postedById: string;
-  postedByName: string;
-  hasDesignTask: boolean;
-  hasProgrammingTask: boolean;
-  hasSqlTask: boolean;
-  designTaskId?: string;
-  programmingTaskId?: string;
-  sqlTaskId?: string;
-  similarityScore?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import React from "react";
+import { fetchWithAuth } from "@/lib/service-api";
+import { HomeContainer } from "./_components/home-container";
+import type { JobPostResponse, JobApplicationResponse } from "@/types/api/jobs";
+import type { UserProfileResponse } from "@/types/api/user";
 
 export default async function HomePage() {
+  let profile: UserProfileResponse | null = null;
   let recommendedJobs: JobPostResponse[] = [];
   let recentJobs: JobPostResponse[] = [];
+  let applications: JobApplicationResponse[] = [];
 
   try {
-    [recommendedJobs, recentJobs] = await Promise.all([
-      fetchWithAuth<JobPostResponse[]>('/jobs?semanticSearch=true&sortBy=similarity').catch(() => []),
-      fetchWithAuth<JobPostResponse[]>('/jobs?sortBy=date').catch(() => []),
+    const results = await Promise.allSettled([
+      fetchWithAuth<UserProfileResponse>("/user/profile"),
+      fetchWithAuth<JobPostResponse[]>("/jobs?semanticSearch=true&sortBy=similarity"),
+      fetchWithAuth<JobPostResponse[]>("/jobs?sortBy=date"),
+      fetchWithAuth<JobApplicationResponse[]>("/jobs/my-applications"),
     ]);
+
+    if (results[0].status === "fulfilled") profile = results[0].value;
+    if (results[1].status === "fulfilled") recommendedJobs = results[1].value;
+    if (results[2].status === "fulfilled") recentJobs = results[2].value;
+    if (results[3].status === "fulfilled") applications = results[3].value;
   } catch (err) {
-    // Fail gracefully
+    // Fail gracefully with fallback states
+    console.error("Failed to load initial home feed data:", err);
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome Back</h1>
-        <p className="text-muted-foreground text-lg">Here are jobs matched to your profile.</p>
-      </div>
-      <HomeFeed recommendedJobs={recommendedJobs} recentJobs={recentJobs} />
+    <div className="py-4 md:py-6">
+      <HomeContainer
+        profile={profile}
+        recommendedJobs={recommendedJobs}
+        recentJobs={recentJobs}
+        applications={applications}
+      />
     </div>
   );
 }

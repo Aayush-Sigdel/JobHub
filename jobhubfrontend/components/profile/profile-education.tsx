@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -35,7 +36,7 @@ export interface EducationDto {
   id: string;
   institution: string;
   degree: string;
-  fieldOfStudy?: string;
+  fieldOfStudy: string;
   startDate: string;
   endDate?: string;
   description?: string;
@@ -44,7 +45,7 @@ export interface EducationDto {
 const educationSchema = z.object({
   institution: z.string().min(2, "Institution must be at least 2 characters"),
   degree: z.string().min(2, "Degree must be at least 2 characters"),
-  fieldOfStudy: z.string().optional(),
+  fieldOfStudy: z.string().min(2, "Field of study must be at least 2 characters"),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
   endDate: z.string().optional().or(z.literal("")),
   description: z.string().optional(),
@@ -52,11 +53,16 @@ const educationSchema = z.object({
 
 type EducationFormValues = z.infer<typeof educationSchema>;
 
+function toInstant(date: string): string {
+  return new Date(`${date}T00:00:00.000Z`).toISOString();
+}
+
 export function ProfileEducation({
   educations = [],
 }: {
   educations?: EducationDto[];
 }) {
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -76,8 +82,8 @@ export function ProfileEducation({
   const onSubmit = (data: EducationFormValues) => {
     const payload = {
       ...data,
-      endDate: data.endDate || undefined,
-      fieldOfStudy: data.fieldOfStudy || undefined,
+      startDate: toInstant(data.startDate),
+      endDate: data.endDate ? toInstant(data.endDate) : undefined,
       description: data.description || undefined,
     };
 
@@ -91,7 +97,8 @@ export function ProfileEducation({
           toast.success("Education added successfully");
         }
         closeDialog();
-      } catch (error) {
+        router.refresh();
+      } catch {
         toast.error("Failed to save education");
       }
     });
@@ -116,7 +123,8 @@ export function ProfileEducation({
         try {
           await deleteEducationAction(id);
           toast.success("Education deleted successfully");
-        } catch (error) {
+          router.refresh();
+        } catch {
           toast.error("Failed to delete education");
         }
       });
@@ -137,9 +145,9 @@ export function ProfileEducation({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="flex items-center gap-2 text-xl font-bold text-foreground">
           <GraduationCap className="w-5 h-5 text-primary" />
           Education
         </h2>
@@ -155,24 +163,24 @@ export function ProfileEducation({
 
       <div className="space-y-6">
         {educations.length === 0 ? (
-          <p className="text-gray-500 text-sm">No education history added yet.</p>
+          <p className="text-sm text-muted-foreground">No education history added yet.</p>
         ) : (
           educations.map((edu: EducationDto) => (
             <div
               key={edu.id}
-              className="group relative border-l-2 border-gray-200 pl-4 pb-6 last:pb-0"
+              className="group relative border-l-2 border-border pl-4 pb-6 last:pb-0"
             >
-              <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-primary" />
+              <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 border-primary bg-card" />
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-900">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {edu.institution}
                   </h3>
-                  <p className="text-gray-600 font-medium">
+                  <p className="font-medium text-foreground/80">
                     {edu.degree}
                     {edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
                     <span>
                       {edu.startDate
@@ -185,7 +193,7 @@ export function ProfileEducation({
                     </span>
                   </div>
                   {edu.description && (
-                    <p className="text-gray-600 mt-3 text-sm whitespace-pre-wrap">
+                    <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
                       {edu.description}
                     </p>
                   )}
