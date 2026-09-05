@@ -6,6 +6,7 @@ import { ProfileStrength } from "./_components/profile-strength";
 import { ProfileContact } from "./_components/profile-contact";
 import { ProfileWorkExperience } from "./_components/profile-work-experience";
 import { ProfileEducation } from "./_components/profile-education";
+import { EmployerShortcuts } from "./_components/employer-shortcuts";
 import type { UserProfileResponse } from "@/types/api/user";
 import { ProfileAccessError } from "./_components/profile-access-error";
 
@@ -19,6 +20,8 @@ export default async function CandidateProfilePage() {
     }
     throw error;
   }
+
+  const isEmployer = Boolean(profile?.employer);
 
   const locationObj = profile?.location
     ? {
@@ -39,9 +42,14 @@ export default async function CandidateProfilePage() {
             location={locationObj}
             imageUrl={profile?.imageUrl}
             isVerified={profile?.isVerified ?? false}
+            isEmployer={isEmployer}
           />
-          {/* Preferred roles are hidden until profile preference endpoints are available. */}
-          <ProfileAbout key={`about-${profile.updatedAt}`} about={profile?.bio || ""} />
+          <ProfileAbout
+            key={`about-${profile.updatedAt}`}
+            about={profile?.bio || ""}
+            isEmployer={isEmployer}
+          />
+
           <ProfileWorkExperience
             key={`exp-${profile.updatedAt}`}
             experiences={profile?.experiences || []}
@@ -50,12 +58,10 @@ export default async function CandidateProfilePage() {
             key={`skills-${profile.updatedAt}`}
             initialSkills={profile?.skills || []}
           />
-
           <ProfileEducation
             key={`edu-${profile.updatedAt}`}
             educations={profile?.educations || []}
           />
-          {/* Certifications and languages are hidden until their endpoints are available. */}
         </div>
 
         <div className="w-full lg:w-[320px] flex flex-col gap-6">
@@ -65,7 +71,11 @@ export default async function CandidateProfilePage() {
             initialPhones={profile?.contactNumbers || []}
             initialSocialLinks={profile?.socialLinks || []}
           />
-          <ProfileStrength profile={profile ?? {}} />
+          {isEmployer ? (
+            <EmployerShortcuts />
+          ) : (
+            <ProfileStrength profile={profile ?? {}} />
+          )}
         </div>
       </div>
     </div>

@@ -1,63 +1,230 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Bell, Mail, HelpCircle, ChevronDown } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Briefcase,
+  Users,
+  Settings,
+  LogOut,
+  Plus,
+  Eye,
+  Layers,
+  UserRound,
+} from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/motion/theme-toggle";
 import { cn } from "@/lib/utils";
+import type { UserProfileResponse } from "@/types/api/user";
 
-export function PosterHeader() {
+interface PosterHeaderProps {
+  profile?: UserProfileResponse | null;
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 1) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase() || "EP";
+}
+
+export function PosterHeader({ profile }: PosterHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const user = session?.user;
+  const userName = profile?.name || user?.name || "Employer";
+  const userEmail = profile?.email || user?.email || "";
+  const userImage = profile?.imageUrl || user?.image || undefined;
 
   const navLinks = [
     { name: "Dashboard", href: "/dashboard" },
-    { name: "My Listings", href: "/manage-jobs", hasDropdown: true },
-    { name: "Candidates", href: "/candidates", hasDropdown: true },
-    { name: "Analytics", href: "/analytics", hasDropdown: true },
+    { name: "My Listings", href: "/manage-jobs" },
+    { name: "Candidates", href: "/candidates" },
+    { name: "Analytics", href: "/analytics" },
   ];
 
   return (
-    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-card px-4 md:px-8 sticky top-0 z-50">
+    <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/90 backdrop-blur-md px-4 md:px-8">
+      {/* Left: Brand & Navigation */}
       <div className="flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-2 font-black text-3xl tracking-tighter text-foreground">
-          JobHub<span className="text-brand">.</span>
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-1 font-black text-2xl tracking-tighter text-foreground hover:opacity-90 transition-opacity"
+        >
+          <span>JobHub</span>
+          <span className="text-primary font-black">.</span>
+          <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
+            Employer
+          </span>
         </Link>
-        
-        <nav className="hidden md:flex items-center gap-6 text-[15px] font-semibold text-muted-foreground ml-4">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.name} 
-              href={link.href}
-              className={cn(
-                "flex items-center gap-1.5 hover:text-foreground transition-colors py-2",
-                pathname === link.href || pathname.startsWith(`${link.href}/`) 
-                  ? "text-foreground" 
-                  : ""
-              )}
-            >
-              {link.name}
-              {link.hasDropdown && <ChevronDown className="h-4 w-4 opacity-50" />}
-            </Link>
-          ))}
+
+        <nav className="hidden md:flex items-center gap-1 text-sm font-semibold">
+          {navLinks.map((link) => {
+            const isActive =
+              pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  isActive
+                    ? "bg-muted text-foreground font-bold"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
-      <div className="flex items-center gap-5">
-        <button className="text-muted-foreground hover:text-foreground transition-colors relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary border-2 border-background" />
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors">
-          <Mail className="h-5 w-5" />
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors">
-          <HelpCircle className="h-5 w-5" />
-        </button>
-        
-        <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary/20 cursor-pointer transition-colors ml-2">
-          <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-          <AvatarFallback className="bg-primary text-black font-bold text-xs">AS</AvatarFallback>
-        </Avatar>
+      {/* Right: Quick CTA, Notifications, ThemeToggle, Profile Menu */}
+      <div className="flex items-center gap-3">
+        <Button
+          asChild
+          size="sm"
+          className="h-8.5 px-3.5 rounded-xl font-bold text-xs bg-primary text-black hover:bg-primary/90 shadow-xs cursor-pointer gap-1.5 hidden sm:inline-flex"
+        >
+          <Link href="/post-job">
+            <Plus className="w-3.5 h-3.5 text-black stroke-[3]" />
+            <span>Post a Job</span>
+          </Link>
+        </Button>
+
+        <ThemeToggle />
+
+        {/* Profile Dropdown Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Employer account menu"
+              className="flex items-center gap-2 rounded-full border border-border bg-muted p-0.5 transition-all hover:border-foreground/30 focus:outline-none cursor-pointer"
+            >
+              <Avatar className="h-8 w-8 rounded-full border border-border/80 shadow-2xs">
+                {userImage && (
+                  <AvatarImage src={userImage} alt={userName} className="object-cover" />
+                )}
+                <AvatarFallback className="bg-primary text-black font-bold text-xs">
+                  {getInitials(userName)}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent
+            align="end"
+            className="w-64 rounded-2xl border border-border p-1.5 shadow-lg text-foreground bg-card outline-none"
+          >
+            {/* User Info Header */}
+            <div className="flex items-center gap-3 border-b border-border/70 px-3 py-3 mb-1">
+              <Avatar className="h-9 w-9 rounded-xl border border-border shadow-2xs shrink-0">
+                {userImage && (
+                  <AvatarImage src={userImage} alt={userName} className="object-cover" />
+                )}
+                <AvatarFallback className="bg-primary text-black font-bold text-xs">
+                  {getInitials(userName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate text-xs font-bold text-foreground">
+                    {userName}
+                  </p>
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary text-black">
+                    Employer
+                  </span>
+                </div>
+                <p className="truncate text-[11px] text-muted-foreground mt-0.5">
+                  {userEmail}
+                </p>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <DropdownMenuItem
+              onClick={() => router.push("/profile")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <UserRound className="w-4 h-4 text-muted-foreground" />
+              <span>My Profile</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => router.push("/dashboard")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+              <span>Employer Dashboard</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => router.push("/preview/me")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span>Public Profile Preview</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => router.push("/manage-jobs")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <Briefcase className="w-4 h-4 text-muted-foreground" />
+              <span>Manage Job Listings</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => router.push("/candidates")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <span>Candidate Pipeline</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => router.push("/post-task")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <Layers className="w-4 h-4 text-muted-foreground" />
+              <span>Assessment Tasks</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => router.push("/setting")}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
+            >
+              <Settings className="w-4 h-4 text-muted-foreground" />
+              <span>Account Settings</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="my-1 bg-border/70 h-px" />
+
+            <DropdownMenuItem
+              onClick={() => signOut({ callbackUrl: "/sign-in" })}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive"
+            >
+              <LogOut className="w-4 h-4 text-destructive" />
+              <span>Sign out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

@@ -141,14 +141,14 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border/70">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <Link
-              href="/find-job"
+              href={profile.employer ? "/dashboard" : "/find-job"}
               className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Jobs</span>
+              <span>{profile.employer ? "Dashboard" : "Jobs"}</span>
             </Link>
             <span>/</span>
-            <span>Candidates</span>
+            <span>{profile.employer ? 'Employers' : 'Candidates'}</span>
             <span>/</span>
             <span className="text-foreground font-bold">{profile.name}</span>
           </div>
@@ -171,7 +171,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
                 size="sm"
                 className="rounded-xl text-xs font-bold h-9 px-4 bg-primary text-black hover:bg-primary/90 shadow-xs cursor-pointer gap-1.5"
               >
-                <Link href="/candidate-profile">
+                <Link href="/profile">
                   <Pencil className="w-3.5 h-3.5 text-black" />
                   <span>Edit Profile</span>
                 </Link>
@@ -184,7 +184,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
               >
                 <a href={`mailto:${profile.email}`}>
                   <Mail className="w-3.5 h-3.5 text-black" />
-                  <span>Contact Candidate</span>
+                  <span>{profile.employer ? 'Contact Employer' : 'Contact Candidate'}</span>
                 </a>
               </Button>
             )}
@@ -210,7 +210,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
                   {profile.isVerified && (
                     <div
                       className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shrink-0 shadow-2xs"
-                      title="Verified Candidate"
+                      title={profile.employer ? "Verified Employer" : "Verified Candidate"}
                     >
                       <svg
                         className="w-3.5 h-3.5 text-black"
@@ -264,7 +264,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
             <div className="flex flex-wrap md:flex-col items-start md:items-end gap-2 shrink-0">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-muted/60 text-foreground border border-border">
                 <ShieldCheck className="w-4 h-4 text-muted-foreground" />
-                <span>Candidate Profile</span>
+                <span>{profile.employer ? 'Employer Profile' : 'Candidate Profile'}</span>
               </span>
               {profile.isVerified && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-primary text-black shadow-2xs">
@@ -301,187 +301,205 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
               </div>
             )}
 
-            {/* Work Experience Card */}
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-6">
+            {profile.employer && (
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-3">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
                     <Briefcase className="h-4.5 w-4.5 text-foreground" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-foreground">Work Experience</h2>
+                    <h2 className="text-lg font-bold text-foreground">Hiring Organization</h2>
                     <p className="text-xs text-muted-foreground font-medium">
-                      Roles, career highlights, and impact
+                      Official recruitment profile on JobHub
                     </p>
                   </div>
                 </div>
-                {experiences.length > 0 && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-border">
-                    {experiences.length} {experiences.length === 1 ? 'Position' : 'Positions'}
-                  </span>
-                )}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  This employer actively manages hiring campaigns and evaluates candidate talent on JobHub. Reach out via the verified channels to discuss open roles, candidate inquiries, or recruitment collaborations.
+                </p>
               </div>
-
-              {experiences.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
-                  <p className="text-sm font-semibold text-foreground">No work experience listed</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This candidate has not added any past work experiences yet.
-                  </p>
+            )}
+                {/* Work Experience Card */}
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
+                      <Briefcase className="h-4.5 w-4.5 text-foreground" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-foreground">Work Experience</h2>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Roles, career highlights, and impact
+                      </p>
+                    </div>
+                  </div>
+                  {experiences.length > 0 && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-border">
+                      {experiences.length} {experiences.length === 1 ? 'Position' : 'Positions'}
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {experiences.map((exp) => (
-                    <div
-                      key={exp.id}
-                      className="group relative border-l-2 border-border/80 ml-2.5 pl-5 pb-6 last:pb-1"
-                    >
-                      {/* Timeline Dot with Brand Green Indicator */}
-                      <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background shadow-xs" />
 
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base sm:text-[17px] font-bold text-foreground leading-snug">
-                          {exp.title}
-                        </h3>
-                        <p className="text-sm font-semibold text-foreground/85 mt-0.5">
-                          {exp.company}
-                        </p>
+                {experiences.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
+                    <p className="text-sm font-semibold text-foreground">No work experience listed</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No past work experiences added yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {experiences.map((exp) => (
+                      <div
+                        key={exp.id}
+                        className="group relative border-l-2 border-border/80 ml-2.5 pl-5 pb-6 last:pb-1"
+                      >
+                        {/* Timeline Dot with Brand Green Indicator */}
+                        <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background shadow-xs" />
 
-                        <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
-                          <span>
-                            {formatDisplayDate(exp.startDate) || 'N/A'} -{' '}
-                            {exp.isCurrentRole || exp.currentRole
-                              ? 'Present'
-                              : formatDisplayDate(exp.endDate) || 'N/A'}
-                          </span>
-                        </div>
-
-                        {exp.description && (
-                          <p className="mt-2.5 whitespace-pre-wrap text-sm text-muted-foreground font-normal leading-relaxed">
-                            {exp.description}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-[17px] font-bold text-foreground leading-snug">
+                            {exp.title}
+                          </h3>
+                          <p className="text-sm font-semibold text-foreground/85 mt-0.5">
+                            {exp.company}
                           </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Skills Card */}
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
-                    <Sparkles className="h-4.5 w-4.5 text-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-foreground">Skills & Expertise</h2>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Technical proficiencies and competencies
-                    </p>
-                  </div>
-                </div>
-                {skills.length > 0 && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-border">
-                    {skills.length} {skills.length === 1 ? 'Skill' : 'Skills'}
-                  </span>
-                )}
-              </div>
+                          <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
+                            <span>
+                              {formatDisplayDate(exp.startDate) || 'N/A'} -{' '}
+                              {exp.isCurrentRole || exp.currentRole
+                                ? 'Present'
+                                : formatDisplayDate(exp.endDate) || 'N/A'}
+                            </span>
+                          </div>
 
-              {skills.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
-                  <p className="text-sm font-semibold text-foreground">No skills listed</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This candidate has not added technical skills to their profile.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {skills.map((skill) => (
-                    <div
-                      key={skill.id || skill.name}
-                      className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-background hover:bg-muted/30 transition-colors"
-                    >
-                      <span className="font-semibold text-sm text-foreground block truncate mr-2">
-                        {skill.name}
-                      </span>
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md border shrink-0 capitalize bg-muted/60 text-muted-foreground border-border/80">
-                        {skill.level.toLowerCase()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Education Card */}
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
-                    <GraduationCap className="h-4.5 w-4.5 text-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-foreground">Education</h2>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Degrees, institutions, and academic background
-                    </p>
-                  </div>
-                </div>
-                {educations.length > 0 && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-border">
-                    {educations.length} {educations.length === 1 ? 'Degree' : 'Degrees'}
-                  </span>
-                )}
-              </div>
-
-              {educations.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
-                  <p className="text-sm font-semibold text-foreground">No education history listed</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This candidate has not added academic degrees or credentials.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {educations.map((edu) => (
-                    <div
-                      key={edu.id}
-                      className="group relative border-l-2 border-border/80 ml-2.5 pl-5 pb-6 last:pb-1"
-                    >
-                      {/* Timeline Dot with Brand Green Indicator */}
-                      <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background shadow-xs" />
-
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-base sm:text-[17px] font-bold text-foreground leading-snug">
-                          {edu.institution}
-                        </h3>
-                        <p className="text-sm font-semibold text-foreground/85 mt-0.5">
-                          {edu.degree}
-                          {edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}
-                        </p>
-
-                        <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
-                          <span>
-                            {formatDisplayDate(edu.startDate) || 'N/A'} -{' '}
-                            {formatDisplayDate(edu.endDate) || 'Present'}
-                          </span>
+                          {exp.description && (
+                            <p className="mt-2.5 whitespace-pre-wrap text-sm text-muted-foreground font-normal leading-relaxed">
+                              {exp.description}
+                            </p>
+                          )}
                         </div>
-
-                        {edu.description && (
-                          <p className="mt-2.5 whitespace-pre-wrap text-sm text-muted-foreground font-normal leading-relaxed">
-                            {edu.description}
-                          </p>
-                        )}
                       </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Skills Card */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4.5 w-4.5 text-foreground" />
                     </div>
-                  ))}
+                    <div>
+                      <h2 className="text-lg font-bold text-foreground">Skills & Expertise</h2>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Technical proficiencies and competencies
+                      </p>
+                    </div>
+                  </div>
+                  {skills.length > 0 && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-border">
+                      {skills.length} {skills.length === 1 ? 'Skill' : 'Skills'}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {skills.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
+                    <p className="text-sm font-semibold text-foreground">No skills listed</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No technical skills added yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {skills.map((skill) => (
+                      <div
+                        key={skill.id || skill.name}
+                        className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-background hover:bg-muted/30 transition-colors"
+                      >
+                        <span className="font-semibold text-sm text-foreground block truncate mr-2">
+                          {skill.name}
+                        </span>
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md border shrink-0 capitalize bg-muted/60 text-muted-foreground border-border/80">
+                          {skill.level.toLowerCase()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Education Card */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
+                      <GraduationCap className="h-4.5 w-4.5 text-foreground" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-foreground">Education</h2>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Degrees, institutions, and academic background
+                      </p>
+                    </div>
+                  </div>
+                  {educations.length > 0 && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-border">
+                      {educations.length} {educations.length === 1 ? 'Degree' : 'Degrees'}
+                    </span>
+                  )}
+                </div>
+
+                {educations.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
+                    <p className="text-sm font-semibold text-foreground">No education history listed</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No academic degrees or credentials added yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {educations.map((edu) => (
+                      <div
+                        key={edu.id}
+                        className="group relative border-l-2 border-border/80 ml-2.5 pl-5 pb-6 last:pb-1"
+                      >
+                        {/* Timeline Dot with Brand Green Indicator */}
+                        <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background shadow-xs" />
+
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-[17px] font-bold text-foreground leading-snug">
+                            {edu.institution}
+                          </h3>
+                          <p className="text-sm font-semibold text-foreground/85 mt-0.5">
+                            {edu.degree}
+                            {edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}
+                          </p>
+
+                          <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
+                            <span>
+                              {formatDisplayDate(edu.startDate) || 'N/A'} -{' '}
+                              {formatDisplayDate(edu.endDate) || 'Present'}
+                            </span>
+                          </div>
+
+                          {edu.description && (
+                            <p className="mt-2.5 whitespace-pre-wrap text-sm text-muted-foreground font-normal leading-relaxed">
+                              {edu.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
           </div>
 
           {/* Right Sidebar (w-full lg:w-[320px]) */}
@@ -555,9 +573,11 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
               )}
             </div>
 
-            {/* Candidate Overview Card */}
+            {/* Overview Card */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-5">
-              <h2 className="text-[15px] font-bold text-foreground">Candidate Overview</h2>
+              <h2 className="text-[15px] font-bold text-foreground">
+                {profile.employer ? 'Recruiter Overview' : 'Candidate Overview'}
+              </h2>
 
               <div className="divide-y divide-border/60 text-xs">
                 <div className="flex items-center justify-between py-2.5">
@@ -570,7 +590,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
                     {profile.isVerified ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
-                        <span>Verified Talent</span>
+                        <span>{profile.employer ? 'Verified Employer' : 'Verified Talent'}</span>
                       </>
                     ) : (
                       'Standard Profile'
@@ -578,26 +598,55 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-muted-foreground font-medium">Work History</span>
-                  <span className="font-bold text-foreground">
-                    {experiences.length} {experiences.length === 1 ? 'Position' : 'Positions'}
-                  </span>
-                </div>
+                {profile.employer ? (
+                  <>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-muted-foreground font-medium">Account Role</span>
+                      <span className="font-bold text-foreground">Employer / Recruiter</span>
+                    </div>
+                    {profile.location && (
+                      <div className="flex items-center justify-between py-2.5">
+                        <span className="text-muted-foreground font-medium">Location</span>
+                        <span className="font-bold text-foreground">{profile.location}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-muted-foreground font-medium">Verified Status</span>
+                      <span className="font-bold text-foreground">
+                        {profile.isVerified ? "Verified Employer" : "Standard Employer"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-muted-foreground font-medium">Channels</span>
+                      <span className="font-bold text-foreground">
+                        {socialLinks.length} {socialLinks.length === 1 ? 'Link' : 'Links'}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-muted-foreground font-medium">Work History</span>
+                      <span className="font-bold text-foreground">
+                        {experiences.length} {experiences.length === 1 ? 'Position' : 'Positions'}
+                      </span>
+                    </div>
 
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-muted-foreground font-medium">Skills Listed</span>
-                  <span className="font-bold text-foreground">
-                    {skills.length} {skills.length === 1 ? 'Skill' : 'Skills'}
-                  </span>
-                </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-muted-foreground font-medium">Skills Listed</span>
+                      <span className="font-bold text-foreground">
+                        {skills.length} {skills.length === 1 ? 'Skill' : 'Skills'}
+                      </span>
+                    </div>
 
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-muted-foreground font-medium">Education</span>
-                  <span className="font-bold text-foreground">
-                    {educations.length} {educations.length === 1 ? 'Credential' : 'Credentials'}
-                  </span>
-                </div>
+                    <div className="flex items-center justify-between py-2.5">
+                      <span className="text-muted-foreground font-medium">Education</span>
+                      <span className="font-bold text-foreground">
+                        {educations.length} {educations.length === 1 ? 'Credential' : 'Credentials'}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -609,7 +658,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
                   >
                     <a href={`mailto:${profile.email}`}>
                       <Mail className="w-4 h-4 text-black" />
-                      <span>Email Candidate</span>
+                      <span>{profile.employer ? 'Email Recruiter' : 'Email Candidate'}</span>
                     </a>
                   </Button>
                 )}
@@ -630,7 +679,7 @@ export default function ProfilePreviewView({ profile, isOwner }: ProfilePreviewV
                     variant="outline"
                     className="w-full h-10 rounded-xl font-semibold text-xs cursor-pointer gap-2"
                   >
-                    <Link href="/candidate-profile">
+                    <Link href="/profile">
                       <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                       <span>Edit Your Profile</span>
                     </Link>

@@ -8,9 +8,10 @@ import { toast } from "sonner";
 
 interface ProfileAboutProps {
   about?: string;
+  isEmployer?: boolean;
 }
 
-export function ProfileAbout({ about = "" }: ProfileAboutProps) {
+export function ProfileAbout({ about = "", isEmployer }: ProfileAboutProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
@@ -96,7 +97,9 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
               <div className="flex items-start gap-2 p-4 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg">
                 <Info size={18} className="mt-0.5 shrink-0" />
                 <p className="text-[13px] font-medium leading-relaxed">
-                  Add details about your expertise and the work you do to help clients and recruiters know you better.
+                  {isEmployer
+                    ? "Add details about your organization, company mission, and hiring culture to help candidates know you better."
+                    : "Add details about your expertise and the work you do to help clients and recruiters know you better."}
                 </p>
               </div>
 
