@@ -112,12 +112,12 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
         color: "#FF723B",
         text:
           pageType === "onboarding"
-            ? "Setting up your candidate profile... 🚀"
+            ? "Setting up your candidate profile..."
             : pageType === "enterprise"
-              ? "Submitting your enterprise request... 🚀"
+              ? "Submitting your enterprise request..."
               : pageType === "signup"
-                ? "Creating your account... 🎉"
-                : "Logging you in... Hang tight! ⏳",
+                ? "Creating your account..."
+                : "Logging you in... Hang tight!",
       };
     }
 
@@ -125,13 +125,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
       return {
         speaker: "Shadow",
         color: "#EF4444",
-        text:
-          errorMessage.endsWith("!") ||
-          errorMessage.endsWith(".") ||
-          errorMessage.includes("⚠️") ||
-          errorMessage.includes("❌")
-            ? errorMessage
-            : `${errorMessage} ⚠️`,
+        text: errorMessage,
       };
     }
 
@@ -141,7 +135,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
         return {
           speaker: "Orange",
           color: "#FF723B",
-          text: "Looks great! Click to complete your profile 🚀",
+          text: "Looks great! Click to complete your profile.",
         };
       }
       if (onboardingStep === 1) {
@@ -150,35 +144,35 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
             speaker: "Shadow",
             color: "#18181D",
             text: usernameValue
-              ? `@${usernameValue.replace(/^@/, "")} looks clean and memorable! 👌`
-              : "Pick a unique username handle for your profile! 🆔",
+              ? `@${usernameValue.replace(/^@/, "")} looks clean and memorable.`
+              : "Pick a unique username handle for your profile.",
           };
         }
         return {
           speaker: "Orange",
           color: "#FF723B",
-          text: "Choose your unique username handle and professional title! ✨",
+          text: "Choose your unique username handle and professional title.",
         };
       }
       if (onboardingStep === 2) {
         return {
           speaker: "Purple",
           color: "#6929FF",
-          text: "What roles and work style match your goals? 💼",
+          text: "What roles and work style match your goals?",
         };
       }
       if (onboardingStep === 3) {
         return {
           speaker: "Pip",
           color: "#F2C418",
-          text: "Add your top skills and location so recruiters can reach you! 🎯",
+          text: "Add your top skills and location so recruiters can reach you.",
         };
       }
       if (onboardingStep === 4) {
         return {
           speaker: "Purple",
           color: "#6929FF",
-          text: "Add your GitHub, portfolio, or resume so recruiters can see your work! 🚀",
+          text: "Add your GitHub, portfolio, or resume so recruiters can see your work.",
         };
       }
     }
@@ -188,14 +182,14 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
         return {
           speaker: "Orange",
           color: "#FF723B",
-          text: "Ready to scale? Click to request your demo! 🚀",
+          text: "Ready to scale? Click to request your demo.",
         };
       }
       if (enterpriseStep === 1) {
         return {
           speaker: "Orange",
           color: "#FF723B",
-          text: "What's the name of your company or organization? 🏢",
+          text: "What's the name of your company or organization?",
         };
       }
       if (enterpriseStep === 2) {
@@ -203,29 +197,29 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
           speaker: "Purple",
           color: "#6929FF",
           text: nameValue
-            ? `Great to meet you, ${nameValue.split(" ")[0]}! What's your role? 👋`
-            : "Who are we speaking with today? Nice to meet you! 👋",
+            ? `Great to meet you, ${nameValue.split(" ")[0]}! What's your role?`
+            : "Who are we speaking with today? Nice to meet you.",
         };
       }
       if (enterpriseStep === 3) {
         return {
           speaker: "Shadow",
           color: "#18181D",
-          text: "What's your official work email for the custom demo quote? ✉️",
+          text: "What's your official work email for the custom demo quote?",
         };
       }
       if (enterpriseStep === 4) {
         return {
           speaker: "Pip",
           color: "#F2C418",
-          text: "Exciting growth ahead! How many roles are you hiring? 📈",
+          text: "Exciting growth ahead! How many roles are you hiring?",
         };
       }
       if (enterpriseStep === 5) {
         return {
           speaker: "Purple",
           color: "#6929FF",
-          text: "Any priority roles, tech stacks, or ATS needs on your mind? 🎯",
+          text: "Any priority roles, tech stacks, or ATS needs on your mind?",
         };
       }
     }
@@ -234,7 +228,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
       return {
         speaker: "Orange",
         color: "#FF723B",
-        text: "Ready to launch? Click to continue! 🚀",
+        text: "Ready to launch? Click to continue.",
       };
     }
 
@@ -242,7 +236,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
       return {
         speaker: "Purple",
         color: "#6929FF",
-        text: "Quick 1-click Google authentication! ⚡",
+        text: "Quick 1-click Google authentication.",
       };
     }
 
@@ -251,13 +245,13 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
         return {
           speaker: "Purple",
           color: "#6929FF",
-          text: "What's your full name? Nice to meet you! 👋",
+          text: "What's your full name? Nice to meet you.",
         };
       }
       return {
         speaker: "Orange",
         color: "#FF723B",
-        text: `Great to meet you, ${nameValue.split(" ")[0]}! ✨`,
+        text: `Great to meet you, ${nameValue.split(" ")[0]}!`,
       };
     }
 
@@ -268,21 +262,21 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
           color: "#FF723B",
           text:
             pageType === "forget"
-              ? "Enter your email for the reset instructions ✉️"
-              : "What's your email address? ✉️",
+              ? "Enter your email for the reset instructions."
+              : "What's your email address?",
         };
       }
       if (!emailValue.includes("@") || !emailValue.includes(".")) {
         return {
           speaker: "Shadow",
           color: "#18181D",
-          text: "Don't forget the '@' and valid domain (e.g. .com) 🤔",
+          text: "Don't forget the '@' and valid domain (e.g. .com).",
         };
       }
       return {
         speaker: "Orange",
         color: "#FF723B",
-        text: "Valid email format! Looking clean 👍",
+        text: "Valid email format! Looking clean.",
       };
     }
 
@@ -291,27 +285,27 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
         return {
           speaker: "Purple",
           color: "#6929FF",
-          text: "Ooooh, we can see your secret password now! 👀",
+          text: "You can see your password now.",
         };
       }
       if (!passwordValue) {
         return {
           speaker: "Orange",
           color: "#FF723B",
-          text: "Shhh! Enter your password 🙈 We won't peek!",
+          text: "Enter your password to proceed.",
         };
       }
       if (passwordValue.length < 8) {
         return {
           speaker: "Pip",
           color: "#F2C418",
-          text: "Almost there! Keep going for 8+ characters 🔒",
+          text: "Almost there! Keep going for 8+ characters.",
         };
       }
       return {
         speaker: "Purple",
         color: "#6929FF",
-        text: "That's a super strong & secure password! 💪",
+        text: "That's a strong and secure password.",
       };
     }
 
@@ -320,28 +314,28 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
       return {
         speaker: "Purple",
         color: "#6929FF",
-        text: "Join JobHub to discover thousands of dream jobs! 🌟",
+        text: "Join JobHub to discover thousands of verified jobs.",
       };
     }
     if (pageType === "forget") {
       return {
         speaker: "Pip",
         color: "#F2C418",
-        text: "Don't worry, we'll help you get back into your account! 🔑",
+        text: "We will help you get back into your account.",
       };
     }
     if (pageType === "verify") {
       return {
         speaker: "Orange",
         color: "#FF723B",
-        text: "Check your inbox for the 6-digit verification code! 📬",
+        text: "Check your inbox for the 6-digit verification code.",
       };
     }
 
     return {
       speaker: "Orange",
       color: "#FF723B",
-      text: "Welcome back! Enter your details to get started ✨",
+      text: "Welcome back! Enter your details to get started.",
     };
   };
 

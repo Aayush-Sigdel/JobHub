@@ -32,6 +32,7 @@ async function refreshAllMatchingData() {
 
 function revalidateMatchingViews() {
   revalidatePath('/candidate-profile');
+  revalidatePath('/profile');
   revalidatePath('/home');
   revalidatePath('/find-job');
 }

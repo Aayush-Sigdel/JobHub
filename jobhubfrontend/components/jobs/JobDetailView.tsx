@@ -80,9 +80,29 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
         <main className="space-y-8 min-w-0">
           {/* Header Card */}
           <header className="rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-sm">
-            <div className="flex items-center gap-2 text-primary font-bold text-sm">
-              <Building2 className="size-4" />
-              <span>{job.companyName}</span>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="inline-flex items-center gap-1.5 font-bold text-primary">
+                <Building2 className="size-4" />
+                <span>{job.companyName}</span>
+              </span>
+              {job.postedByName && (
+                <>
+                  <span className="text-muted-foreground/40">•</span>
+                  <span className="text-xs text-muted-foreground">
+                    Posted by{" "}
+                    {job.postedById ? (
+                      <Link
+                        href={`/preview/${job.postedById}`}
+                        className="font-medium text-foreground underline decoration-muted-foreground/40 underline-offset-2 hover:decoration-foreground transition-colors"
+                      >
+                        {job.postedByName}
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-foreground">{job.postedByName}</span>
+                    )}
+                  </span>
+                </>
+              )}
             </div>
 
             <h1 className="mt-2.5 text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground">
@@ -214,6 +234,56 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
             </div>
 
           </div>
+
+          {/* Hiring Organization & Recruiter Card */}
+          {(job.postedByName || job.companyName) && (
+            <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Hiring Organization
+                </p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  <ShieldCheck className="size-3" />
+                  Verified
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3.5 pt-1">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-muted font-bold text-foreground text-sm border border-border/70">
+                  {job.postedByName
+                    ? job.postedByName
+                        .split(" ")
+                        .filter(Boolean)
+                        .map((part) => part[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase()
+                    : <Building2 className="size-5 text-muted-foreground" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-foreground">
+                    {job.postedByName || job.companyName}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground font-medium">
+                    {job.companyName}
+                  </p>
+                </div>
+              </div>
+
+              {job.postedById && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl text-xs font-semibold hover:bg-muted/80"
+                  asChild
+                >
+                  <Link href={`/preview/${job.postedById}`}>
+                    View Recruiter Profile
+                  </Link>
+                </Button>
+              )}
+            </div>
+          )}
 
           {job.tabLock && (
             <div className="flex gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-muted-foreground">

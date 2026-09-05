@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, X, MoreHorizontal, Pencil, Trash2, Loader2, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -133,9 +133,9 @@ export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
         </div>
 
         {!isEditing && (
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-start gap-2 mb-4">
-            <span className="text-blue-500 text-sm mt-0.5">ℹ️</span>
-            <p className="text-sm text-foreground/80">
+          <div className="bg-muted/60 border border-border rounded-xl p-3 flex items-start gap-2 mb-4">
+            <Info className="w-4 h-4 text-foreground/80 mt-0.5 shrink-0" />
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Adding your specific skills helps make sure the right employers discover your profile.
             </p>
           </div>
@@ -146,11 +146,11 @@ export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
             placeholder="Add skill or expertise (e.g. React, Python, Docker)"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="h-11 rounded-lg border-input"
+            className="h-10 rounded-xl border-border bg-background text-sm font-medium focus-visible:ring-primary/40"
           />
 
           <div>
-            <label className="text-xs font-semibold text-muted-foreground block mb-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-2">
               Proficiency Level
             </label>
             <div className="flex flex-wrap gap-2">
@@ -159,10 +159,10 @@ export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
                   key={level}
                   type="button"
                   onClick={() => setFormData({ ...formData, level })}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
                     formData.level?.toLowerCase() === level.toLowerCase()
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                      ? "bg-primary text-black font-bold border-primary shadow-xs"
+                      : "bg-muted/50 text-foreground border-border/80 hover:bg-muted"
                   }`}
                 >
                   {level}
@@ -171,12 +171,12 @@ export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-3">
+          <div className="flex justify-end gap-3 pt-3 border-t border-border/60">
             <button
               type="button"
               disabled={isLoading}
               onClick={() => (isEditing ? setEditIndex(null) : setIsAddOpen(false))}
-              className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all border border-border cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
@@ -184,10 +184,10 @@ export function ProfileSkills({ initialSkills }: ProfileSkillsProps) {
               type="button"
               disabled={isLoading}
               onClick={handleSave}
-              className="px-4 py-2 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Save
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-black" />}
+              <span>Save</span>
             </button>
           </div>
         </div>

@@ -62,7 +62,7 @@ class JobController(
         @RequestParam(required = false) salaryMin: Double?,
         @RequestParam(required = false) hasTasks: Boolean?,
         @RequestParam(required = false, defaultValue = "false") semanticSearch: Boolean,
-        @RequestParam(required = false, defaultValue = "date") sortBy: String
+        @RequestParam(required = false, defaultValue = "similarity") sortBy: String
     ): ResponseEntity<List<JobPostResponse>> {
         val filter = JobSearchRequest(
             query = query,

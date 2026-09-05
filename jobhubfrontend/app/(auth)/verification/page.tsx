@@ -193,7 +193,7 @@ function VerificationForm() {
                     type="button"
                     onClick={() =>
                       setAuthError(
-                        "Code resent! Please check your spam folder too 📬",
+                        "Code resent! Please check your spam folder too.",
                       )
                     }
                     className="text-neutral-900 font-bold hover:underline transition-colors ml-1 cursor-pointer"

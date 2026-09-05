@@ -8,9 +8,10 @@ import { toast } from "sonner";
 
 interface ProfileAboutProps {
   about?: string;
+  isEmployer?: boolean;
 }
 
-export function ProfileAbout({ about = "" }: ProfileAboutProps) {
+export function ProfileAbout({ about = "", isEmployer }: ProfileAboutProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
@@ -96,7 +97,9 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
               <div className="flex items-start gap-2 p-4 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-lg">
                 <Info size={18} className="mt-0.5 shrink-0" />
                 <p className="text-[13px] font-medium leading-relaxed">
-                  Add details about your expertise and the work you do to help clients and recruiters know you better.
+                  {isEmployer
+                    ? "Add details about your organization, company mission, and hiring culture to help candidates know you better."
+                    : "Add details about your expertise and the work you do to help clients and recruiters know you better."}
                 </p>
               </div>
 
@@ -120,7 +123,7 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                     title="Copy to clipboard"
                   >
                     {copied ? (
-                      <Check size={16} className="text-primary" />
+                      <Check size={16} className="text-emerald-700 dark:text-emerald-400" />
                     ) : (
                       <Copy size={16} />
                     )}
@@ -144,12 +147,12 @@ export function ProfileAbout({ about = "" }: ProfileAboutProps) {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-5 py-2 text-[14px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSaving ? (
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin text-black" />
                   ) : (
-                    <Check size={16} />
+                    <Check size={16} className="text-black stroke-[3]" />
                   )}
                   Save
                 </button>

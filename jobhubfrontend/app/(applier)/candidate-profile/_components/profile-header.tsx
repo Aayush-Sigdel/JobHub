@@ -17,6 +17,7 @@ interface ProfileHeaderProps {
   title?: string;
   location?: Location;
   isVerified?: boolean;
+  isEmployer?: boolean;
 }
 
 export function ProfileHeader({
@@ -26,6 +27,7 @@ export function ProfileHeader({
   title,
   location,
   isVerified,
+  isEmployer,
 }: ProfileHeaderProps) {
   const router = useRouter();
   const [profileImage, setProfileImage] = useState(imageUrl || "");
@@ -136,10 +138,10 @@ export function ProfileHeader({
                 {isVerified && (
                   <div
                     className="w-5 h-5 bg-primary/100 rounded-full flex items-center justify-center"
-                    title="Verified Professional"
+                    title={isEmployer ? "Verified Employer" : "Verified Professional"}
                   >
                     <svg
-                      className="w-3.5 h-3.5 text-primary-foreground"
+                      className="w-3.5 h-3.5 text-black"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -152,6 +154,11 @@ export function ProfileHeader({
                       />
                     </svg>
                   </div>
+                )}
+                {isEmployer && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
+                    Employer
+                  </span>
                 )}
                 <Pencil className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </h1>
@@ -171,7 +178,7 @@ export function ProfileHeader({
                 }}
                 onKeyDown={handleTitleKeyDown}
                 className="h-7 w-64 text-sm bg-card border-input focus-visible:ring-ring px-2"
-                placeholder="Professional title"
+                placeholder={isEmployer ? "Recruiter / Leadership title" : "Professional title"}
               />
             ) : (
               <div
@@ -216,7 +223,7 @@ export function ProfileHeader({
 
         <Link
           href={`/preview/${previewId}`}
-          className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-border font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+          className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 rounded-lg bg-primary text-black font-bold hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
         >
           <Eye className="w-4 h-4 mr-2" /> Public Preview
         </Link>

@@ -204,5 +204,5 @@ data class JobSearchRequest(
 
     val hasTasks: Boolean? = null,
     val semanticSearch: Boolean = false,
-    val sortBy: String = "date"
+    val sortBy: String = "similarity"
 )

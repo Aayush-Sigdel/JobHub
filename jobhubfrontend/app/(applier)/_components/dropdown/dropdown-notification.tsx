@@ -1,135 +1,141 @@
 "use client";
 
-import * as React from "react";
-import { motion } from "motion/react";
+import React, { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  IconBell,
+  IconBriefcase,
+  IconCircleCheck,
+  IconCode,
+} from "@tabler/icons-react";
 
-import { Lightbulb, Wrench } from "lucide-react";
-import { ChartColumnIcon as ChartColumn } from "@animateicons/react/lucide";
-import { BellIcon } from "@/components/ui/bell";
-
-const notifications = [
-  {
-    id: 1,
-    title: "Your AI Just Got Smarter",
-    description:
-      "Adaptive learning speed increased by 27%. New feature: AI-driven trend forecasting",
-    time: "1h ago",
-    icon: <Lightbulb size={18} />,
-  },
-  {
-    id: 2,
-    title: "Data Analysis Completed",
-    description:
-      "Your AI has processed 10,000+ records and identified key trends.",
-    time: "3h ago",
-    icon: <ChartColumn size={18} />,
-  },
-  {
-    id: 3,
-    title: "System Maintenance",
-    description:
-      "Performance tuning & security updates will be applied at 2:00 AM UTC",
-    time: "5h ago",
-    icon: <Wrench size={18} />,
-  },
-];
-
-function NotificationCard({
-  title,
-  description,
-  time,
-  icon,
-}: {
+interface NotificationItem {
+  id: number;
   title: string;
   description: string;
   time: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="flex gap-3 py-4 border-b border-border last:border-none">
-      <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground">
-        {icon}
-      </div>
-
-      <div className="flex-1">
-        <div className="flex justify-between items-center">
-          <h3 className="font-medium text-sm text-foreground">
-            <span className="inline-block w-2 h-2 bg-tomato-500 rounded-full mr-2" />
-            {title}
-          </h3>
-
-          <span className="text-xs text-muted-foreground">{time}</span>
-        </div>
-
-        <p className="text-sm text-muted-foreground mt-1">{description}</p>
-      </div>
-    </div>
-  );
+  read: boolean;
+  type: "application" | "job" | "task";
 }
 
+const INITIAL_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: 1,
+    title: "Application reviewed",
+    description: "TechCorp viewed your application for Senior Backend Developer.",
+    time: "2h ago",
+    read: false,
+    type: "application",
+  },
+  {
+    id: 2,
+    title: "New match in market",
+    description: "PixelCraft posted a Frontend Developer role matching your skills.",
+    time: "1d ago",
+    read: false,
+    type: "job",
+  },
+  {
+    id: 3,
+    title: "Assessment ready",
+    description: "Practical coding challenge is available for your active submission.",
+    time: "2d ago",
+    read: true,
+    type: "task",
+  },
+];
+
 export default function NotificationCenter() {
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "application":
+        return <IconCircleCheck size={16} stroke={1.75} className="text-emerald-600 dark:text-emerald-400" />;
+      case "task":
+        return <IconCode size={16} stroke={1.75} className="text-blue-500" />;
+      case "job":
+      default:
+        return <IconBriefcase size={16} stroke={1.75} className="text-foreground/80" />;
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors cursor-pointer">
-          <BellIcon size={20} />
+        <button
+          className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-transparent hover:border-border/60"
+          aria-label="Notifications"
+        >
+          <IconBell size={18} stroke={1.75} />
+          {unreadCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
+          )}
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="end"
-        asChild
-        className="w-100 rounded-2xl border border-border p-0 shadow-lg text-foreground bg-background outline-none"
+        className="w-80 sm:w-96 rounded-xl border border-border bg-card p-0 shadow-lg text-foreground outline-none"
       >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ type: "spring", bounce: 0.35, duration: 0.5 }}
-        >
-          <div className="rounded-xl p-6 bg-background">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-5 text-foreground text-md font-semibold">
-            <h2 className="text-lg font-semibold">Notification Center</h2>
-
-            <button className="px-3 py-1 text-sm bg-muted rounded-lg hover:bg-muted/80">
-              See All
-            </button>
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-foreground">Notifications</h3>
+            {unreadCount > 0 && (
+              <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                {unreadCount} new
+              </span>
+            )}
           </div>
 
-          <div className="flex bg-muted rounded-xl p-1 mb-5 text-foreground text-md font-medium border border-border">
-            <button className="flex-1 bg-background rounded-lg py-2 text-sm font-medium border border-border">
-              Today
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              Mark all as read
             </button>
-
-            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              This Week
-            </button>
-
-            <button className="flex-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Earlier
-            </button>
-          </div>
-
-          {/* Notifications */}
-          <div>
-            {notifications.map((item) => (
-              <NotificationCard
-                key={item.id}
-                title={item.title}
-                description={item.description}
-                time={item.time}
-                icon={item.icon}
-              />
-            ))}
-          </div>
+          )}
         </div>
-        </motion.div>
+
+        <div className="divide-y divide-border/60 max-h-80 overflow-y-auto">
+          {notifications.map((item) => (
+            <div
+              key={item.id}
+              className={`p-3.5 flex gap-3 transition-colors hover:bg-muted/40 ${
+                !item.read ? "bg-muted/20" : ""
+              }`}
+            >
+              <div className="w-8 h-8 rounded-lg bg-muted/60 border border-border/70 flex items-center justify-center shrink-0 mt-0.5">
+                {getIcon(item.type)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {item.title}
+                  </p>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {item.time}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
+

@@ -1,9 +1,10 @@
 import React from "react";
+import Link from "next/link";
 import type { CandidateDashboardResponse } from "@/types/api/recruiter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Eye } from "lucide-react";
 import { calculateSupportedOverallSimilarity, getSimilaritySources } from "@/lib/semantic-match";
 
 interface CandidateCardProps {
@@ -16,8 +17,10 @@ export default function CandidateCard({ candidate, onSelect }: CandidateCardProp
   const overallSimilarity = calculateSupportedOverallSimilarity(candidate);
 
   return (
-    <Card className="bg-card shadow-sm transition-colors hover:border-primary/50">
-      <button type="button" className="w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" onClick={() => onSelect?.(candidate)}>
+    <Card
+      className="bg-card shadow-sm transition-colors hover:border-primary/50 cursor-pointer"
+      onClick={() => onSelect?.(candidate)}
+    >
       <CardContent className="space-y-4 p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
@@ -38,7 +41,22 @@ export default function CandidateCard({ candidate, onSelect }: CandidateCardProp
         <div className="space-y-2">
           <div className="flex justify-between text-xs items-center">
             <span className="text-muted-foreground">Evidence {evidenceSources.length}/5 sources</span>
-            <span className="inline-flex items-center gap-1 font-medium text-primary">Review <ArrowRight className="size-3" /></span>
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/preview/${candidate.candidateId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 font-semibold text-xs text-muted-foreground hover:text-foreground transition-colors hover:underline"
+                title="Preview candidate profile in new tab"
+              >
+                <Eye className="size-3" />
+                <span>Preview</span>
+              </Link>
+              <span className="inline-flex items-center gap-1 font-medium text-primary">
+                Review <ArrowRight className="size-3" />
+              </span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
             {evidenceSources.length <= 1 && (
@@ -63,7 +81,6 @@ export default function CandidateCard({ candidate, onSelect }: CandidateCardProp
           </div>
         </div>
       </CardContent>
-      </button>
     </Card>
   );
 }

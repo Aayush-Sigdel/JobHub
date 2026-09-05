@@ -12,6 +12,7 @@ interface HomeContainerProps {
   recommendedJobs: JobPostResponse[];
   recentJobs: JobPostResponse[];
   applications: JobApplicationResponse[];
+  initialTab?: string;
 }
 
 export function HomeContainer({
@@ -19,8 +20,15 @@ export function HomeContainer({
   recommendedJobs,
   recentJobs,
   applications,
+  initialTab = "recommended",
 }: HomeContainerProps) {
-  const [activeTab, setActiveTab] = useState<string>("recommended");
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   return (
     <div className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-6 lg:gap-8 pb-16">
@@ -43,7 +51,7 @@ export function HomeContainer({
       />
 
       {/* RIGHT COLUMN: Skills & Profile Strength & Career Insights (Sticky on Desktop) */}
-      <SkillsSidebar profile={profile} />
+      <SkillsSidebar profile={profile} onTabChange={setActiveTab} />
     </div>
   );
 }

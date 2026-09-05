@@ -1,31 +1,88 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, X, MoreHorizontal, Briefcase, Pencil, Trash2 } from "lucide-react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { format, parseISO } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
-import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Briefcase,
+  Calendar,
+  Plus,
+  X,
+  Pencil,
+  Trash2,
+  Loader2,
+  Check,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  createExperienceAction,
+  updateExperienceAction,
+  deleteExperienceAction,
+} from "@/lib/actions/user";
+import type { ExperienceDto } from "@/types/api/user";
 
-export function ProfileWorkExperience() {
-  const [experiences, setExperiences] = useState<any[]>([]);
+interface ProfileWorkExperienceProps {
+  experiences?: ExperienceDto[];
+}
+
+interface ExperienceFormData {
+  title: string;
+  company: string;
+  startDate: string;
+  endDate: string;
+  isCurrentRole: boolean;
+  description: string;
+}
+
+const INITIAL_FORM: ExperienceFormData = {
+  title: "",
+  company: "",
+  startDate: "",
+  endDate: "",
+  isCurrentRole: false,
+  description: "",
+};
+
+function toInstant(dateStr: string): string {
+  if (!dateStr) return "";
+  if (dateStr.includes("T")) return dateStr;
+  return new Date(`${dateStr}T00:00:00.000Z`).toISOString();
+}
+
+function toDateInput(isoStr?: string): string {
+  if (!isoStr) return "";
+  try {
+    return format(parseISO(isoStr), "yyyy-MM-dd");
+  } catch {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) return isoStr;
+    return "";
+  }
+}
+
+function formatDisplayDate(isoStr?: string): string {
+  if (!isoStr) return "";
+  try {
+    return format(parseISO(isoStr), "MMM yyyy");
+  } catch {
+    return isoStr;
+  }
+}
+
+export function ProfileWorkExperience({
+  experiences = [],
+}: ProfileWorkExperienceProps) {
+  const router = useRouter();
+  const [items, setItems] = useState<ExperienceDto[]>(experiences);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    employmentType: "",
-    company: "",
-    isCurrent: false,
-    startDate: "",
-    endDate: "",
-    description: "",
-    skills: "",
-    industry: "",
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<ExperienceFormData>(INITIAL_FORM);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const accordionVariants = {
     hidden: { height: 0, opacity: 0, overflow: "hidden" },
@@ -33,39 +90,127 @@ export function ProfileWorkExperience() {
   };
 
   const handleOpenAdd = () => {
-    setFormData({
-      title: "", employmentType: "", company: "", isCurrent: false,
-      startDate: "", endDate: "", description: "", skills: "", industry: ""
-    });
-    setEditIndex(null);
+    setFormData(INITIAL_FORM);
+    setErrors({});
+    setEditingId(null);
     setIsAddOpen(true);
   };
 
-  const handleOpenEdit = (index: number) => {
-    setFormData(experiences[index]);
+  const handleOpenEdit = (exp: ExperienceDto) => {
+    setFormData({
+      title: exp.title || "",
+      company: exp.company || "",
+      startDate: toDateInput(exp.startDate),
+      endDate: toDateInput(exp.endDate),
+      isCurrentRole: exp.isCurrentRole ?? (!exp.endDate && !!exp.startDate),
+      description: exp.description || "",
+    });
+    setErrors({});
     setIsAddOpen(false);
-    setEditIndex(index);
+    setEditingId(exp.id);
+  };
+
+  const handleCloseForm = () => {
+    setIsAddOpen(false);
+    setEditingId(null);
+    setFormData(INITIAL_FORM);
+    setErrors({});
+  };
+
+  const validate = (): boolean => {
+    const nextErrors: Record<string, string> = {};
+    if (!formData.title.trim() || formData.title.trim().length < 2) {
+      nextErrors.title = "Job title must be at least 2 characters.";
+    }
+    if (!formData.company.trim() || formData.company.trim().length < 2) {
+      nextErrors.company = "Company name must be at least 2 characters.";
+    }
+    if (!formData.startDate) {
+      nextErrors.startDate = "Start date is required.";
+    }
+    if (!formData.isCurrentRole && !formData.endDate) {
+      nextErrors.endDate = "End date is required if not your current role.";
+    }
+    if (
+      formData.startDate &&
+      formData.endDate &&
+      !formData.isCurrentRole &&
+      formData.startDate > formData.endDate
+    ) {
+      nextErrors.endDate = "End date cannot be earlier than start date.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleSave = () => {
-    if (!formData.title || !formData.company) return;
-    
-    if (editIndex !== null) {
-      const newExps = [...experiences];
-      newExps[editIndex] = formData;
-      setExperiences(newExps);
-      setEditIndex(null);
-    } else {
-      setExperiences([{ id: Math.random(), ...formData }, ...experiences]);
-      setIsAddOpen(false);
-    }
+    if (!validate()) return;
+
+    startTransition(async () => {
+      try {
+        const payload = {
+          title: formData.title.trim(),
+          company: formData.company.trim(),
+          startDate: toInstant(formData.startDate),
+          endDate: formData.isCurrentRole || !formData.endDate ? undefined : toInstant(formData.endDate),
+          isCurrentRole: formData.isCurrentRole,
+          description: formData.description.trim() || undefined,
+        };
+
+        if (editingId) {
+          await updateExperienceAction(editingId, payload);
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === editingId
+                ? {
+                    ...item,
+                    ...payload,
+                    id: editingId,
+                  }
+                : item
+            )
+          );
+          toast.success("Work experience updated.");
+        } else {
+          const created = await createExperienceAction(payload);
+          const newItem: ExperienceDto = created?.id
+            ? created
+            : {
+                id: Math.random().toString(),
+                ...payload,
+              };
+          setItems((prev) => [newItem, ...prev]);
+          toast.success("Work experience added.");
+        }
+
+        handleCloseForm();
+        router.refresh();
+      } catch (err) {
+        console.error("Failed to save experience:", err);
+        toast.error(
+          err instanceof Error ? err.message : "Unable to save work experience."
+        );
+      }
+    });
   };
 
-  const handleDelete = (index: number) => {
-    const newExps = [...experiences];
-    newExps.splice(index, 1);
-    setExperiences(newExps);
-    if (editIndex === index) setEditIndex(null);
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    startTransition(async () => {
+      try {
+        await deleteExperienceAction(id);
+        setItems((prev) => prev.filter((item) => item.id !== id));
+        if (editingId === id) handleCloseForm();
+        toast.success("Work experience removed.");
+        router.refresh();
+      } catch (err) {
+        console.error("Failed to delete experience:", err);
+        toast.error("Failed to remove work experience.");
+      } finally {
+        setDeletingId(null);
+      }
+    });
   };
 
   const renderForm = (isEditing: boolean) => (
@@ -75,123 +220,162 @@ export function ProfileWorkExperience() {
       animate="visible"
       exit="hidden"
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="mb-6"
+      className={isEditing ? "my-4" : "mb-6"}
     >
-      <div className="border-2 border-border rounded-xl p-5 bg-card">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2 text-foreground font-semibold">
-            {isEditing ? <Pencil className="w-5 h-5" /> : <Plus className="w-5 h-5" />} 
-            {isEditing ? "Edit experience" : "Add new"}
+      <div className="border border-border rounded-2xl p-5 sm:p-6 bg-card shadow-xs space-y-4">
+        {/* Form Title & Close Button */}
+        <div className="flex items-center justify-between pb-2 border-b border-border/60">
+          <div className="flex items-center gap-2 text-foreground font-bold text-base">
+            {isEditing ? (
+              <Pencil className="w-4.5 h-4.5 text-foreground" />
+            ) : (
+              <Briefcase className="w-4.5 h-4.5 text-foreground" />
+            )}
+            <span>{isEditing ? "Edit Work Experience" : "Add Work Experience"}</span>
           </div>
-          <button 
-            onClick={() => isEditing ? setEditIndex(null) : setIsAddOpen(false)} 
-            className="text-muted-foreground hover:text-foreground"
+          <button
+            type="button"
+            onClick={handleCloseForm}
+            className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors cursor-pointer"
+            aria-label="Close form"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4.5 h-4.5" />
           </button>
         </div>
 
-        <div className="space-y-4">
-          <Input
-            placeholder="Title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="h-11 rounded-lg border-input"
-          />
-          
-          <select
-            value={formData.employmentType}
-            onChange={(e) => setFormData({ ...formData, employmentType: e.target.value })}
-            className="w-full h-11 px-3 border border-input rounded-lg text-sm text-foreground bg-card focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="" disabled>Employment type (Optional)</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-          </select>
-
-          <Input
-            placeholder="Company name"
-            value={formData.company}
-            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            className="h-11 rounded-lg border-input"
-          />
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="current-work"
-              checked={formData.isCurrent}
-              onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked })}
-              className="w-4 h-4 rounded border-input text-foreground focus:ring-ring"
-            />
-            <label htmlFor="current-work" className="text-sm text-foreground/80">I currently work here</label>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        {/* Form Inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Job Title <span className="text-destructive">*</span>
+            </label>
             <Input
-              type="month"
-              placeholder="Start date"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              className="h-11 rounded-lg border-input"
+              placeholder="e.g. Senior Frontend Engineer"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              className="h-10 rounded-xl border-border bg-background focus-visible:ring-primary/40 text-sm font-medium"
             />
+            {errors.title && (
+              <p className="text-xs text-destructive font-medium">{errors.title}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Company / Employer <span className="text-destructive">*</span>
+            </label>
             <Input
-              type="month"
-              placeholder="End date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              disabled={formData.isCurrent}
-              className="h-11 rounded-lg border-input disabled:bg-muted"
+              placeholder="e.g. Acme Corp"
+              value={formData.company}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, company: e.target.value }))
+              }
+              className="h-10 rounded-xl border-border bg-background focus-visible:ring-primary/40 text-sm font-medium"
             />
+            {errors.company && (
+              <p className="text-xs text-destructive font-medium">{errors.company}</p>
+            )}
           </div>
-
-          <div>
-            <textarea
-              placeholder="Add your job history and achievements to give employers insight into your expertise."
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full min-h-[120px] p-3 border border-input rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-ring text-sm"
-            />
-            <div className="flex justify-end mt-1">
-              <span className="text-xs text-muted-foreground">{formData.description.length}/2000 characters</span>
-            </div>
-          </div>
-
-          <select
-            value={formData.skills}
-            onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-            className="w-full h-11 px-3 border border-input rounded-lg text-sm text-foreground bg-card focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="" disabled>Skills (Optional)</option>
-            <option value="React">React</option>
-            <option value="Node">Node</option>
-          </select>
-
-          <select
-            value={formData.industry}
-            onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-            className="w-full h-11 px-3 border border-input rounded-lg text-sm text-foreground bg-card focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="" disabled>Industry (Optional)</option>
-            <option value="IT">IT</option>
-            <option value="Finance">Finance</option>
-          </select>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        {/* Date Inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Start Date <span className="text-destructive">*</span>
+            </label>
+            <Input
+              type="date"
+              value={formData.startDate}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, startDate: e.target.value }))
+              }
+              className="h-10 rounded-xl border-border bg-background focus-visible:ring-primary/40 text-sm font-medium"
+            />
+            {errors.startDate && (
+              <p className="text-xs text-destructive font-medium">
+                {errors.startDate}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              End Date {!formData.isCurrentRole && <span className="text-destructive">*</span>}
+            </label>
+            <Input
+              type="date"
+              value={formData.isCurrentRole ? "" : formData.endDate}
+              disabled={formData.isCurrentRole}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+              }
+              className="h-10 rounded-xl border-border bg-background focus-visible:ring-primary/40 text-sm font-medium disabled:opacity-50 disabled:bg-muted/40"
+            />
+            {errors.endDate && (
+              <p className="text-xs text-destructive font-medium">{errors.endDate}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Current Role Checkbox */}
+        <div className="pt-1">
+          <label className="flex items-center gap-2.5 text-sm text-foreground font-medium cursor-pointer select-none">
+            <Checkbox
+              id="current-role"
+              checked={formData.isCurrentRole}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isCurrentRole: !!checked,
+                  endDate: checked ? "" : prev.endDate,
+                }))
+              }
+            />
+            <span>I currently work here in this role</span>
+          </label>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Description & Core Responsibilities
+          </label>
+          <Textarea
+            rows={3}
+            placeholder="Highlight your key achievements, notable features delivered, and technical stack used..."
+            value={formData.description}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, description: e.target.value }))
+            }
+            className="rounded-xl border-border bg-background p-3 text-sm focus-visible:ring-primary/40 leading-relaxed resize-y font-normal"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/60">
           <button
-            onClick={() => isEditing ? setEditIndex(null) : setIsAddOpen(false)}
-            className="px-5 py-2 rounded-lg font-semibold text-foreground/80 border border-border bg-transparent hover:bg-muted transition-colors"
+            type="button"
+            disabled={isPending}
+            onClick={handleCloseForm}
+            className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all border border-border cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
           <button
+            type="button"
+            disabled={isPending}
             onClick={handleSave}
-            disabled={!formData.title || !formData.company}
-            className="px-5 py-2 rounded-lg font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:bg-primary/50"
+            className="px-5 py-2 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isEditing ? "Update" : "Add"}
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin text-black" />
+            ) : (
+              <Check className="w-4 h-4 text-black stroke-[3]" />
+            )}
+            <span>{isEditing ? "Save Changes" : "Save Experience"}</span>
           </button>
         </div>
       </div>
@@ -199,79 +383,128 @@ export function ProfileWorkExperience() {
   );
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-foreground">Work experience</h2>
-        {!isAddOpen && editIndex === null && (
-          <button 
+    <div className="bg-card border border-border rounded-2xl p-6 shadow-xs">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-muted/60 border border-border flex items-center justify-center shrink-0">
+            <Briefcase className="h-4.5 w-4.5 text-foreground" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Work Experience</h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              Roles, career highlights, and impact
+            </p>
+          </div>
+        </div>
+
+        {!isAddOpen && (
+          <button
+            type="button"
             onClick={handleOpenAdd}
-            className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
+            className="px-3.5 py-1.5 rounded-xl border border-border/80 hover:bg-muted text-foreground text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="h-4 w-4" />
+            <span>Add Experience</span>
           </button>
         )}
       </div>
 
-      <AnimatePresence>
-        {isAddOpen && renderForm(false)}
-      </AnimatePresence>
+      {/* Inline Expanding Add Box */}
+      <AnimatePresence>{isAddOpen && renderForm(false)}</AnimatePresence>
 
-      {experiences.length === 0 && !isAddOpen ? (
-        <div className="text-muted-foreground text-sm">
-          <p>Add your job history and achievements to give employers insight into your expertise.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {experiences.map((exp, idx) => (
-            <div key={exp.id}>
-              <AnimatePresence>
-                {editIndex === idx ? (
-                  renderForm(true)
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="border border-border rounded-xl p-4 flex gap-4 hover:border-input transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-muted border border-border rounded-full flex items-center justify-center shrink-0">
-                      <Briefcase className="w-5 h-5 text-muted-foreground" />
+      {/* Timeline List */}
+      <div className="space-y-6">
+        {items.length === 0 && !isAddOpen ? (
+          <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/10">
+            <p className="text-sm font-semibold text-foreground">
+              No work experience added yet
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
+              Showcase roles and career achievements to boost relevant job recommendations.
+            </p>
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-primary text-black hover:bg-primary/90 shadow-xs cursor-pointer transition-all"
+            >
+              <Plus className="h-4 w-4 text-black" />
+              <span>Add Your First Role</span>
+            </button>
+          </div>
+        ) : (
+          items.map((exp) => {
+            const isEditingThis = editingId === exp.id;
+
+            if (isEditingThis) {
+              return <div key={exp.id}>{renderForm(true)}</div>;
+            }
+
+            return (
+              <div
+                key={exp.id}
+                className="group relative border-l-2 border-border/80 ml-2.5 pl-5 pb-6 last:pb-1"
+              >
+                {/* Timeline Dot with Brand Green Indicator */}
+                <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background shadow-xs" />
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-[17px] font-bold text-foreground leading-snug">
+                      {exp.title}
+                    </h3>
+                    <p className="text-sm font-semibold text-foreground/85 mt-0.5">
+                      {exp.company}
+                    </p>
+
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
+                      <span>
+                        {formatDisplayDate(exp.startDate) || "N/A"} -{" "}
+                        {exp.isCurrentRole
+                          ? "Present"
+                          : formatDisplayDate(exp.endDate) || "N/A"}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-bold text-foreground">{exp.company}</h3>
-                          <p className="text-sm text-muted-foreground">{exp.title} {exp.employmentType ? `• ${exp.employmentType}` : ""}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}</p>
-                        </div>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="text-muted-foreground hover:text-foreground hover:bg-muted p-1 rounded-md transition-colors">
-                              <MoreHorizontal className="w-5 h-5" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-32 bg-card">
-                            <DropdownMenuItem onClick={() => handleOpenEdit(idx)} className="cursor-pointer text-foreground/80 focus:bg-muted focus:text-foreground">
-                              <Pencil className="w-4 h-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(idx)} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
 
-                      </div>
-                      {exp.description && (
-                        <p className="text-sm text-foreground/90 mt-3 whitespace-pre-wrap">{exp.description}</p>
+                    {exp.description && (
+                      <p className="mt-2.5 whitespace-pre-wrap text-sm text-muted-foreground font-normal leading-relaxed">
+                        {exp.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Actions (Edit / Delete) */}
+                  <div className="flex items-center gap-1 shrink-0 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(exp)}
+                      disabled={isPending}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      title="Edit experience"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(exp.id)}
+                      disabled={isPending && deletingId === exp.id}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      title="Remove experience"
+                    >
+                      {isPending && deletingId === exp.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-destructive" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
                       )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
-        </div>
-      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
