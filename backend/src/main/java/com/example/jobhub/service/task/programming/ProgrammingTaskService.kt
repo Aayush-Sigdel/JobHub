@@ -19,6 +19,7 @@ import com.example.jobhub.repository.UserRepository
 import com.example.jobhub.service.task.TaskExecutionService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
 import java.util.UUID
@@ -38,6 +39,7 @@ class ProgrammingTaskService(
     private val minimumTaskCasesRequired = 5
     private val maximumExampleTestCases = 3
 
+    @Transactional
     fun createTask(userId: UUID, createTask: CreateProgrammingTask): ProgrammingTaskDto{
         validateIdentifier(createTask.methodName, "methodName")
         createTask.parameters.forEach { validateIdentifier(it.name, "parameter name") }
@@ -82,6 +84,7 @@ class ProgrammingTaskService(
         )
     }
 
+    @Transactional
     override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
         val task = task(submitTask.taskId)
         if (submitTask.code == null) {

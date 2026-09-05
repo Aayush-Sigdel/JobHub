@@ -15,6 +15,7 @@ import com.example.jobhub.dto.UpdateSocialLinkRequest
 import com.example.jobhub.dto.UpdateUserProfileRequest
 import com.example.jobhub.dto.UserBasicInfoResponse
 import com.example.jobhub.dto.UserProfileResponse
+import com.example.jobhub.dto.collaborator.UpdateDiscoverabilityRequest
 import com.example.jobhub.dto.social.*
 import com.example.jobhub.model.SocialPlatform
 import com.example.jobhub.security.UserPrincipal
@@ -96,6 +97,15 @@ class UserController(
     ): ResponseEntity<UserProfileResponse> {
         val bio = request["bio"] ?: throw IllegalArgumentException("Bio is required")
         val updatedProfile = userService.setUserBio(userDetails.id, bio)
+        return ResponseEntity.ok(updatedProfile)
+    }
+
+    @PutMapping("/profile/discoverable")
+    fun setDiscoverable(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @RequestBody request: UpdateDiscoverabilityRequest
+    ): ResponseEntity<UserProfileResponse> {
+        val updatedProfile = userService.setDiscoverable(userDetails.id, request.discoverable)
         return ResponseEntity.ok(updatedProfile)
     }
 

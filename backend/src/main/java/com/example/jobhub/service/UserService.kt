@@ -23,18 +23,21 @@ class UserService(
     private val userMapper: UserMapper
 ) {
 
+    @Transactional(readOnly = true)
     fun getUserProfile(userId: UUID): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         return userMapper.toUserProfileResponse(user)
     }
 
+    @Transactional(readOnly = true)
     fun getUserBasicInfo(userId: UUID): UserBasicInfoResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         return userMapper.toUserBasicInfoResponse(user)
     }
 
+    @Transactional
     fun updateUserProfile(userId: UUID, updateRequest: UpdateUserProfileRequest): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -72,6 +75,7 @@ class UserService(
         return userMapper.toUserProfileResponse(userRepository.save(user))
     }
     
+    @Transactional
     fun completeOnboarding(userId: UUID): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -84,6 +88,19 @@ class UserService(
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
         user.title = title
+        val updatedUser = userRepository.save(user)
+        return userMapper.toUserProfileResponse(updatedUser)
+    }
+
+    /**
+     * Opt in or out of being found by other users. Defaults to off, so a profile only becomes
+     * searchable when its owner explicitly enables it.
+     */
+    @Transactional
+    fun setDiscoverable(userId: UUID, discoverable: Boolean): UserProfileResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
+        user.isDiscoverable = discoverable
         val updatedUser = userRepository.save(user)
         return userMapper.toUserProfileResponse(updatedUser)
     }
@@ -106,6 +123,7 @@ class UserService(
         return userMapper.toUserProfileResponse(updatedUser)
     }
 
+    @Transactional
     fun setUserImage(userId: UUID, imageUrl: String): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -114,6 +132,7 @@ class UserService(
         return userMapper.toUserProfileResponse(updatedUser)
     }
 
+    @Transactional
     fun addContactNumber(userId: UUID, contactNumber: String): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -124,6 +143,7 @@ class UserService(
         return userMapper.toUserProfileResponse(updatedUser)
     }
 
+    @Transactional
     fun removeContactNumber(userId: UUID, contactNumber: String): UserProfileResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -236,6 +256,7 @@ class UserService(
         }
     }
 
+    @Transactional
     fun addSocialLink(userId: UUID, createSocialLinkRequest: CreateSocialLinkRequest): SocialLinkDto {
         val user = userRepository.findById(userId)
             .orElseThrow { ApiException("User not found", HttpStatus.NOT_FOUND) }
@@ -244,6 +265,7 @@ class UserService(
         return userMapper.toSocialLinkDto(savedSocialLink)
     }
 
+    @Transactional
     fun updateSocialLink(userId: UUID, socialLinkId: UUID, updateSocialLinkRequest: UpdateSocialLinkRequest): SocialLinkDto {
         val socialLink = socialLinkRepository.findByIdAndUserId(socialLinkId, userId)
             ?: throw ApiException("Social link not found", HttpStatus.NOT_FOUND)
@@ -253,6 +275,7 @@ class UserService(
         return userMapper.toSocialLinkDto(updatedSocialLink)
     }
 
+    @Transactional
     fun deleteSocialLink(userId: UUID, socialLinkId: UUID) {
         val socialLink = socialLinkRepository.findByIdAndUserId(socialLinkId, userId)
             ?: throw ApiException("Social link not found", HttpStatus.NOT_FOUND)

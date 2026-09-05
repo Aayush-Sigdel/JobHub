@@ -17,6 +17,7 @@ import com.example.jobhub.repository.UserRepository
 import com.example.jobhub.service.task.TaskExecutionService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 import javax.imageio.ImageIO
 
@@ -38,6 +39,7 @@ class DesignTaskService(
 
     private val marginOfError = 3.0
 
+    @Transactional
     fun createTask(userId: UUID, createTask: CreateDesignTask): DesignTaskDto {
         if(createTask.minimumMatchingScore > 100){
             throw ApiException("Minimum matching score can't be more than 100 percent", HttpStatus.BAD_REQUEST)
@@ -61,6 +63,7 @@ class DesignTaskService(
         )
     }
 
+    @Transactional
     override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse{
         val task = task(submitTask.taskId)
         if(submitTask.code == null) {

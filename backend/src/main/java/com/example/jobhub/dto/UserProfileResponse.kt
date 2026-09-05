@@ -14,6 +14,7 @@ data class UserProfileResponse(
     val employer: Boolean,
     val isVerified: Boolean,
     val onboardingCompleted: Boolean,
+    val discoverable: Boolean,
     val contactNumbers: List<String>,
     val skills: List<SkillDto>,
     val experiences: List<ExperienceDto>,

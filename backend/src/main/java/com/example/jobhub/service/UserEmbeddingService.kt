@@ -72,6 +72,7 @@ class UserEmbeddingService(
             if (platformEmbedding != null) {
                 user.platformEmbedding = platformEmbedding
             }
+            user.overallEmbedding = EmbeddingAggregator.centroid(user)
             userRepository.save(user)
 
             if (platformEmbedding != null) {
@@ -229,6 +230,7 @@ class UserEmbeddingService(
         val syncResult = applyPlatformResult(userId, user, fetchResult)
 
         if (syncResult.success) {
+            user.overallEmbedding = EmbeddingAggregator.centroid(user)
             userRepository.save(user)
         }
 
@@ -301,6 +303,7 @@ class UserEmbeddingService(
         }
 
         val saved = try {
+            user.overallEmbedding = EmbeddingAggregator.centroid(user)
             userRepository.save(user)
             true
         } catch (e: Exception) {

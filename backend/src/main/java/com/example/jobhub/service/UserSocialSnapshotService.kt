@@ -5,6 +5,7 @@ import com.example.jobhub.model.UserSocialSnapshot
 import com.example.jobhub.repository.UserRepository
 import com.example.jobhub.repository.UserSocialSnapshotRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -13,6 +14,7 @@ class UserSocialSnapshotService(
     private val userRepository: UserRepository
 ) {
 
+    @Transactional
     fun save(userId: UUID, platform: SocialPlatform, data: String): UserSocialSnapshot {
         val snapshot = snapshotRepository
             .findByUserIdAndPlatform(userId, platform)
@@ -30,21 +32,25 @@ class UserSocialSnapshotService(
         return snapshotRepository.save(snapshot)
     }
 
+    @Transactional(readOnly = true)
     fun find(userId: UUID, platform: SocialPlatform): UserSocialSnapshot? {
         return snapshotRepository
             .findByUserIdAndPlatform(userId, platform)
             .orElse(null)
     }
 
+    @Transactional(readOnly = true)
     fun findByUserId(userId: UUID): List<UserSocialSnapshot> {
         return snapshotRepository.findByUserId(userId)
     }
 
+    @Transactional(readOnly = true)
     fun findByUserIds(userIds: Collection<UUID>): List<UserSocialSnapshot> {
         if (userIds.isEmpty()) return emptyList()
         return snapshotRepository.findByUserIdIn(userIds)
     }
 
+    @Transactional
     fun delete(userId: UUID, platform: SocialPlatform) {
         snapshotRepository.deleteByUserIdAndPlatform(
             userId,

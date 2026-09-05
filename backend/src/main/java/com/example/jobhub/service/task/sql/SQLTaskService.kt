@@ -17,6 +17,7 @@ import com.example.jobhub.repository.UserRepository
 import com.example.jobhub.service.task.TaskExecutionService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -31,6 +32,7 @@ class SQLTaskService(
 
     override val taskType = TaskType.SQL
 
+    @Transactional
     fun createTask(userId: UUID, createTask: CreateSQLTask): SQLTaskDto{
         if (createTask.assertions.isEmpty()) {
             throw ApiException("Task must have at least one assertion", HttpStatus.BAD_REQUEST)
@@ -49,6 +51,7 @@ class SQLTaskService(
         )
     }
 
+    @Transactional
     override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
         val task = task(submitTask.taskId)
         if(submitTask.codes.isNullOrEmpty()) {
