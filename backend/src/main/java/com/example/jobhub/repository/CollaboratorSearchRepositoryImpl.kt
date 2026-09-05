@@ -2,14 +2,21 @@ package com.example.jobhub.repository
 
 import com.example.jobhub.model.CollaboratorSource
 import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Repository
-class CollaboratorSearchRepositoryImpl(
-    private val entityManager: EntityManager
-) : CollaboratorSearchRepository {
+class CollaboratorSearchRepositoryImpl : CollaboratorSearchRepository {
+
+    companion object {
+        private const val MIN_SIMILARITY = 0.6
+        private const val MAX_DISTANCE = 1.0 - MIN_SIMILARITY
+    }
+
+    @PersistenceContext
+    private lateinit var entityManager: EntityManager
 
     @Transactional(readOnly = true)
     override fun searchCollaborators(
@@ -29,6 +36,7 @@ class CollaboratorSearchRepositoryImpl(
             append("AND u.employer = false ")
             append("AND u.id <> :selfId ")
             append("AND u.").append(column).append(" IS NOT NULL ")
+            append("AND (u.").append(column).append(" <=> CAST(:vec AS vector)) <= :maxDistance ")
             if (locationFilter != null) {
                 append("AND u.location IS NOT NULL ")
                 append("AND LOWER(u.location) LIKE LOWER(CONCAT('%', CAST(:location AS text), '%')) ")
@@ -39,6 +47,7 @@ class CollaboratorSearchRepositoryImpl(
         val query = entityManager.createNativeQuery(sql)
             .setParameter("vec", queryVector)
             .setParameter("selfId", excludeUserId)
+            .setParameter("maxDistance", MAX_DISTANCE)
             .setMaxResults(limit)
 
         if (locationFilter != null) {
