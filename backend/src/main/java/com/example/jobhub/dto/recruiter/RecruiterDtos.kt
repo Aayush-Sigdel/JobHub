@@ -78,8 +78,8 @@ data class CandidateDashboardResponse(
     val allTasksPassed: Boolean,
 
     // AI & Embedding Match
-    val overallSimilarity: Double,
-    val matchPercentage: Int, // e.g. 87%
+    val overallSimilarity: Double?,
+    val matchPercentage: Int?,
     val platformSimilarity: Double?,
     val githubSimilarity: Double?,
     val devtoSimilarity: Double?,

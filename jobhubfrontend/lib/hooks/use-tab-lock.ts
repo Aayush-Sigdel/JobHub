@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
+import type { RecordTabSwitchResponse } from '@/types/api/jobs';
 
 interface UseTabLockOptions {
   jobId: string;
@@ -33,11 +34,12 @@ export function useTabLock({ jobId, enabled, warningLimit }: UseTabLockOptions):
     setTabSwitchCount(prev => prev + 1);
 
     try {
-      await api.post(`/jobs/${jobId}/tab-switch`, {
+      const response = await api.post<RecordTabSwitchResponse>(`/jobs/${jobId}/tab-switch`, {
         eventType: event.eventType,
         durationSeconds: event.durationSeconds,
         details: event.details,
       });
+      setTabSwitchCount(response.data.tabSwitchCount);
     } catch (err) {
       console.error('Failed to record tab switch event', err);
     }

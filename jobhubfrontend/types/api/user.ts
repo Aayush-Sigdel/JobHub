@@ -11,6 +11,7 @@ export interface ExperienceDto {
   startDate: string;
   endDate?: string;
   isCurrentRole?: boolean;
+  currentRole?: boolean;
   description?: string;
 }
 

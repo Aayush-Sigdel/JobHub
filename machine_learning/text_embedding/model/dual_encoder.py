@@ -13,7 +13,13 @@ class DualEncoder(nn.Module):
     ):
         super().__init__()
 
-        self.encoder = AutoModel.from_pretrained(model_name)
+        try:
+            self.encoder = AutoModel.from_pretrained(
+                model_name,
+                attn_implementation="eager",
+            )
+        except (TypeError, ValueError):
+            self.encoder = AutoModel.from_pretrained(model_name)
         self.proj = nn.Linear(self.encoder.config.hidden_size, embedding_dim)
 
         if gradient_checkpointing and hasattr(self.encoder, "gradient_checkpointing_enable"):

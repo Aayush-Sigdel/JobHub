@@ -1,32 +1,47 @@
 "use client";
 
 import React, { memo } from "react";
-import { Flame, Star } from "lucide-react";
+import Link from "next/link";
+import { Flame, Star, ArrowLeft, ShieldCheck } from "lucide-react";
 import { DesignTask, ScoreResult, PASSING_TOLERANCE } from "@/lib/task/css_data";
 
 interface CssArenaHeaderProps {
   task: DesignTask;
   lastScore: ScoreResult | null;
   isTargetScoreMet: boolean;
+  jobId?: string | null;
+  tabLockEnabled?: boolean;
+  tabSwitchCount?: number;
+  tabLockWarningLimit?: number;
 }
 
 export const CssArenaHeader = memo(
-  ({ task, lastScore, isTargetScoreMet }: CssArenaHeaderProps) => {
+  ({ task, lastScore, isTargetScoreMet, jobId, tabLockEnabled, tabSwitchCount = 0, tabLockWarningLimit = 0 }: CssArenaHeaderProps) => {
     return (
       <header className="h-12 bg-card border-b border-border px-6 flex items-center justify-between text-xs shrink-0 select-none whitespace-nowrap">
         {/* Left: Breadcrumbs & Target Title */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-muted-foreground font-mono text-xs">
-            <Flame className="w-3.5 h-3.5 text-tomato-500 shrink-0" />
-            <span className="hover:text-foreground transition-colors cursor-pointer">
-              Tasks
-            </span>
-            <span className="text-muted-foreground/30">/</span>
-            <span className="hover:text-foreground transition-colors cursor-pointer">
-              CSS Battle
-            </span>
-            <span className="text-muted-foreground/30">/</span>
-          </div>
+          {jobId ? (
+            <Link
+              href={`/find-job/${jobId}`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-muted transition-colors mr-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-primary" />
+              <span>Back to Job</span>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-1.5 text-muted-foreground font-mono text-xs">
+              <Flame className="w-3.5 h-3.5 text-tomato-500 shrink-0" />
+              <span className="hover:text-foreground transition-colors cursor-pointer">
+                Tasks
+              </span>
+              <span className="text-muted-foreground/30">/</span>
+              <span className="hover:text-foreground transition-colors cursor-pointer">
+                CSS Battle
+              </span>
+              <span className="text-muted-foreground/30">/</span>
+            </div>
+          )}
 
           <span className="font-bold text-foreground text-sm tracking-tight">
             {task.title}
@@ -40,6 +55,12 @@ export const CssArenaHeader = memo(
 
         {/* Right: Target Requirement, Last Score, and Canvas Dimensions */}
         <div className="flex items-center gap-4 text-xs font-mono">
+          {tabLockEnabled && (
+            <div className={`flex items-center gap-1.5 font-semibold ${tabSwitchCount >= tabLockWarningLimit ? "text-red-600" : "text-amber-600"}`}>
+              <ShieldCheck className="size-3.5" />
+              <span>Monitored · {tabSwitchCount}/{tabLockWarningLimit}</span>
+            </div>
+          )}
           {/* Target Score Requirement with Color Status Dot */}
           <div className="flex items-center gap-2 text-xs">
             <span

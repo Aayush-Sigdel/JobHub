@@ -5,7 +5,8 @@ export interface RecruiterJobSummaryResponse {
   location?: string;
   jobType: string;
   workplaceType: string;
-  isActive: boolean;
+  isActive?: boolean;
+  active?: boolean;
   tabLock: boolean;
   totalApplicants: number;
   pendingReviewCount: number;
@@ -91,8 +92,8 @@ export interface CandidateDashboardResponse {
   programmingSubmission?: TaskSubmission;
   sqlSubmission?: TaskSubmission;
   allTasksPassed: boolean;
-  overallSimilarity: number;
-  matchPercentage: number;
+  overallSimilarity?: number;
+  matchPercentage?: number;
   platformSimilarity?: number;
   githubSimilarity?: number;
   devtoSimilarity?: number;

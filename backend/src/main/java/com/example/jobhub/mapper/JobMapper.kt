@@ -11,6 +11,8 @@ import com.example.jobhub.model.job.TabSwitchEvent
 import com.example.jobhub.model.task.DesignTask
 import com.example.jobhub.model.task.ProgrammingTask
 import com.example.jobhub.model.task.SQLTask
+import com.example.jobhub.service.embedding.CosineSimilarity
+import com.example.jobhub.service.embedding.JobMatchBreakdown
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import java.util.UUID
@@ -42,8 +44,8 @@ class JobMapper(
             salaryMin = request.salaryMin,
             salaryMax = request.salaryMax,
             salaryCurrency = request.salaryCurrency ?: "USD",
-            tabLock = request.tabLock,
-            tabLockWarningLimit = request.tabLockWarningLimit,
+            tabLock = request.tabLock ?: false,
+            tabLockWarningLimit = request.tabLockWarningLimit ?: 3,
             deadline = request.deadline,
             isActive = true,
             postedBy = postedBy,
@@ -81,6 +83,7 @@ class JobMapper(
             programmingTaskId = jobPost.programmingTask?.id,
             sqlTaskId = jobPost.sqlTask?.id,
             similarityScore = similarityScore,
+            matchPercentage = CosineSimilarity.toPercentage(similarityScore),
             createdAt = jobPost.createdAt,
             updatedAt = jobPost.updatedAt
         )
@@ -91,9 +94,10 @@ class JobMapper(
         applicantCount: Long = 0,
         hasApplied: Boolean = false,
         myApplicationId: UUID? = null,
-        similarityScore: Double? = null
+        matchBreakdown: JobMatchBreakdown? = null,
+        allTasksPassed: Boolean? = null
     ): JobPostDetailResponse {
-        val base = toJobPostResponse(jobPost, similarityScore)
+        val base = toJobPostResponse(jobPost, matchBreakdown?.overall)
         val designTaskDto = jobPost.designTask?.let { taskMapper.toDesignTaskDto(it) }
         val programmingTaskDto = jobPost.programmingTask?.let { taskMapper.toProgrammingTaskDto(it, 3) }
         val sqlTaskDto = jobPost.sqlTask?.let { taskMapper.toSQLTaskDto(it) }
@@ -105,7 +109,16 @@ class JobMapper(
             sqlTask = sqlTaskDto,
             applicantCount = applicantCount,
             hasApplied = hasApplied,
-            myApplicationId = myApplicationId
+            myApplicationId = myApplicationId,
+            allTasksPassed = allTasksPassed,
+            overallSimilarity = matchBreakdown?.overall,
+            matchPercentage = matchBreakdown?.percentage,
+            platformSimilarity = matchBreakdown?.platform,
+            githubSimilarity = matchBreakdown?.github,
+            devtoSimilarity = matchBreakdown?.devto,
+            orcidSimilarity = matchBreakdown?.orcid,
+            stackoverflowSimilarity = matchBreakdown?.stackoverflow,
+            portfolioSimilarity = matchBreakdown?.portfolio
         )
     }
 

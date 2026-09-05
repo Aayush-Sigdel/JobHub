@@ -1,7 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Camera, Eye, Upload } from "lucide-react";
+import { useState } from "react";
+import { Camera, Eye, Link as LinkIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Popover,
   PopoverContent,
@@ -10,24 +13,22 @@ import {
 
 interface ImagePopoverProps {
   profileImage: string;
-  profileUsername: string;
+  profileName: string;
   onImageUpdate: (url: string) => void;
 }
 
 export function ImagePopover({
   profileImage,
-  profileUsername,
+  profileName,
   onImageUpdate,
 }: ImagePopoverProps) {
   const [isImageMenuOpen, setIsImageMenuOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState(profileImage);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      onImageUpdate(url);
-    }
+  const handleImageUpdate = () => {
+    const normalizedUrl = imageUrl.trim();
+    if (!normalizedUrl) return;
+    onImageUpdate(normalizedUrl);
     setIsImageMenuOpen(false);
   };
 
@@ -40,17 +41,14 @@ export function ImagePopover({
 
   const renderAvatar =
     profileImage ||
-    `https://api.dicebear.com/9.x/notionists/svg?seed=${profileUsername}&backgroundColor=e2e8f0`;
+    `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(profileName || "User")}&backgroundColor=e2e8f0`;
 
   return (
     <div className="relative group">
-      <div className="w-24 h-24 rounded-full bg-muted overflow-hidden border border-border">
-        <img
-          src={renderAvatar}
-          alt="Profile"
-          className="w-full h-full object-cover transition-opacity group-hover:opacity-90"
-        />
-      </div>
+      <Avatar className="size-24 border border-border">
+        <AvatarImage src={renderAvatar} alt={profileName || "Profile"} />
+        <AvatarFallback>{(profileName || "U").slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
 
       <Popover open={isImageMenuOpen} onOpenChange={setIsImageMenuOpen}>
         <PopoverTrigger asChild>
@@ -61,7 +59,7 @@ export function ImagePopover({
         <PopoverContent
           align="center"
           sideOffset={8}
-          className="w-48 p-1.5 bg-card border border-border shadow-lg rounded-xl flex flex-col"
+          className="w-80 p-4 bg-card border border-border shadow-lg rounded-xl flex flex-col gap-3"
         >
           <button
             onClick={handlePreviewImage}
@@ -69,19 +67,28 @@ export function ImagePopover({
           >
             <Eye className="w-4 h-4 text-muted-foreground" /> Preview
           </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:bg-muted rounded-md transition-colors w-full text-left"
-          >
-            <Upload className="w-4 h-4 text-muted-foreground" /> Upload from device
-          </button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={handleImageUpload}
-          />
+          <div className="space-y-2 border-t border-border pt-3">
+            <label className="text-xs font-semibold text-muted-foreground" htmlFor="profile-image-url">
+              Public image URL
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <LinkIcon className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                <Input
+                  id="profile-image-url"
+                  type="url"
+                  value={imageUrl}
+                  onChange={(event) => setImageUrl(event.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  className="pl-9"
+                />
+              </div>
+              <Button type="button" onClick={handleImageUpdate} disabled={!imageUrl.trim()}>
+                Save
+              </Button>
+            </div>
+            {/* Device upload is hidden until a media-upload endpoint is available. */}
+          </div>
         </PopoverContent>
       </Popover>
     </div>

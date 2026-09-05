@@ -5,6 +5,8 @@ import { useTheme } from "next-themes";
 import CodeMirror, { Extension } from "@uiw/react-codemirror";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
+import { java } from "@codemirror/lang-java";
+import { python } from "@codemirror/lang-python";
 import { EditorView } from "@codemirror/view";
 import {
   Play,
@@ -31,11 +33,15 @@ export interface CodeEditorProps {
   isSubmitting?: boolean;
   isSubmitLocked?: boolean;
   submitLockMessage?: string;
+  language?: "HTML_CSS" | "JAVA" | "PYTHON";
+  editorLabel?: string;
+  showActionBar?: boolean;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
   initialCode = "",
   onChange,
+  fileName,
   className = "",
   onTest,
   onSubmitFinal,
@@ -43,17 +49,15 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   isSubmitting = false,
   isSubmitLocked = false,
   submitLockMessage = "Reach required matching score to unlock submission",
+  language = "HTML_CSS",
+  editorLabel = "Editor",
+  showActionBar = true,
 }) => {
   const { resolvedTheme } = useTheme();
   const [code, setCode] = useState<string>(initialCode);
   const [fontSize, setFontSize] = useState<number>(15);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
-
-  // Sync initialCode if changed externally
-  useEffect(() => {
-    setCode(initialCode);
-  }, [initialCode]);
 
   const handleChange = useCallback(
     (value: string) => {
@@ -62,7 +66,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         onChange(value);
       }
     },
-    [onChange]
+    [onChange],
   );
 
   const charCount = useMemo(() => code.length, [code]);
@@ -145,18 +149,19 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             : "rgba(237, 43, 18, 0.18) !important",
         },
       },
-      { dark: isDark }
+      { dark: isDark },
     );
   }, [isDark, fontSize]);
 
   const extensions = useMemo(() => {
-    return [
-      html({ matchClosingTags: true, autoCloseTags: true }),
-      css(),
-      editorTheme,
-      EditorView.lineWrapping,
-    ];
-  }, [editorTheme]);
+    const languageExtensions = {
+      HTML_CSS: [html({ matchClosingTags: true, autoCloseTags: true }), css()],
+      JAVA: [java()],
+      PYTHON: [python()],
+    }[language];
+
+    return [...languageExtensions, editorTheme, EditorView.lineWrapping];
+  }, [editorTheme, language]);
 
   return (
     <div
@@ -165,10 +170,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       {/* 1. Editor Header */}
       <div className="bg-muted/40 border-b border-border px-5 py-3 flex items-center justify-between gap-3 text-sm font-mono shrink-0">
         <div className="flex items-center gap-2.5">
-          <span className="font-bold text-foreground text-sm">Editor</span>
-          <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-sans border border-border">
-            CTRL SHIFT E
+          <span className="font-bold text-foreground text-sm">
+            {editorLabel}
           </span>
+          {fileName && (
+            <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-sans border border-border">
+              {fileName}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-4 relative">
@@ -272,49 +281,52 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       </div>
 
       {/* 3. Bottom Action Bar */}
-      <div className="bg-muted/30 border-t border-border p-4 flex items-center gap-3.5 shrink-0">
-        <button
-          onClick={onTest || (() => toast.info("Testing code..."))}
-          disabled={isTesting}
-          className="flex-1 flex items-center justify-center gap-2.5 h-11 px-5 rounded-xl border border-border bg-card hover:bg-muted active:scale-[0.99] text-foreground font-bold text-sm transition-all shadow-2xs cursor-pointer disabled:opacity-50"
-        >
-          {isTesting ? (
-            <Loader2 className="w-4 h-4 animate-spin text-pacific-blue-500" />
-          ) : (
-            <Play className="w-4 h-4 fill-current text-pacific-blue-500" />
-          )}
-          <span>Test Code</span>
-          <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-mono border border-border font-normal">
-            CTRL ENTER
-          </span>
-        </button>
-
-        {isSubmitLocked ? (
+      {showActionBar && (
+        <div className="bg-muted/30 border-t border-border p-4 flex items-center gap-3.5 shrink-0">
           <button
-            onClick={() => toast.warning(submitLockMessage)}
-            className="flex-1 flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-muted/80 text-muted-foreground border border-border/80 font-bold text-xs transition-all shadow-none cursor-not-allowed opacity-80"
-            title={submitLockMessage}
+            onClick={onTest || (() => toast.info("Testing code..."))}
+            disabled={isTesting}
+            className="flex-1 flex items-center justify-center gap-2.5 h-11 px-5 rounded-xl border border-border bg-card hover:bg-muted active:scale-[0.99] text-foreground font-bold text-sm transition-all shadow-2xs cursor-pointer disabled:opacity-50"
           >
-            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Submit (Locked)</span>
-          </button>
-        ) : (
-          <button
-            onClick={
-              onSubmitFinal || (() => toast.success("Final answer submitted!"))
-            }
-            disabled={isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2.5 h-11 px-5 rounded-xl bg-tomato-500 hover:bg-tomato-600 active:scale-[0.99] text-white font-bold text-sm transition-all shadow-sm shadow-tomato-500/25 cursor-pointer disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+            {isTesting ? (
+              <Loader2 className="w-4 h-4 animate-spin text-pacific-blue-500" />
             ) : (
-              <Send className="w-4 h-4" />
+              <Play className="w-4 h-4 fill-current text-pacific-blue-500" />
             )}
-            <span>Submit Final Answer</span>
+            <span>Test Code</span>
+            <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-mono border border-border font-normal">
+              CTRL ENTER
+            </span>
           </button>
-        )}
-      </div>
+
+          {isSubmitLocked ? (
+            <button
+              onClick={() => toast.warning(submitLockMessage)}
+              className="flex-1 flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-muted/80 text-muted-foreground border border-border/80 font-bold text-xs transition-all shadow-none cursor-not-allowed opacity-80"
+              title={submitLockMessage}
+            >
+              <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Submit (Locked)</span>
+            </button>
+          ) : (
+            <button
+              onClick={
+                onSubmitFinal ||
+                (() => toast.success("Final answer submitted!"))
+              }
+              disabled={isSubmitting}
+              className="flex-1 flex items-center justify-center gap-2.5 h-11 px-5 rounded-xl bg-tomato-500 hover:bg-tomato-600 active:scale-[0.99] text-white font-bold text-sm transition-all shadow-sm shadow-tomato-500/25 cursor-pointer disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              <span>Submit Final Answer</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

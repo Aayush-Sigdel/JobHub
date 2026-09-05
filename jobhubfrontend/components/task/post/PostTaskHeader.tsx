@@ -1,17 +1,32 @@
 "use client";
 
 import React, { memo } from "react";
-import { ArrowLeft, Flame, Loader2, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Braces,
+  Code2,
+  Flame,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface PostTaskHeaderProps {
   onPublish: () => void;
   isSubmitting?: boolean;
+  assessmentType?: "design" | "programming";
 }
 
 export const PostTaskHeader = memo(
-  ({ onPublish, isSubmitting = false }: PostTaskHeaderProps) => {
+  ({
+    onPublish,
+    isSubmitting = false,
+    assessmentType = "design",
+  }: PostTaskHeaderProps) => {
     const router = useRouter();
+    const isProgramming = assessmentType === "programming";
+    const AssessmentIcon = isProgramming ? Braces : Flame;
+    const ActionIcon = isProgramming ? Code2 : Sparkles;
 
     return (
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-5">
@@ -29,20 +44,28 @@ export const PostTaskHeader = memo(
             <span>Task Management</span>
             <span className="text-muted-foreground/30">/</span>
             <span className="text-foreground font-semibold">
-              Post CSS Battle Challenge
+              {isProgramming
+                ? "Create Programming Task"
+                : "Post CSS Battle Challenge"}
             </span>
           </div>
 
           <div className="flex items-center gap-2.5 pt-1">
             <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-tomato-500 shadow-2xs">
-              <Flame className="w-4 h-4 fill-tomato-500" />
+              <AssessmentIcon
+                className={`w-4 h-4 ${isProgramming ? "" : "fill-tomato-500"}`}
+              />
             </div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Create CSS Battle Challenge
+              {isProgramming
+                ? "Create Programming Task"
+                : "Create CSS Battle Challenge"}
             </h1>
           </div>
           <p className="text-xs text-muted-foreground">
-            Publish automated pixel-accuracy frontend assessment challenges (400 × 300 px) for job applicants.
+            {isProgramming
+              ? "Publish a typed method contract with private test cases for automated code evaluation."
+              : "Publish automated pixel-accuracy frontend assessment challenges (400 × 300 px) for job applicants."}
           </p>
         </div>
 
@@ -65,14 +88,14 @@ export const PostTaskHeader = memo(
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4" />
+              <ActionIcon className="w-4 h-4" />
             )}
-            <span>Publish Challenge</span>
+            <span>{isProgramming ? "Create Task" : "Publish Challenge"}</span>
           </button>
         </div>
       </div>
     );
-  }
+  },
 );
 
 PostTaskHeader.displayName = "PostTaskHeader";

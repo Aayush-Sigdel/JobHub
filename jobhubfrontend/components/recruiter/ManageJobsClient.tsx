@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Archive, ExternalLink, Plus, Trash2, Users } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Power, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { deleteJobAction, updateJobAction } from "@/lib/actions/jobs";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,10 @@ function displayEnum(value: string) {
   return value.toLowerCase().split("_").map((part) => part[0].toUpperCase() + part.slice(1)).join(" ");
 }
 
+function isJobActive(job: RecruiterJobSummaryResponse) {
+  return job.isActive ?? job.active ?? false;
+}
+
 export function ManageJobsClient({ initialJobs }: { initialJobs: RecruiterJobSummaryResponse[] }) {
   const [jobs, setJobs] = useState(initialJobs);
   const [query, setQuery] = useState("");
@@ -21,11 +25,13 @@ export function ManageJobsClient({ initialJobs }: { initialJobs: RecruiterJobSum
   const visibleJobs = useMemo(() => jobs.filter((job) => `${job.title} ${job.companyName} ${job.location || ""}`.toLowerCase().includes(query.toLowerCase())), [jobs, query]);
 
   const toggleListing = (job: RecruiterJobSummaryResponse) => {
+    const currentlyActive = isJobActive(job);
     startTransition(async () => {
       try {
-        const updated = await updateJobAction(job.id, { isActive: !job.isActive });
-        setJobs((current) => current.map((item) => item.id === job.id ? { ...item, isActive: updated.isActive } : item));
-        toast.success(updated.isActive ? "Job reopened." : "Job closed.");
+        const updated = await updateJobAction(job.id, { isActive: !currentlyActive, active: !currentlyActive });
+        const nextActive = updated.isActive ?? updated.active ?? !currentlyActive;
+        setJobs((current) => current.map((item) => item.id === job.id ? { ...item, isActive: nextActive, active: nextActive } : item));
+        toast.success(nextActive ? "Job activated." : "Job deactivated.");
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Unable to update this job.");
       }
@@ -59,12 +65,23 @@ export function ManageJobsClient({ initialJobs }: { initialJobs: RecruiterJobSum
       ) : (
         <div className="mt-7 overflow-hidden rounded-lg border bg-card">
           <div className="divide-y">
-            {visibleJobs.map((job) => (
-              <article key={job.id} className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between">
-                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold">{job.title}</h2><Badge variant={job.isActive ? "secondary" : "outline"}>{job.isActive ? "Live" : "Closed"}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{job.companyName}{job.location ? ` · ${job.location}` : ""}</p><div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{displayEnum(job.jobType)}</span><span>{displayEnum(job.workplaceType)}</span>{(job.hasDesignTask || job.hasProgrammingTask || job.hasSqlTask) && <span>Assessment attached</span>}</div></div>
-                <div className="flex flex-wrap items-center gap-3 md:justify-end"><span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Users className="size-4" />{job.totalApplicants} applicants</span><Button variant="outline" asChild><Link href={`/candidates?jobId=${job.id}`}><ExternalLink />Candidates</Link></Button><Button variant="outline" disabled={isPending} onClick={() => toggleListing(job)}><Archive />{job.isActive ? "Close" : "Reopen"}</Button><Button variant="destructive" size="icon" disabled={isPending} onClick={() => removeListing(job)} aria-label={`Delete ${job.title}`}><Trash2 /></Button></div>
-              </article>
-            ))}
+            {visibleJobs.map((job) => {
+              const active = isJobActive(job);
+              return (
+                <article key={job.id} className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between">
+                  <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold">{job.title}</h2><Badge variant={active ? "secondary" : "outline"}>{active ? "Live" : "Closed"}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{job.companyName}{job.location ? ` · ${job.location}` : ""}</p><div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{displayEnum(job.jobType)}</span><span>{displayEnum(job.workplaceType)}</span>{(job.hasDesignTask || job.hasProgrammingTask || job.hasSqlTask) && <span>Assessment attached</span>}</div></div>
+                  <div className="flex flex-wrap items-center gap-3 md:justify-end">
+                    <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Users className="size-4" />{job.totalApplicants} applicants</span>
+                    <Button variant="outline" asChild><Link href={`/candidates?jobId=${job.id}`}><ExternalLink />Candidates</Link></Button>
+                    <Button variant="outline" asChild><Link href={`/manage-jobs/${job.id}/edit`}><Pencil />Edit</Link></Button>
+                    <Button variant={active ? "outline" : "default"} disabled={isPending} onClick={() => toggleListing(job)} aria-pressed={active}>
+                      <Power />{active ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button variant="destructive" size="icon" disabled={isPending} onClick={() => removeListing(job)} aria-label={`Delete ${job.title}`}><Trash2 /></Button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       )}

@@ -3,13 +3,14 @@ import { ScoreResult, calculateScorePoints } from "./css_data";
 
 /**
  * Runs off-screen visual rasterization and pixelmatch diffing between
- * candidate code and target code at 400x300 viewport.
+ * candidate code and target code (or target image) at 400x300 viewport.
  */
 export function evaluateCssCode(
   userCode: string,
-  targetHtml: string,
+  targetHtmlOrImage: string,
   width = 400,
-  height = 300
+  height = 300,
+  isTargetImage = false
 ): Promise<ScoreResult> {
   return new Promise((resolve) => {
     const offscreenUser = document.createElement("canvas");
@@ -23,13 +24,20 @@ export function evaluateCssCode(
     const ctxTarget = offscreenTarget.getContext("2d", { willReadFrequently: true });
 
     const userSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;width:${width}px;height:${height}px;background:#ffffff;overflow:hidden;">${userCode}</div></foreignObject></svg>`;
-    const targetSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;width:${width}px;height:${height}px;background:#ffffff;overflow:hidden;">${targetHtml}</div></foreignObject></svg>`;
-
     const userBlob = new Blob([userSvg], { type: "image/svg+xml;charset=utf-8" });
-    const targetBlob = new Blob([targetSvg], { type: "image/svg+xml;charset=utf-8" });
-
     const userUrl = URL.createObjectURL(userBlob);
-    const targetUrl = URL.createObjectURL(targetBlob);
+
+    let targetUrl: string;
+    let shouldRevokeTarget = false;
+
+    if (isTargetImage) {
+      targetUrl = targetHtmlOrImage;
+    } else {
+      const targetSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;width:${width}px;height:${height}px;background:#ffffff;overflow:hidden;">${targetHtmlOrImage}</div></foreignObject></svg>`;
+      const targetBlob = new Blob([targetSvg], { type: "image/svg+xml;charset=utf-8" });
+      targetUrl = URL.createObjectURL(targetBlob);
+      shouldRevokeTarget = true;
+    }
 
     const userImg = new Image();
     const targetImg = new Image();
@@ -37,7 +45,9 @@ export function evaluateCssCode(
     let loaded = 0;
     const cleanup = () => {
       URL.revokeObjectURL(userUrl);
-      URL.revokeObjectURL(targetUrl);
+      if (shouldRevokeTarget) {
+        URL.revokeObjectURL(targetUrl);
+      }
     };
 
     const onBothLoaded = () => {
@@ -100,9 +110,18 @@ export function evaluateCssCode(
       loaded++;
       if (loaded === 2) onBothLoaded();
     };
+    userImg.onerror = () => {
+      resolve({ score: 0, matchPct: 0, chars: userCode.length });
+      cleanup();
+    };
+
     targetImg.onload = () => {
       loaded++;
       if (loaded === 2) onBothLoaded();
+    };
+    targetImg.onerror = () => {
+      resolve({ score: 0, matchPct: 0, chars: userCode.length });
+      cleanup();
     };
 
     userImg.src = userUrl;

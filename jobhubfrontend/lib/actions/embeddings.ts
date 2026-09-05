@@ -9,6 +9,8 @@ export async function syncAllEmbeddingsAction(): Promise<UserEmbeddingSyncRespon
     method: 'POST'
   });
   revalidatePath('/candidate-profile');
+  revalidatePath('/home');
+  revalidatePath('/find-job');
   return result;
 }
 
@@ -17,6 +19,8 @@ export async function syncPlatformEmbeddingAction(): Promise<PlatformEmbeddingSy
     method: 'POST'
   });
   revalidatePath('/candidate-profile');
+  revalidatePath('/home');
+  revalidatePath('/find-job');
   return result;
 }
 
@@ -25,5 +29,7 @@ export async function syncSocialEmbeddingAction(source: SocialSource): Promise<E
     method: 'POST'
   });
   revalidatePath('/candidate-profile');
+  revalidatePath('/home');
+  revalidatePath('/find-job');
   return result;
 }

@@ -10,7 +10,7 @@ export default withAuth(
 
     const user = token.user as any;
     const isOnboarding = path.startsWith("/onboarding");
-    const isEmployerRoute = ["/analytics", "/candidates", "/dashboard", "/manage-jobs", "/post-job", "/post-task"].some((route) => path.startsWith(route));
+    const isEmployerRoute = ["/analytics", "/candidates", "/dashboard", "/manage-job", "/manage-jobs", "/post-job", "/post-task"].some((route) => path.startsWith(route));
     const isCandidateRoute = ["/candidate-profile", "/find-job", "/home", "/job-tracker", "/task"].some((route) => path.startsWith(route));
 
     // 1. If logged in but hasn't completed onboarding, redirect to /onboarding
@@ -58,6 +58,7 @@ export const config = {
     "/dashboard/:path*",
     "/find-job/:path*",
     "/manage-jobs/:path*",
+    "/manage-job/:path*",
     "/post-job/:path*",
     "/post-task/:path*",
   ],
