@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Mail, HelpCircle, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function PosterHeader() {
@@ -46,7 +45,7 @@ export function PosterHeader() {
       <div className="flex items-center gap-5">
         <button className="text-muted-foreground hover:text-foreground transition-colors relative">
           <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-brand border-2 border-white" />
+          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary border-2 border-background" />
         </button>
         <button className="text-muted-foreground hover:text-foreground transition-colors">
           <Mail className="h-5 w-5" />
@@ -55,9 +54,9 @@ export function PosterHeader() {
           <HelpCircle className="h-5 w-5" />
         </button>
         
-        <Avatar className="h-9 w-9 border-2 border-transparent hover:border-brand/20 cursor-pointer transition-colors ml-2">
+        <Avatar className="h-9 w-9 border-2 border-transparent hover:border-primary/20 cursor-pointer transition-colors ml-2">
           <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-          <AvatarFallback className="bg-emerald-700 text-white font-bold text-xs">AS</AvatarFallback>
+          <AvatarFallback className="bg-primary text-black font-bold text-xs">AS</AvatarFallback>
         </Avatar>
       </div>
     </header>
