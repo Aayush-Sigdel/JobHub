@@ -15,6 +15,7 @@ import com.example.jobhub.util.AuthUtil
 import com.example.jobhub.util.JwtUtil
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AuthService(
@@ -52,6 +53,7 @@ class AuthService(
         )
     }
 
+    @Transactional
     fun verifyOtp(verifyRequest: VerifyOtpRequest) {
         val user = userRepository.findByEmail(verifyRequest.email)
             ?: throw ApiException("User not found")
@@ -97,7 +99,13 @@ class AuthService(
         return RefreshResponse(newAccessToken, newRefreshToken)
     }
 
-    fun logout(userId: String, request: LogoutRequest) {
+    /**
+     * Authenticated by the refresh token itself rather than the caller's principal, so a user whose
+     * access token has already expired can still revoke their session instead of leaving the
+     * refresh token live in Redis until its TTL runs out. Mirrors how [refresh] resolves the user.
+     */
+    fun logout(request: LogoutRequest) {
+        val userId = jwtUtil.extractUserId(request.refreshToken)
         if (!refreshTokenService.isValid(userId, request.refreshToken)){
             throw ApiException("Invalid or expired refresh token", HttpStatus.FORBIDDEN)
         }

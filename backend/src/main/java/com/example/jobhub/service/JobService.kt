@@ -47,6 +47,7 @@ class JobService(
 
     private val logger = LoggerFactory.getLogger(JobService::class.java)
 
+    @Transactional
     fun createJobPost(employerId: UUID, request: CreateJobPostRequest): JobPostResponse {
         val employer = userRepository.findById(employerId).orElseThrow {
             ApiException("Employer not found", HttpStatus.NOT_FOUND)
@@ -122,6 +123,7 @@ class JobService(
         return jobMapper.toJobPostResponse(saved)
     }
 
+    @Transactional
     fun updateJobPost(employerId: UUID, jobId: UUID, request: UpdateJobPostRequest): JobPostResponse {
         val jobPost = jobPostRepository.findByIdAndPostedById(jobId, employerId).orElseThrow {
             ApiException("Job post not found or you are not authorized to edit it", HttpStatus.NOT_FOUND)

@@ -40,6 +40,9 @@ public class User {
     @Column(nullable = false)
     private boolean onboardingCompleted = false;
 
+    @Column(name = "discoverable", nullable = false, columnDefinition = "boolean default false")
+    private boolean discoverable = false;
+
     @Column(length = 500)
     private String title;
 
@@ -98,6 +101,10 @@ public class User {
     @JdbcTypeCode(SqlTypes.VECTOR)
     @Column(columnDefinition = "vector(256)")
     private float[] platformEmbedding;
+
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Column(columnDefinition = "vector(256)")
+    private float[] overallEmbedding;
 
     @CreationTimestamp
     private Instant createdAt;
