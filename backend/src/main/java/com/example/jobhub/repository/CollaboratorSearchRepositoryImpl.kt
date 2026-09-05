@@ -11,7 +11,7 @@ import java.util.UUID
 class CollaboratorSearchRepositoryImpl : CollaboratorSearchRepository {
 
     companion object {
-        private const val MIN_SIMILARITY = 0.6
+        private const val MIN_SIMILARITY = 0.5
         private const val MAX_DISTANCE = 1.0 - MIN_SIMILARITY
     }
 
