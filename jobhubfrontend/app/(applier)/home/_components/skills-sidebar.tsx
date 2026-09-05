@@ -2,13 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { Zap, Plus, Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Zap, Plus, Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, TrendingUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatSkillName } from "@/lib/utils";
 import type { UserProfileResponse } from "@/types/api/user";
 
 interface SkillsSidebarProps {
   profile: UserProfileResponse | null;
+  onTabChange?: (tab: string) => void;
 }
 
 const TRENDING_IN_DEMAND_SKILLS = [
@@ -26,7 +28,7 @@ const TRENDING_IN_DEMAND_SKILLS = [
   "Redis",
 ];
 
-export function SkillsSidebar({ profile }: SkillsSidebarProps) {
+export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
   const userSkills = profile?.skills || [];
 
   // Identify missing professional evidence without inventing a percentage score.
@@ -78,22 +80,17 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
     <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0 flex flex-col gap-5">
       {/* Sticky container */}
       <div className="sticky top-20 flex flex-col gap-5">
-        {/* Your Skills & Match Strength Card */}
-        <div className="border border-border bg-card rounded-2xl shadow-sm p-5 transition-all hover:shadow-md">
+        {/* Your Skills Card */}
+        <div className="border border-border bg-card rounded-2xl shadow-xs p-5 hover:border-primary/30 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
-                <Zap className="h-4 w-4 fill-amber-500/20" />
-              </div>
-              <h3 className="font-bold text-[15px] text-foreground">
-                Your Skills
-              </h3>
-            </div>
+            <h3 className="font-bold text-sm text-foreground">
+              Your Skills
+            </h3>
             <Button
               asChild
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-xs font-bold text-primary hover:text-primary hover:bg-primary/10 gap-1 rounded-lg"
+              className="h-7 px-2.5 text-xs font-bold text-black bg-primary hover:bg-primary/90 gap-1 rounded-full shadow-xs cursor-pointer"
             >
               <Link href="/candidate-profile">
                 <Plus className="h-3.5 w-3.5" />
@@ -103,15 +100,15 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
           </div>
 
           {userSkills.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {userSkills.map((skill) => (
                 <div
                   key={skill.id || skill.name}
-                  className="group inline-flex items-center gap-1.5 bg-muted/80 hover:bg-primary/10 hover:border-primary/30 border border-border text-foreground text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-all"
+                  className="inline-flex items-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground text-xs font-medium px-3 py-1 rounded-full border border-border transition-colors"
                 >
-                  <span>{skill.name}</span>
+                  <span>{formatSkillName(skill.name)}</span>
                   {skill.level && (
-                    <span className="text-[10px] font-bold text-primary/80 bg-background/80 px-1.5 py-0.2 rounded-md">
+                    <span className="text-[10px] bg-background text-muted-foreground px-1.5 py-0.2 rounded-full font-medium border border-border/60">
                       {formatLevel(skill.level)}
                     </span>
                   )}
@@ -119,16 +116,14 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border p-4 text-center">
-              <Sparkles className="h-6 w-6 text-muted-foreground/60 mx-auto mb-1.5" />
-              <p className="text-xs text-muted-foreground font-medium">
-                No skills added yet. Add your skills to get high-accuracy AI recommendations.
+            <div className="rounded-xl border border-dashed border-border/80 p-4 text-center">
+              <p className="text-xs text-muted-foreground font-normal">
+                No skills added yet. Add your skills to receive tailored recommendations.
               </p>
               <Button
                 asChild
                 size="sm"
-                variant="outline"
-                className="mt-2.5 h-7 text-xs font-bold rounded-lg"
+                className="mt-3 h-7 text-xs font-bold rounded-full bg-primary text-black hover:bg-primary/90 shadow-xs"
               >
                 <Link href="/candidate-profile">Add Skills</Link>
               </Button>
@@ -137,9 +132,9 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
 
           {/* Trending Tech Suggestions */}
           <div className="mt-5 pt-4 border-t border-border/60">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mb-2.5">
-              <TrendingUp className="h-3.5 w-3.5 text-primary" />
-              <span>Trending in Job Market</span>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground mb-2.5">
+              <TrendingUp className="h-3.5 w-3.5 text-foreground" />
+              <span>Trending in market</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {TRENDING_IN_DEMAND_SKILLS.filter(
@@ -150,7 +145,7 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
                   <Link
                     key={trendingSkill}
                     href={`/find-job?query=${encodeURIComponent(trendingSkill)}`}
-                    className="text-[11px] font-medium text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-2 py-1 rounded-lg transition-colors border border-transparent hover:border-border"
+                    className="text-[11px] font-semibold text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted border border-border/60 px-2.5 py-0.5 rounded-full transition-all"
                   >
                     +{trendingSkill}
                   </Link>
@@ -159,32 +154,70 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
           </div>
         </div>
 
-        {/* Matching evidence checklist */}
-        <div className="border border-border bg-card rounded-2xl shadow-sm p-5 transition-all hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="font-bold text-[14px] text-foreground">
-                  Matching data
-                </h3>
-              </div>
+        {/* Candidate Peer Collaboration Spotlight */}
+        <div className="border border-border bg-card rounded-2xl shadow-xs p-5 hover:border-primary/30 transition-all duration-300">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center text-foreground">
+              <Users className="h-4 w-4" />
             </div>
-            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+            <h3 className="font-bold text-sm text-foreground">
+              Peer Collaboration
+            </h3>
+          </div>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Practice mock interviews, pair-code challenges, or build open projects with other candidates.
+          </p>
+
+          <div className="mt-3.5">
+            {onTabChange ? (
+              <Button
+                onClick={() => onTabChange("collaboration")}
+                className="w-full h-8 text-xs font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Users className="h-3.5 w-3.5" />
+                Open Collaboration Hub
+              </Button>
+            ) : (
+              <Button
+                asChild
+                className="w-full h-8 text-xs font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                <Link href="/home?tab=collaboration" className="flex items-center justify-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  Open Collaboration Hub
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Matching evidence checklist with SastoTech progress bar */}
+        <div className="border border-border bg-card rounded-2xl shadow-xs p-5 hover:border-primary/30 transition-all duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-sm text-foreground">
+              Profile Completeness
+            </h3>
+            <span className="text-xs font-bold text-foreground">
               {completedEvidenceItems} of {evidenceItemCount}
             </span>
           </div>
 
+          {/* Progress Bar */}
+          <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-3">
+            <div
+              className="bg-primary h-full rounded-full transition-all duration-500 shadow-xs"
+              style={{ width: `${Math.round((completedEvidenceItems / evidenceItemCount) * 100)}%` }}
+            />
+          </div>
+
           {missingItems.length > 0 ? (
-            <div className="mt-3.5 bg-muted/50 rounded-xl p-3 border border-border/50">
+            <div className="bg-muted/40 rounded-xl p-3 border border-border/60">
               <div className="flex items-start gap-2 text-xs">
-                <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-foreground">Next recommended step:</p>
                   <p className="text-muted-foreground text-[11px] mt-0.5">
-                    {missingItems[0]} to improve match accuracy.
+                    {missingItems[0]} to improve recommendations.
                   </p>
                 </div>
               </div>
@@ -192,17 +225,17 @@ export function SkillsSidebar({ profile }: SkillsSidebarProps) {
                 asChild
                 variant="link"
                 size="sm"
-                className="p-0 h-auto text-xs font-bold text-primary mt-2 flex items-center gap-1"
+                className="p-0 h-auto text-xs font-bold text-foreground hover:underline mt-2 flex items-center gap-1"
               >
                 <Link href="/candidate-profile">
-                  Complete Profile <ArrowUpRight className="h-3 w-3" />
+                  Complete Profile <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
                 </Link>
               </Button>
             </div>
           ) : (
-            <div className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>Your profile is fully optimized for top recruiters!</span>
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Your profile has all recommended details.</span>
             </div>
           )}
         </div>

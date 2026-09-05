@@ -1,6 +1,5 @@
 import { fetchWithAuth } from "@/lib/service-api";
 import NavigationBar from "../(applier)/_components/navigation/navigation-bar";
-import NavigationBarBottom from "../(applier)/_components/navigation/navigation-bar-bottom";
 
 export default async function UsersLayout({
   children,
@@ -15,10 +14,9 @@ export default async function UsersLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavigationBar profile={profile} />
-      <NavigationBarBottom />
-      <div className="flex-1">{children}</div>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

@@ -46,7 +46,7 @@ export function SocialSnapshotPreview({ snapshot }: SocialSnapshotPreviewProps) 
       </div>
       <div className="flex flex-col">
         <span className="text-muted-foreground">Badges</span>
-        <span className="font-semibold">🥇 {data.badges?.gold} 🥈 {data.badges?.silver} 🥉 {data.badges?.bronze}</span>
+        <span className="font-semibold">Gold: {data.badges?.gold || 0} · Silver: {data.badges?.silver || 0} · Bronze: {data.badges?.bronze || 0}</span>
       </div>
       <div className="flex flex-col col-span-2">
         <span className="text-muted-foreground">Top Tags</span>

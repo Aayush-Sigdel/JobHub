@@ -4,7 +4,14 @@ import { HomeContainer } from "./_components/home-container";
 import type { JobPostResponse, JobApplicationResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams?: Promise<{ tab?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const initialTab = resolvedParams?.tab || "recommended";
+
   let profile: UserProfileResponse | null = null;
   let recommendedJobs: JobPostResponse[] = [];
   let recentJobs: JobPostResponse[] = [];
@@ -34,6 +41,7 @@ export default async function HomePage() {
         recommendedJobs={recommendedJobs}
         recentJobs={recentJobs}
         applications={applications}
+        initialTab={initialTab}
       />
     </div>
   );

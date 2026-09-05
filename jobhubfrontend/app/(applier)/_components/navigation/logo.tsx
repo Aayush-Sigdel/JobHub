@@ -1,13 +1,17 @@
+import React from "react";
+
 const Logo = () => {
   return (
-    <h1 className="text-3xl font-bold font-heading">
-      <span className=" bg-tomato-500 py-1 rounded-md px-1 text-background">
+    <div className="flex items-center select-none">
+      <span className="bg-primary text-primary-foreground font-black px-2 py-0.5 rounded-md text-xs uppercase tracking-wider mr-1">
         Job
       </span>
-      <span className="pl-1">Hub</span>
-      <span className="inline-block w-2 h-2 ml-1 rounded-full bg-tomato-500 "></span>
-    </h1>
+      <span className="font-bold text-lg tracking-tight text-foreground">
+        Hub
+      </span>
+    </div>
   );
 };
 
 export default Logo;
+

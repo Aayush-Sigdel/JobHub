@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { SearchBar } from "@/components/web/search";
@@ -12,82 +12,129 @@ import NotificationCenter from "@/app/(applier)/_components/dropdown/dropdown-no
 import Logo from "./logo";
 import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
+import { cn } from "@/lib/utils";
 
-const links = [
-  { name: "Dashboard", href: "#" },
-  { name: "Applications", href: "#" },
+const candidateLinks = [
+  { name: "Home", href: "/home" },
+  { name: "Find Jobs", href: "/find-job" },
+  { name: "Track Applications", href: "/job-tracker" },
+  { name: "Collaboration", href: "/home?tab=collaboration" },
 ];
 
 interface NavigationBarProps {
   profile?: any;
 }
 
-const NavigationBar = ({ profile }: NavigationBarProps) => {
+const NavigationBarContent = ({ profile }: NavigationBarProps) => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const { data: session, status } = useSession();
   const isUserLoggedIn = status === "authenticated";
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border dark:border-slate-800 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
-        <div className="flex flex-1 items-center gap-6">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
+        {/* Left: Logo & Primary Candidate Links */}
+        <div className="flex items-center gap-6 shrink-0">
           <Link
-            href="/"
-            className="flex shrink-0 items-center hover:scale-105 transition-transform"
+            href={isUserLoggedIn ? "/home" : "/"}
+            className="flex items-center transition-opacity hover:opacity-90"
+            aria-label="JobHub Home"
           >
             <Logo />
           </Link>
 
-          <div className="hidden w-full max-w-xl md:block">
-            <SearchBar />
-          </div>
+          {isUserLoggedIn && (
+            <nav className="hidden lg:flex items-center gap-1">
+              {candidateLinks.map((link) => {
+                const isCollabLink = link.href === "/home?tab=collaboration";
+                const isActive = isCollabLink
+                  ? pathname === "/home" && currentTab === "collaboration"
+                  : link.href === "/home"
+                  ? pathname === "/home" && currentTab !== "collaboration"
+                  : pathname === link.href || pathname.startsWith(link.href);
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                      isActive
+                        ? "bg-muted text-foreground font-semibold"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    )}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-4">
-          {isUserLoggedIn && (
-            <div className="flex items-center gap-3">
-              <NotificationCenter />
+        {/* Center: Compact Search Bar */}
+        <div className="flex-1 max-w-md hidden sm:block">
+          <SearchBar />
+        </div>
+
+        {/* Right: Actions, Theme, & Profile / Auth */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isUserLoggedIn ? (
+            <div className="flex items-center gap-1">
+              <JobTracker />
               <MessageCenter />
+              <NotificationCenter />
+            </div>
+          ) : null}
+
+          <div className="mx-1.5 h-4 w-px bg-border hidden sm:block" />
+
+          <ThemeToggle variant="circle" />
+
+          {isUserLoggedIn ? (
+            <div className="ml-1">
+              <DropdownMenuProfileIcons profile={profile} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 ml-1">
               <Link
-                href={"/job-tracker"}
-                className="hover:text-tomato-500 transition-colors"
+                href="/sign-in"
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
               >
-                <JobTracker />
+                Sign In
+              </Link>
+
+              <Link
+                href="/sign-up"
+                className="rounded-lg bg-primary px-3.5 py-1.5 text-xs font-bold text-black hover:bg-primary/90 transition-colors shadow-xs"
+              >
+                Sign Up
               </Link>
             </div>
           )}
-
-          <div className="flex items-center gap-3 border-l border-border dark:border-slate-800 pl-4">
-            <ThemeToggle variant="circle" />
-            {isUserLoggedIn ? (
-              <DropdownMenuProfileIcons profile={profile} />
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <Link href="/sign-in">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-1.5 rounded-xl font-bold text-sm text-foreground hover:bg-muted dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
-                  >
-                    Sign In
-                  </motion.div>
-                </Link>
-
-                <Link href="/sign-up">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-1.5 bg-tomato-500 text-white rounded-xl font-bold text-sm flex items-center justify-center cursor-pointer border border-tomato-500 hover:bg-transparent hover:text-foreground transition-colors"
-                  >
-                    Sign Up
-                  </motion.div>
-                </Link>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-    </nav>
+    </header>
+  );
+};
+
+const NavigationBar = (props: NavigationBarProps) => {
+  return (
+    <Suspense
+      fallback={
+        <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+          <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
+            <div className="flex items-center gap-6 shrink-0">
+              <Logo />
+            </div>
+          </div>
+        </header>
+      }
+    >
+      <NavigationBarContent {...props} />
+    </Suspense>
   );
 };
 

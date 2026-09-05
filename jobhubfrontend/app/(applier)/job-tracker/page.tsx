@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { fetchWithAuth } from '@/lib/service-api';
 import { JobTrackerTabs } from '@/components/job-tracker/JobTrackerTabs';
 import type { JobApplicationResponse } from '@/components/job-tracker/ApplicationCard';
@@ -33,7 +33,9 @@ export default async function JobTrackerPage() {
   return (
     <div className="container mx-auto py-10 px-4">
       <h1 className="text-3xl font-bold mb-8">My Job Tracker</h1>
-      <JobTrackerTabs applied={applied} inReview={inReview} shortlisted={shortlisted} accepted={accepted} rejected={rejected} />
+      <Suspense>
+        <JobTrackerTabs applied={applied} inReview={inReview} shortlisted={shortlisted} accepted={accepted} rejected={rejected} />
+      </Suspense>
     </div>
   );
 }
