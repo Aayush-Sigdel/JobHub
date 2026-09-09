@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { JobPostForm } from "@/components/post-job/JobPostForm";
 import { fetchWithAuth } from "@/lib/service-api";
+import { getRecruiterJobAction } from "@/lib/actions/recruiter";
 import type { JobPostResponse } from "@/types/api/jobs";
 import type { DesignTaskDto, ProgrammingTaskDto, SQLTaskDto } from "@/types/api/tasks";
 
@@ -25,7 +26,7 @@ export default async function EditJobPage({
 
   try {
     [job, designTasks, programmingTasks, sqlTasks] = await Promise.all([
-      fetchWithAuth<JobPostResponse>(`/recruiter/jobs/${id}`, { cache: "no-store" }),
+      getRecruiterJobAction(id),
       loadTasks<DesignTaskDto>("/task/design/get"),
       loadTasks<ProgrammingTaskDto>("/task/programming/get"),
       loadTasks<SQLTaskDto>("/task/sql/get"),
