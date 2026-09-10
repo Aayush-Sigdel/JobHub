@@ -1,0 +1,51 @@
+.frame {
+  overflow: hidden;
+}
+.track {
+  display: flex;
+  width: max-content;
+  animation: locations 35s linear infinite;
+}
+.group,
+.duplicate {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding-right: 2.5rem;
+}
+.frame:hover .track,
+.frame:focus-within .track,
+.frame[data-paused="true"] .track {
+  animation-play-state: paused;
+}
+/* Focus reveals all original links without moving keyboard targets off screen. */
+.frame:focus-within .track {
+  animation: none;
+  width: 100%;
+}
+.frame:focus-within .group {
+  flex-wrap: wrap;
+  padding-right: 0;
+}
+.frame:focus-within .duplicate {
+  display: none;
+}
+@keyframes locations {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+    width: 100%;
+  }
+  .group {
+    flex-wrap: wrap;
+    gap: 0 2rem;
+    padding-right: 0;
+  }
+  .duplicate {
+    display: none;
+  }
+}

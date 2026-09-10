@@ -1,122 +1,111 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { PlusIcon as Plus, MinusIcon as Minus } from "@animateicons/react/lucide";;
+import { useId, useState } from "react";
+import { IconPlus, IconMinus } from "@tabler/icons-react";
+import { landing } from "./landing-styles";
 
 const faqs = [
   {
-    question: "How is JobHub different from other Nepalese job portals?",
+    question: "What makes JobHub different?",
     answer:
-      "Unlike traditional platforms that suffer from duplicate listings and hidden algorithms, JobHub actively cleans expired data, uses 100% transparent AI matching formulas, and analyzes your actual coding portfolios—not just a static resume.",
+      "JobHub brings job discovery, profiles, portfolios, and practical assessments together. Candidates can show their work, and employers can review more than a résumé when considering an application.",
   },
   {
-    question: "How does the 'Blind Shortlisting' actually work?",
+    question: "Do I need to connect GitHub or a portfolio?",
     answer:
-      "To prevent unconscious bias, our system temporarily masks personally identifiable information (like your name, profile photo, and gender) during the initial review stages. Employers only see your skills, GitHub metrics, and match score.",
+      "No. Start with your skills, experience, and education. You can add GitHub and portfolio links to give employers more context about the work you have done.",
   },
   {
-    question: "Do I have to connect my GitHub and Portfolio?",
+    question: "How should I read a match score?",
     answer:
-      "It is completely optional, but highly recommended! Connecting external sources gives our deep-profiling engine a much richer understanding of your capabilities, which directly boosts your match accuracy for premium roles.",
+      "Treat it as a guide based on the information available. Review the job requirements and any supporting match evidence yourself. A score does not guarantee an interview or job offer.",
   },
   {
-    question: "Is JobHub completely free for candidates?",
+    question: "Does every job include an assessment?",
     answer:
-      "Yes. All candidate features, including intelligent matching, automated Top-K alerts, and deep-profile extraction, are completely free to use.",
+      "No. Employers choose whether to attach programming, design, or SQL tasks to a listing. Check the job details to see what is required before you apply.",
   },
   {
-    question: "How do the automated 'Top-K' alerts function?",
+    question: "Where can I track my applications?",
     answer:
-      "The moment an employer publishes a new job, our algorithm calculates match scores across the candidate pool. The top 'K' (e.g., top 10) most qualified candidates instantly receive a push notification to apply.",
+      "Your job tracker keeps submitted applications and their current statuses together. Sign in and open Job Tracker to follow their progress.",
+  },
+  {
+    question: "How do I review candidates as an employer?",
+    answer:
+      "Open a job in your hiring workspace to review applicants, profiles, and available assessment results. You can also edit the listing’s details from the same workspace.",
   },
 ];
 
-const FAQItem = ({
-  question,
-  answer,
-  isOpen,
-  onClick,
-}: {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onClick: () => void;
-}) => {
+export default function LandingSectionFAQ() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const id = useId();
   return (
-    <div
-      className={`border-2 border-foreground bg-background transition-all duration-300 ${
-        isOpen
-          ? "border-tomato-500 -translate-y-1"
-          : ""
-      } mb-6`}
+    <section
+      id="faq"
+      className={landing.section + " scroll-mt-8 bg-background"}
     >
-      <button
-        onClick={onClick}
-        className="w-full flex items-center justify-between p-6 md:p-8 text-left focus:outline-none"
-      >
-        <span className="font-black text-lg md:text-xl text-foreground pr-8 uppercase tracking-wide">
-          {question}
-        </span>
-        <div
-          className={`shrink-0 p-2 border-2 border-foreground transition-colors ${isOpen ? "bg-tomato-500" : "bg-muted"}`}
-        >
-          {isOpen ? (
-            <Minus className="w-6 h-6 text-foreground" />
-          ) : (
-            <Plus className="w-6 h-6 text-foreground" />
-          )}
-        </div>
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="p-6 md:p-8 pt-0 border-t-2 border-dashed border-gray-300 text-gray-700 font-bold text-base md:text-lg leading-relaxed mt-2">
-              {answer}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-const LandingSectionFAQ = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // First item open by default
-
-  return (
-    <section className="w-full bg-muted py-24 md:py-32 px-6 flex flex-col items-center border-b-2 border-foreground">
-      <div className="max-w-4xl mx-auto w-full">
-        <div className="text-center mb-16 flex flex-col items-center">
-          <span className="text-xs font-black uppercase tracking-widest bg-foreground text-tomato-500 px-3 py-1 mb-4 border-2 border-foreground">
-            Got Questions?
-          </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-[1.1] uppercase">
-            Frequently Asked <br className="hidden md:block" /> Questions.
+      <div className={landing.container}>
+        <div className="mx-auto max-w-4xl">
+          <h2 className={landing.heading + " mb-10 text-center"}>
+            Frequently asked
+            <br className="hidden sm:block" /> questions.
           </h2>
-        </div>
-
-        <div className="w-full flex flex-col">
-          {faqs.map((faq, index) => (
-            <FAQItem
-              key={index}
-              question={faq.question}
-              answer={faq.answer}
-              isOpen={openIndex === index}
-              onClick={() => setOpenIndex(openIndex === index ? null : index)}
-            />
-          ))}
+          <div className="space-y-4">
+            {faqs.map((faq, index) => {
+              const open = openIndex === index;
+              return (
+                <div
+                  key={faq.question}
+                  className={
+                    "overflow-hidden rounded-2xl border bg-card transition-colors " +
+                    (open ? "border-foreground/40" : "border-border")
+                  }
+                >
+                  <h3>
+                    <button
+                      type="button"
+                      id={id + "-question-" + index}
+                      aria-expanded={open}
+                      aria-controls={id + "-answer-" + index}
+                      onClick={() => setOpenIndex(open ? null : index)}
+                      className="flex w-full items-center justify-between gap-5 rounded-2xl p-6 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-foreground sm:p-7"
+                    >
+                      <span className="text-base font-bold sm:text-lg">
+                        {faq.question}
+                      </span>
+                      <span
+                        className={
+                          "flex size-9 shrink-0 items-center justify-center rounded-lg " +
+                          (open
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground")
+                        }
+                      >
+                        {open ? (
+                          <IconMinus className="size-5" />
+                        ) : (
+                          <IconPlus className="size-5" />
+                        )}
+                      </span>
+                    </button>
+                  </h3>
+                  <div
+                    id={id + "-answer-" + index}
+                    role="region"
+                    aria-labelledby={id + "-question-" + index}
+                    hidden={!open}
+                  >
+                    <p className="px-6 pb-6 text-base leading-7 text-muted-foreground sm:px-7 sm:pb-7">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
   );
-};
-
-export default LandingSectionFAQ;
+}

@@ -1,30 +1,36 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { api } from "@/lib/api";
-import type { CandidateDashboardResponse, CandidateSocialSnapshotDto } from "@/types/api/recruiter";
-import { updateApplicationStatusAction } from "@/lib/actions/recruiter";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
-  IconBriefcase,
   IconExternalLink,
-  IconEye,
-  IconSchool,
-  IconShieldExclamation,
-  IconCircleCheck,
-  IconCircleX,
-  IconInfoCircle,
   IconSparkles,
+  IconCheck,
+  IconAlertCircle,
+  IconArrowRight,
 } from "@tabler/icons-react";
-import { calculateSupportedOverallSimilarity, getSimilaritySources } from "@/lib/semantic-match";
+import { updateApplicationStatusAction } from "@/lib/actions/recruiter";
+import type { CandidateDashboardResponse } from "@/types/api/recruiter";
+import type { ApplicationStatus } from "@/types/api/jobs";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import CandidateMatchTimeline from "./CandidateMatchTimeline";
+import SubmittedAnswer from "./SubmittedAnswer";
+import {
+  candidateStages,
+  candidateMatchLabel,
+  reviewDate,
+} from "./candidate-review-utils";
 
 interface Props {
   candidate: CandidateDashboardResponse;
@@ -32,507 +38,385 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   embedded?: boolean;
-  onStatusChange?: (status: "SHORTLISTED" | "ACCEPTED" | "REJECTED") => void;
+  onStatusChange?: (status: ApplicationStatus) => void;
 }
 
-export default function CandidateDetailDrawer({
+export default function CandidateDetailDrawer(props: Props) {
+  const key = `${props.jobId}:${props.candidate.applicationId || props.candidate.candidateId}`;
+  if (props.embedded) return <CandidateReview key={key} {...props} />;
+  return (
+    <Sheet open={props.open} onOpenChange={props.onOpenChange}>
+      <SheetContent className="flex h-full w-full flex-col gap-0 overflow-hidden border-l border-border p-0 sm:max-w-2xl lg:max-w-3xl">
+        {props.open && <CandidateReview key={key} {...props} />}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function CandidateReview({
   candidate,
   jobId,
-  open,
-  onOpenChange,
   embedded = false,
   onStatusChange,
 }: Props) {
   const router = useRouter();
-  const [snapshots, setSnapshots] = useState<CandidateSocialSnapshotDto[]>([]);
-  const [snapsLoading, setSnapshotsLoading] = useState(false);
-  const [snapshotsError, setSnapshotsError] = useState(false);
+  const [tab, setTab] = useState("basic");
+  const [status, setStatus] = useState<ApplicationStatus>(
+    candidate.status || "APPLIED",
+  );
   const [isPending, startTransition] = useTransition();
-  const evidenceSources = getSimilaritySources(candidate);
-  const overallSimilarity = calculateSupportedOverallSimilarity(candidate);
+  const effectiveJobId =
+    candidate.jobId || (jobId !== "all" ? jobId : undefined);
+  const submissions = [
+    { label: "Design", data: candidate.designSubmission },
+    { label: "Programming", data: candidate.programmingSubmission },
+    { label: "SQL", data: candidate.sqlSubmission },
+  ].flatMap((item) =>
+    item.data ? [{ label: item.label, data: item.data }] : [],
+  );
 
-  const displayName = candidate.name;
-
-  const getExternalUrl = (url: string) => {
-    const trimmed = url.trim();
-    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  };
-
-  const effectiveJobId = candidate.jobId || (jobId !== "all" ? jobId : undefined);
-
-  useEffect(() => {
-    if (open && candidate.candidateId && effectiveJobId) {
-      const fetchSnapshots = async () => {
-        setSnapshotsLoading(true);
-        setSnapshotsError(false);
-        try {
-          const res = await api.get(`/recruiter/jobs/${effectiveJobId}/candidates/${candidate.candidateId}/snapshots`);
-          setSnapshots(res.data);
-        } catch (error) {
-          console.error("Failed to load snapshots", error);
-          setSnapshotsError(true);
-        } finally {
-          setSnapshotsLoading(false);
-        }
-      };
-      fetchSnapshots();
-    }
-  }, [open, effectiveJobId, candidate.candidateId]);
-
-  const handleAction = (status: "SHORTLISTED" | "ACCEPTED" | "REJECTED") => {
-    if (candidate.applicationId) {
-      startTransition(async () => {
-        try {
-          await updateApplicationStatusAction(candidate.applicationId!, status);
-          toast.success(`Application marked ${status.toLowerCase().replace("_", " ")}.`);
-          if (onStatusChange) onStatusChange(status);
-          else { onOpenChange(false); router.refresh(); }
-        } catch (error) {
-          console.error("Failed to update application status", error);
-          toast.error(error instanceof Error ? error.message : "Unable to update this application.");
-        }
-      });
-    }
-  };
+  function changeStage(nextStatus: ApplicationStatus) {
+    if (!candidate.applicationId || isPending || nextStatus === status) return;
+    startTransition(async () => {
+      try {
+        await updateApplicationStatusAction(
+          candidate.applicationId!,
+          nextStatus,
+        );
+        setStatus(nextStatus);
+        onStatusChange?.(nextStatus);
+        if (!onStatusChange) router.refresh();
+        toast.success(
+          `Moved to ${candidateStages.find((stage) => stage.id === nextStatus)?.label.toLowerCase()}.`,
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Unable to update this application.",
+        );
+      }
+    });
+  }
 
   const Header = embedded ? "div" : SheetHeader;
   const Title = embedded ? "h2" : SheetTitle;
   const Description = embedded ? "p" : SheetDescription;
-  const content = (
-    <>
-        {/* Drawer Header */}
-        <div className="p-6 sm:p-7 border-b border-border/70 flex-shrink-0">
-          <Header className="text-left flex flex-col xl:flex-row xl:items-center justify-between gap-5">
-            <div className="flex gap-4 items-center min-w-0">
-              <Avatar className="h-16 w-16 rounded-2xl border-2 border-border shadow-xs shrink-0">
-                <AvatarImage src={candidate.imageUrl} className="object-cover" />
-                <AvatarFallback className="bg-foreground text-background font-bold text-lg">
-                  {candidate.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="min-w-0">
-                <Title className="text-xl sm:text-2xl font-semibold truncate text-foreground">
-                  {displayName}
-                </Title>
-                <Description className="text-sm sm:text-base text-muted-foreground truncate mt-0.5">
-                  {candidate.title || "Applicant"}
-                </Description>
-
-                <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                  {candidate.jobTitle && (
-                    <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 gap-1.5 bg-secondary text-foreground border-border">
-                      <IconBriefcase className="size-3.5 text-muted-foreground" />
-                      <span>{candidate.jobTitle}</span>
-                    </Badge>
-                  )}
-                  <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5">
-                    {candidate.status || "APPLIED"}
-                  </Badge>
-                  <Badge variant="outline" className="font-mono font-bold text-xs border-border text-foreground px-2.5 py-0.5">
-                    Match {overallSimilarity?.toFixed(3) ?? "N/A"}
-                  </Badge>
-
-                  {candidate.candidateId && !embedded && (
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs font-semibold rounded-lg px-3 gap-1.5 text-foreground hover:bg-muted"
-                    >
-                      <Link
-                        href={`/preview/${candidate.candidateId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <IconEye className="size-3.5 text-muted-foreground" />
-                        <span>Public Preview</span>
-                        <IconExternalLink className="size-3 text-muted-foreground" />
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+  const tabClass =
+    "flex-none rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none";
+  return (
+    <section
+      aria-label={`Review ${candidate.name}`}
+      className="min-h-0 flex-1 overflow-y-auto"
+    >
+      <div className="border-b border-border/70 px-5 py-6 sm:px-8">
+        <Header className="flex flex-col justify-between gap-5 text-left xl:flex-row xl:items-start">
+          <div className="flex min-w-0 items-start gap-3">
+            <Avatar className="size-12 shrink-0 rounded-xl border border-border">
+              <AvatarImage src={candidate.imageUrl} alt="" />
+              <AvatarFallback className="rounded-xl text-sm">
+                {candidate.name.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <Title className="truncate text-xl font-semibold text-foreground">
+                {candidate.name}
+              </Title>
+              <Description className="mt-1 text-sm text-muted-foreground">
+                {candidate.title || "Applicant"}
+              </Description>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+                <span className="rounded-md bg-muted px-2 py-1">
+                  {candidateStages.find((stage) => stage.id === status)?.label}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTab("match")}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground"
+                >
+                  <IconSparkles className="size-3.5" />
+                  {candidateMatchLabel(candidate)} match
+                </button>
+                <Link
+                  href={`/preview/${encodeURIComponent(candidate.candidateId)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-foreground"
+                >
+                  Profile preview
+                  <IconExternalLink className="size-3.5" />
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </Link>
               </div>
             </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2.5 shrink-0">
-              <Button
-                size="default"
-                onClick={() => handleAction("SHORTLISTED")}
-                disabled={isPending || !candidate.applicationId}
-                className="h-10 px-5 rounded-xl font-bold text-sm bg-primary text-black hover:bg-primary/90 shadow-xs cursor-pointer w-full sm:w-auto"
-              >
-                Shortlist Candidate
-              </Button>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-9 px-3.5 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950 cursor-pointer flex-1 sm:flex-none"
-                  onClick={() => handleAction("ACCEPTED")}
-                  disabled={isPending || !candidate.applicationId}
-                >
-                  Accept
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-9 px-3.5 rounded-xl text-xs font-semibold text-red-700 dark:text-red-400 border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950 cursor-pointer flex-1 sm:flex-none"
-                  onClick={() => handleAction("REJECTED")}
-                  disabled={isPending || !candidate.applicationId}
-                >
-                  Reject
-                </Button>
-              </div>
-            </div>
-          </Header>
-        </div>
-
-        {/* Tab Navigation */}
-        <Tabs defaultValue="profile" className={embedded ? "flex flex-col" : "flex-1 flex flex-col overflow-hidden"}>
-          <div className="overflow-x-auto px-6 sm:px-7 border-b border-border/70 flex-shrink-0">
-            <TabsList className="w-max min-w-full justify-start h-auto p-0 bg-transparent gap-6">
-              <TabsTrigger
-                value="profile"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 border-foreground rounded-none px-0 py-3.5 text-sm font-semibold"
-              >
-                Profile & Resume
-              </TabsTrigger>
-              <TabsTrigger
-                value="ai-match"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 border-foreground rounded-none px-0 py-3.5 text-sm font-semibold"
-              >
-                Match Evidence
-              </TabsTrigger>
-              <TabsTrigger
-                value="assessments"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 border-foreground rounded-none px-0 py-3.5 text-sm font-semibold"
-              >
-                Assessments
-              </TabsTrigger>
-              <TabsTrigger
-                value="social"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 border-foreground rounded-none px-0 py-3.5 text-sm font-semibold"
-              >
-                Social Evidence
-              </TabsTrigger>
-            </TabsList>
           </div>
-
-          <ScrollArea className="flex-1">
-            <div className="p-6 sm:p-7 space-y-6">
-              {/* Profile Tab */}
-              <TabsContent value="profile" className="mt-0 space-y-6">
-                {candidate.candidateId && !embedded && (
-                  <div className="flex items-center justify-between p-4 rounded-2xl border border-border bg-muted/40">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-bold text-foreground">Candidate Public Profile</h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        View complete resume timeline, verified credentials, and skill endorsements.
-                      </p>
-                    </div>
-                    <Button asChild variant="outline" size="sm" className="h-9 px-4 rounded-xl font-semibold text-xs border-border hover:bg-muted text-foreground gap-1.5 shrink-0 cursor-pointer">
-                      <Link href={`/preview/${candidate.candidateId}`} target="_blank" rel="noopener noreferrer">
-                        <IconEye className="size-3.5" />
-                        <span>Open Preview</span>
-                        <IconExternalLink className="size-3" />
-                      </Link>
-                    </Button>
+          <div className="flex flex-wrap items-center gap-2 xl:pr-5">
+            {status !== "SHORTLISTED" &&
+              status !== "ACCEPTED" &&
+              status !== "REJECTED" && (
+                <Button
+                  onClick={() => changeStage("SHORTLISTED")}
+                  disabled={isPending || !candidate.applicationId}
+                  className="h-9 rounded-lg px-4"
+                >
+                  Shortlist
+                </Button>
+              )}
+            {status === "APPLIED" && (
+              <Button
+                variant="outline"
+                className="h-9 rounded-lg"
+                disabled={isPending || !candidate.applicationId}
+                onClick={() => changeStage("IN_REVIEW")}
+              >
+                Start review
+              </Button>
+            )}
+            {(status === "IN_REVIEW" || status === "SHORTLISTED") && (
+              <Button
+                variant={status === "SHORTLISTED" ? "default" : "outline"}
+                className="h-9 rounded-lg"
+                disabled={isPending || !candidate.applicationId}
+                onClick={() => changeStage("ACCEPTED")}
+              >
+                Accept
+              </Button>
+            )}
+            {status !== "REJECTED" && status !== "ACCEPTED" && (
+              <Button
+                variant="ghost"
+                className="h-9 rounded-lg text-destructive"
+                disabled={isPending || !candidate.applicationId}
+                onClick={() => changeStage("REJECTED")}
+              >
+                Reject
+              </Button>
+            )}
+            {(status === "ACCEPTED" ||
+              status === "REJECTED" ||
+              status === "SHORTLISTED") && (
+              <Button
+                variant="outline"
+                className="h-9 rounded-lg"
+                disabled={isPending || !candidate.applicationId}
+                onClick={() => changeStage("IN_REVIEW")}
+              >
+                Return to review
+              </Button>
+            )}
+            {isPending && (
+              <span role="status" className="text-xs text-muted-foreground">
+                Saving…
+              </span>
+            )}
+          </div>
+        </Header>
+      </div>
+      <Tabs value={tab} onValueChange={setTab} className="gap-0">
+        <div className="overflow-x-auto border-b border-border/70 px-5 sm:px-8">
+          <TabsList className="h-auto w-max justify-start gap-6 rounded-none bg-transparent p-0">
+            <TabsTrigger value="basic" className={tabClass}>
+              Basic info
+            </TabsTrigger>
+            <TabsTrigger value="assessments" className={tabClass}>
+              Assessments{" "}
+              <span className="ml-1 text-xs text-muted-foreground">
+                {submissions.length}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="match" className={tabClass}>
+              <IconSparkles className="size-4" />
+              Match
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <div className="w-full px-5 py-6 sm:px-8">
+          <TabsContent
+            value="basic"
+            className="mt-0 grid items-start gap-6 lg:grid-cols-[1fr_1.1fr]"
+          >
+            <div className="rounded-xl border border-border p-5">
+              <h3 className="mb-5 text-sm font-semibold">
+                Application details
+              </h3>
+              <dl className="grid gap-x-6 gap-y-5 text-sm sm:grid-cols-2">
+                {[
+                  ["Email", candidate.email || "Not specified"],
+                  ["Location", candidate.location || "Not specified"],
+                  ["Applied for", candidate.jobTitle || "Selected role"],
+                  ["Applied on", reviewDate(candidate.appliedAt)],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className="mt-1.5 break-words font-medium">{value}</dd>
                   </div>
-                )}
-
-                {/* Info Grid */}
-                <div className="grid gap-4 rounded-2xl border border-border bg-card p-5 text-sm sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">Email Address</p>
-                    <p className="mt-1 font-semibold text-foreground break-all">
-                      {candidate.email}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">Location</p>
-                    <p className="mt-1 font-semibold text-foreground">
-                      {candidate.location || "Not specified"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">Applied Position</p>
-                    <p className="mt-1 font-semibold text-foreground">
-                      {candidate.jobTitle || "Selected role"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">Application Date</p>
-                    <p className="mt-1 font-semibold text-foreground">
-                      {candidate.appliedAt
-                        ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-                            new Date(candidate.appliedAt)
-                          )
-                        : "Date unavailable"}
-                    </p>
-                  </div>
-                </div>
-
-                {candidate.coverNote && (
-                  <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-foreground">Cover Note</h3>
-                    <div className="rounded-2xl border border-border bg-muted/40 p-4">
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                        {candidate.coverNote}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {candidate.bio && (
-                  <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-foreground">About</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{candidate.bio}</p>
-                  </div>
-                )}
-
-                {/* Experience Timeline */}
-                {candidate.experiences && candidate.experiences.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-                      <IconBriefcase className="size-4 text-foreground" />
-                      <span>Experience</span>
-                    </h3>
-                    <div className="space-y-4 pl-1">
-                      {candidate.experiences.map((exp) => (
-                        <div key={exp.id} className="relative pl-5 border-l-2 border-border pb-2 last:pb-0">
-                          <div className="absolute w-2.5 h-2.5 bg-foreground rounded-full -left-[6px] top-1.5 ring-4 ring-background" />
-                          <h4 className="font-bold text-sm sm:text-base text-foreground">{exp.title}</h4>
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                            {exp.company} • {exp.startDate?.substring(0, 7)} -{" "}
-                            {exp.isCurrentRole ?? exp.currentRole ? "Present" : exp.endDate?.substring(0, 7)}
-                          </p>
-                          {exp.description && (
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                              {exp.description}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Education */}
-                {candidate.educations && candidate.educations.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-                      <IconSchool className="size-4 text-foreground" />
-                      <span>Education</span>
-                    </h3>
-                    <div className="space-y-3">
-                      {candidate.educations.map((edu) => (
-                        <div key={edu.id} className="rounded-xl border border-border bg-card p-4">
-                          <h4 className="font-bold text-sm sm:text-base text-foreground">{edu.institution}</h4>
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                            {edu.degree} in {edu.fieldOfStudy}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Skills */}
-                {candidate.skills && candidate.skills.length > 0 && (
-                  <div className="space-y-2.5">
-                    <h3 className="font-bold text-sm text-foreground">Skills & Endorsements</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {candidate.skills.map((skill) => (
-                        <Badge key={skill.id} variant="secondary" className="text-xs sm:text-sm font-medium px-3 py-1 rounded-lg">
-                          {skill.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Social Links */}
-                {candidate.socialLinks && candidate.socialLinks.length > 0 && (
-                  <div className="space-y-2.5">
-                    <h3 className="font-bold text-sm text-foreground">Verified External Profiles</h3>
-                    <div className="grid gap-2.5 sm:grid-cols-2">
-                      {candidate.socialLinks.map((link) => (
-                        <a
-                          key={link.id}
-                          href={getExternalUrl(link.url)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border p-3 text-sm font-medium transition-colors hover:bg-muted"
-                        >
-                          <span className="truncate">{link.platform.replaceAll("_", " ")}</span>
-                          <IconExternalLink className="size-4 shrink-0 text-muted-foreground" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Match Evidence Tab */}
-              <TabsContent value="ai-match" className="mt-0 space-y-6">
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-border bg-muted/30 p-5 text-sm">
-                    <div className="flex items-start gap-3">
-                      <IconInfoCircle className="mt-0.5 size-5 shrink-0 text-foreground" />
-                      <div className="space-y-1">
-                        <p className="font-bold text-foreground">Evidence Similarity Model</p>
-                        <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                          JobHub computes multi-vector cosine similarity across candidate work evidence, portfolio signals, and assessment results. Evidence coverage: {evidenceSources.length}/5 sources.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border bg-card p-6 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">Weighted Overall Similarity</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Standardized aggregate evidence calibration score.
-                      </p>
-                    </div>
-                    <span className="font-mono text-3xl sm:text-4xl font-bold text-foreground tabular-nums">
-                      {overallSimilarity?.toFixed(3) ?? "N/A"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl bg-card border border-border p-4 text-sm">
-                    <span className="font-medium text-foreground">All Required Tasks Passed</span>
-                    <span className="font-bold text-foreground font-mono">
-                      {candidate.allTasksPassed ? "Yes (Verified)" : "Pending / Not Completed"}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Source-Level Similarity Breakdown
-                    </h4>
-                    {evidenceSources.map((source) => (
-                      <div
-                        key={source.key}
-                        className="flex items-center justify-between rounded-xl bg-muted/40 border border-border/70 px-4 py-3"
+                ))}
+              </dl>
+              {candidate.skills?.length > 0 && (
+                <div className="mt-5 border-t border-border pt-4">
+                  <h4 className="text-xs text-muted-foreground">Key skills</h4>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {candidate.skills.slice(0, 8).map((skill) => (
+                      <span
+                        key={skill.id}
+                        className="rounded-md bg-muted px-2 py-1 text-xs"
                       >
-                        <span className="text-sm font-medium text-foreground">{source.label}</span>
-                        <span className="font-mono font-bold text-sm tabular-nums text-foreground">
-                          {source.value.toFixed(3)}
-                        </span>
-                      </div>
+                        {skill.name}
+                      </span>
                     ))}
-                    {evidenceSources.length === 0 && (
-                      <p className="text-sm text-muted-foreground p-4 bg-muted/20 rounded-xl border">
-                        No source-level evidence was returned for this candidate.
-                      </p>
+                    {candidate.skills.length > 8 && (
+                      <span className="self-center text-xs text-muted-foreground">
+                        +{candidate.skills.length - 8} in profile
+                      </span>
                     )}
                   </div>
                 </div>
-              </TabsContent>
-
-              {/* Assessments Tab */}
-              <TabsContent value="assessments" className="mt-0 space-y-6">
-                {candidate.tabSwitchLimitExceeded && (
-                  <div className="bg-red-50 border border-red-300 dark:bg-red-950 dark:border-red-800 rounded-2xl p-5 flex items-start gap-3.5">
-                    <IconShieldExclamation className="text-red-700 dark:text-red-400 mt-0.5 size-5 shrink-0" />
+              )}
+              {candidate.coverNote && (
+                <div className="mt-5 border-t border-border pt-5">
+                  <h3 className="text-sm font-semibold">Application note</h3>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
+                    {candidate.coverNote}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border p-5">
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    Assessment submissions
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {submissions.length
+                      ? `${submissions.length} submitted · ${submissions.filter((item) => item.data.passed).length} passed`
+                      : "No submissions recorded for this application."}
+                  </p>
+                </div>
+                {submissions.length > 0 && (
+                  <div className="mt-4 divide-y divide-border">
+                    {submissions.map(({ label, data }) => (
+                      <button
+                        key={data.id || data.taskId}
+                        type="button"
+                        onClick={() => setTab("assessments")}
+                        className="flex w-full items-center gap-3 rounded-lg py-3 text-left text-sm outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-foreground"
+                      >
+                        <span className="flex-1 font-medium">{label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {data.passed ? "Passed" : "Needs review"}
+                        </span>
+                        <span className="font-medium tabular-nums">
+                          {data.achievedScore}
+                        </span>
+                        <IconArrowRight className="size-4 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setTab("match")}
+                className="flex w-full items-center gap-4 rounded-xl border border-border bg-muted/20 p-5 text-left outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-foreground"
+              >
+                <IconSparkles className="size-5 shrink-0" />
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold">
+                    Explore the match
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Source scores and an animated walkthrough of the snapshots.
+                  </span>
+                </span>
+                <span className="text-lg font-semibold tabular-nums">
+                  {candidateMatchLabel(candidate)}
+                </span>
+                <IconArrowRight className="size-4 shrink-0" />
+              </button>
+            </div>
+          </TabsContent>
+          <TabsContent value="assessments" className="mt-0 space-y-5">
+            <div>
+              <h3 className="text-base font-semibold">Assessment review</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Review the recorded results and evaluator feedback.
+              </p>
+            </div>
+            {candidate.tabSwitchLimitExceeded && (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+                <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
+                <p className="text-sm leading-6">
+                  {candidate.tabSwitchCount} tab switches were recorded,
+                  exceeding the configured limit. Review this context alongside
+                  the assessment results.
+                </p>
+              </div>
+            )}
+            {submissions.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+                No assessment submissions are available for this application.
+              </p>
+            ) : (
+              submissions.map(({ label, data }) => (
+                <article
+                  key={data.id || data.taskId}
+                  className="rounded-xl border border-border p-4 sm:p-5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h4 className="text-sm font-semibold">
+                      {label} assessment
+                    </h4>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${data.passed ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/10 text-amber-800 dark:text-amber-400"}`}
+                    >
+                      {data.passed && <IconCheck className="size-3.5" />}
+                      {data.passed ? "Passed" : "Below required score"}
+                    </span>
+                  </div>
+                  <dl className="mt-5 flex flex-wrap gap-8 text-sm">
                     <div>
-                      <h4 className="font-bold text-red-900 dark:text-red-200 text-sm sm:text-base">Anti-Cheat Alert</h4>
-                      <p className="text-red-800 dark:text-red-300 text-xs sm:text-sm mt-1 leading-relaxed">
-                        Candidate exceeded the allowable tab switch limit ({candidate.tabSwitchCount} switches recorded during assessment).
+                      <dt className="text-xs text-muted-foreground">
+                        Score achieved
+                      </dt>
+                      <dd className="mt-1 font-semibold tabular-nums">
+                        {data.achievedScore}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">
+                        Score required
+                      </dt>
+                      <dd className="mt-1 font-semibold tabular-nums">
+                        {data.requiredScore}
+                      </dd>
+                    </div>
+                  </dl>
+                  {data.message && (
+                    <div className="mt-5">
+                      <h5 className="text-xs font-medium text-muted-foreground">
+                        Evaluator feedback
+                      </h5>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">
+                        {data.message}
                       </p>
                     </div>
-                  </div>
-                )}
-
-                <div className="grid gap-4">
-                  {[
-                    { title: "Design Assessment", data: candidate.designSubmission },
-                    { title: "Programming Assessment", data: candidate.programmingSubmission },
-                    { title: "SQL Assessment", data: candidate.sqlSubmission },
-                  ].map(
-                    (task, i) =>
-                      task.data && (
-                        <div key={i} className="border border-border rounded-2xl p-5 bg-card space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-bold text-base text-foreground">{task.title}</h4>
-                            {task.data.passed ? (
-                              <Badge className="bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800 gap-1 font-semibold text-xs px-2.5 py-0.5">
-                                <IconCircleCheck className="size-3.5 text-emerald-700 dark:text-emerald-400" /> Passed
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive" className="gap-1 font-semibold text-xs px-2.5 py-0.5">
-                                <IconCircleX className="size-3.5" /> Failed
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <span>Score</span>
-                            <span className="font-mono font-bold text-foreground">
-                              {task.data.achievedScore} / {task.data.requiredScore} required
-                            </span>
-                          </div>
-                          {task.data.message && (
-                            <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground bg-muted/40 p-3 rounded-xl border">
-                              {task.data.message}
-                            </p>
-                          )}
-                        </div>
-                      )
                   )}
-
-                  {!candidate.designSubmission &&
-                    !candidate.programmingSubmission &&
-                    !candidate.sqlSubmission && (
-                      <div className="text-center py-10 bg-muted/10 border border-dashed rounded-2xl text-sm text-muted-foreground">
-                        No task submissions have been recorded for this application.
-                      </div>
-                    )}
-                </div>
-              </TabsContent>
-
-              {/* Social Tab */}
-              <TabsContent value="social" className="mt-0 space-y-6">
-                {snapsLoading ? (
-                  <div className="space-y-3 py-2">
-                    <div className="h-24 animate-pulse rounded-2xl bg-muted" />
-                    <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+                  <div className="mt-5 border-t border-border pt-4">
+                    <SubmittedAnswer submission={data} />
                   </div>
-                ) : snapshotsError ? (
-                  <div className="rounded-2xl border border-destructive/30 p-5 text-sm text-destructive">
-                    Social evidence could not be loaded. Try reopening this applicant.
-                  </div>
-                ) : snapshots.length === 0 ? (
-                  <div className="text-center py-10 bg-muted/10 border border-dashed rounded-2xl text-sm text-muted-foreground">
-                    No external social snapshots available for this candidate.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {snapshots.map((snap, i) => (
-                      <div key={i} className="border border-border rounded-2xl p-5 bg-card space-y-2">
-                        <h4 className="font-bold text-base text-foreground capitalize flex items-center gap-1.5">
-                          <IconSparkles className="size-4 text-foreground" />
-                          <span>{snap.platform}</span>
-                        </h4>
-                        <div className="space-y-1.5">
-                          {snap.aiCoolFeedItems.map((item, j) => (
-                            <p key={j} className="text-sm text-muted-foreground leading-relaxed">
-                              • {item}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </div>
-          </ScrollArea>
-        </Tabs>
-    </>
+                </article>
+              ))
+            )}
+          </TabsContent>
+          <TabsContent value="match" className="mt-0">
+            <CandidateMatchTimeline
+              candidate={candidate}
+              jobId={effectiveJobId}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
+    </section>
   );
-  if (embedded) return <section aria-label={`Review ${candidate.name}`} className="min-h-0 flex-1 overflow-y-auto">{content}</section>;
-  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl w-full p-0 flex flex-col h-full rounded-l-3xl border-l border-border">{content}</SheetContent></Sheet>;
 }

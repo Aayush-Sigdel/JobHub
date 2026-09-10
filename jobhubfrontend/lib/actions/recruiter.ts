@@ -4,7 +4,10 @@ import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
 import { loadRecruiterJob } from "@/lib/recruiter-job-loader";
 import { revalidatePath } from "next/cache";
 import type { ApplicationStatus } from "@/types/api/jobs";
-import type { CandidateDashboardResponse } from "@/types/api/recruiter";
+import type {
+  CandidateDashboardResponse,
+  CandidateSocialSnapshotDto,
+} from "@/types/api/recruiter";
 
 export async function getRecruiterJobAction(jobId: string) {
   return loadRecruiterJob(jobId, fetchWithAuth);
@@ -32,6 +35,22 @@ export async function getJobCandidatesAction(jobId: string) {
     `/recruiter/jobs/${encodeURIComponent(jobId)}/candidates`,
     { cache: "no-store" },
   );
+}
+
+export async function getCandidateSnapshotsAction(
+  jobId: string,
+  candidateId: string,
+) {
+  if (!jobId || jobId === "all" || !candidateId) {
+    throw new Error("Select a job application to view its evidence.");
+  }
+  const snapshots = await fetchWithAuth<CandidateSocialSnapshotDto[]>(
+    `/recruiter/jobs/${encodeURIComponent(jobId)}/candidates/${encodeURIComponent(candidateId)}/snapshots`,
+    { cache: "no-store" },
+  );
+  if (!Array.isArray(snapshots))
+    throw new Error("Evidence could not be read. Please try again.");
+  return snapshots;
 }
 
 export async function getJobTaskOptionsAction() {

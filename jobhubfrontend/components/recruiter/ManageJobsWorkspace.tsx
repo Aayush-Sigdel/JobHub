@@ -15,6 +15,8 @@ import {
   IconCheck,
   IconChevronRight,
   IconLayoutSidebar,
+  IconLayoutKanban,
+  IconList,
   IconPencil,
   IconPlus,
   IconSearch,
@@ -27,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { JobPostForm } from "@/components/post-job/JobPostForm";
 import CandidateDetailDrawer from "@/components/recruiter/CandidateDetailDrawer";
+import KanbanView from "@/components/recruiter/KanbanView";
 import {
   getJobCandidatesAction,
   getJobTaskOptionsAction,
@@ -136,6 +139,7 @@ export default function ManageJobsWorkspace({
   const [tasks, setTasks] = useState<TaskOptions | null>(null);
   const [taskAttempt, setTaskAttempt] = useState(0);
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [candidateView, setCandidateView] = useState<"list" | "kanban">("list");
   const [status, setStatus] = useState("ALL");
   const [sort, setSort] = useState("match");
   const [minMatch, setMinMatch] = useState("");
@@ -963,19 +967,51 @@ export default function ManageJobsWorkspace({
                       {currentData.candidates.length}
                     </span>
                   </h2>
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    Sort by
-                    <select
-                      aria-label="Sort candidates"
-                      className={control}
-                      value={sort}
-                      onChange={(e) => setSort(e.target.value)}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div
+                      role="group"
+                      aria-label="Candidate view"
+                      className="flex gap-1 rounded-lg border border-border p-1"
                     >
-                      <option value="match">Best match</option>
-                      <option value="newest">Newest</option>
-                      <option value="name">Name</option>
-                    </select>
-                  </label>
+                      {(["list", "kanban"] as const).map((view) => {
+                        const Icon =
+                          view === "list" ? IconList : IconLayoutKanban;
+                        return (
+                          <button
+                            key={view}
+                            type="button"
+                            aria-pressed={candidateView === view}
+                            onClick={() => {
+                              setCandidateView(view);
+                              if (view === "kanban") setStatus("ALL");
+                            }}
+                            className={cn(
+                              "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+                              candidateView === view
+                                ? "bg-muted text-foreground"
+                                : "text-muted-foreground hover:bg-muted/50",
+                            )}
+                          >
+                            <Icon className="size-4" />
+                            {view === "list" ? "List" : "Kanban"}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      Sort by
+                      <select
+                        aria-label="Sort candidates"
+                        className={control}
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value)}
+                      >
+                        <option value="match">Best match</option>
+                        <option value="newest">Newest</option>
+                        <option value="name">Name</option>
+                      </select>
+                    </label>
+                  </div>
                 </div>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                   <div className="relative flex-1">
@@ -988,25 +1024,27 @@ export default function ManageJobsWorkspace({
                       onChange={(e) => setCandidateSearch(e.target.value)}
                     />
                   </div>
-                  <select
-                    aria-label="Filter candidate status"
-                    className={control}
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="ALL">All stages</option>
-                    {[
-                      "APPLIED",
-                      "IN_REVIEW",
-                      "SHORTLISTED",
-                      "ACCEPTED",
-                      "REJECTED",
-                    ].map((value) => (
-                      <option key={value} value={value}>
-                        {readable(value)}
-                      </option>
-                    ))}
-                  </select>
+                  {candidateView === "list" && (
+                    <select
+                      aria-label="Filter candidate status"
+                      className={control}
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                    >
+                      <option value="ALL">All stages</option>
+                      {[
+                        "APPLIED",
+                        "IN_REVIEW",
+                        "SHORTLISTED",
+                        "ACCEPTED",
+                        "REJECTED",
+                      ].map((value) => (
+                        <option key={value} value={value}>
+                          {readable(value)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <details className="mt-4 text-sm">
                   <summary className="cursor-pointer text-xs text-muted-foreground">
@@ -1047,56 +1085,84 @@ export default function ManageJobsWorkspace({
                     </label>
                   </div>
                 </details>
-                <div className="mt-5 divide-y divide-border/60">
-                  {candidates.map((candidate) => {
-                    const match =
-                      calculateSupportedOverallSimilarity(candidate);
-                    return (
-                      <button
-                        key={candidate.applicationId || candidate.candidateId}
-                        type="button"
-                        onClick={() =>
-                          setCandidateId(
-                            candidate.applicationId || candidate.candidateId,
-                          )
-                        }
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-4 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring sm:gap-4"
-                      >
-                        <Avatar className="size-10 shrink-0 rounded-xl">
-                          <AvatarImage src={candidate.imageUrl} alt="" />
-                          <AvatarFallback className="rounded-xl text-xs">
-                            {candidate.name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">
-                            {candidate.name}
-                          </p>
-                          <p className="mt-1 truncate text-xs text-muted-foreground">
-                            {candidate.title || candidate.email}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground sm:hidden">
+                {candidateView === "kanban" && candidates.length > 0 ? (
+                  <div className="mt-5">
+                    <KanbanView
+                      candidates={candidates}
+                      onCandidateSelect={(candidate) =>
+                        setCandidateId(
+                          candidate.applicationId || candidate.candidateId,
+                        )
+                      }
+                      onStatusChange={(applicationId, nextStatus) => {
+                        setData((previous) =>
+                          previous?.id === selectedId
+                            ? {
+                                ...previous,
+                                candidates: previous.candidates.map(
+                                  (candidate) =>
+                                    candidate.applicationId === applicationId
+                                      ? { ...candidate, status: nextStatus }
+                                      : candidate,
+                                ),
+                              }
+                            : previous,
+                        );
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-5 divide-y divide-border/60">
+                    {candidates.map((candidate) => {
+                      const match =
+                        calculateSupportedOverallSimilarity(candidate);
+                      return (
+                        <button
+                          key={candidate.applicationId || candidate.candidateId}
+                          type="button"
+                          onClick={() =>
+                            setCandidateId(
+                              candidate.applicationId || candidate.candidateId,
+                            )
+                          }
+                          className="flex w-full items-center gap-3 rounded-lg px-2 py-4 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring sm:gap-4"
+                        >
+                          <Avatar className="size-10 shrink-0 rounded-xl">
+                            <AvatarImage src={candidate.imageUrl} alt="" />
+                            <AvatarFallback className="rounded-xl text-xs">
+                              {candidate.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold">
+                              {candidate.name}
+                            </p>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                              {candidate.title || candidate.email}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground sm:hidden">
+                              {readable(candidate.status || "APPLIED")}
+                            </p>
+                          </div>
+                          <span className="hidden text-xs text-muted-foreground sm:block">
                             {readable(candidate.status || "APPLIED")}
-                          </p>
-                        </div>
-                        <span className="hidden text-xs text-muted-foreground sm:block">
-                          {readable(candidate.status || "APPLIED")}
-                        </span>
-                        <span className="min-w-16 text-right">
-                          <span className="block text-sm font-medium tabular-nums">
-                            {match === null
-                              ? "N/A"
-                              : `${Math.round(match * 100)}%`}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            match
+                          <span className="min-w-16 text-right">
+                            <span className="block text-sm font-medium tabular-nums">
+                              {match === null
+                                ? "N/A"
+                                : `${Math.round(match * 100)}%`}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              match
+                            </span>
                           </span>
-                        </span>
-                        <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                      </button>
-                    );
-                  })}
-                </div>
+                          <IconChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {candidates.length === 0 && (
                   <div className="py-16 text-center">
                     <IconUsers className="mx-auto mb-4 size-7 text-muted-foreground" />

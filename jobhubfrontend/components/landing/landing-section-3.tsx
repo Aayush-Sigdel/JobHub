@@ -1,47 +1,41 @@
-const LandingSectionThree = () => {
-  const companyList = [
-    "Esewa",
-    "Khalti",
-    "Pathao",
-    "InDrive",
-    "SastoDeal",
-    "Foodmandu",
-    "Daraz",
-    "HamroBazaar",
-    "MeroJob",
-    "NagarikApp",
-    "EcommerceNepal",
-    "NepBay",
-    "Google",
-    "Microsoft",
-    "Amazon",
-    "Meta",
-    "Apple",
-    "Netflix",
-  ];
+import { Suspense } from "react";
+import LandingCompanies from "./landing-companies";
+import { landing } from "./landing-styles";
 
+export default function LandingSectionThree() {
   return (
-    <section className="w-full bg-muted py-24 px-6 flex flex-col items-center text-center">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground mb-12">
-          Aggregated Opportunities
-        </h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 w-full">
-          {companyList.map((company, index) => (
-            <div
-              key={index}
-              className="bg-card rounded-xl border border-border hover:border-primary/50 flex items-center justify-center py-5 px-3 hover:-translate-y-0.5 hover:shadow-sm transition-all cursor-pointer"
-            >
-              <span className="font-semibold text-muted-foreground text-sm md:text-base truncate">
-                {company}
-              </span>
-            </div>
-          ))}
+    <section
+      id="companies"
+      className={landing.section + " scroll-mt-8 bg-background"}
+    >
+      <div className={landing.container}>
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Discover who’s hiring.
+          </h2>
+          <p className={landing.body + " mx-auto mt-4 max-w-xl"}>
+            Explore companies with current opportunities on JobHub.
+          </p>
         </div>
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            >
+              {[0, 1, 2, 3].map((key) => (
+                <div
+                  key={key}
+                  className="h-24 rounded-xl bg-muted motion-safe:animate-pulse"
+                />
+              ))}
+              <span className="sr-only">Loading companies</span>
+            </div>
+          }
+        >
+          <LandingCompanies />
+        </Suspense>
       </div>
     </section>
   );
-};
-
-export default LandingSectionThree;
+}
