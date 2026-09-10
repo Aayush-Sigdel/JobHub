@@ -4,6 +4,34 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.job-markdown-editor .w-md-editor {
+  --md-editor-box-shadow-color: var(--border);
+  --color-canvas-default: var(--background);
+  --color-canvas-subtle: var(--muted);
+  --color-fg-default: var(--foreground);
+  --color-fg-muted: var(--muted-foreground);
+  --color-border-default: var(--border);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: none;
+  overflow: hidden;
+}
+.job-markdown-editor .w-md-editor-toolbar { padding: 8px; border-bottom-color: var(--border); }
+.job-markdown-editor .w-md-editor-toolbar li > button { height: 28px; width: 28px; border-radius: 4px; }
+.job-markdown-editor .w-md-editor-text { padding: 14px; }
+.job-markdown-editor .w-md-editor-text-input { -webkit-text-fill-color: transparent; }
+.job-deadline-calendar {
+  --rdp-accent-color: var(--foreground);
+  --rdp-accent-background-color: var(--muted);
+  --rdp-day-width: 36px;
+  --rdp-day-height: 36px;
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-height: 34px;
+  --rdp-selected-border: 1px solid var(--foreground);
+  font-size: 13px;
+}
+.job-deadline-calendar .rdp-selected .rdp-day_button { background: var(--foreground); color: var(--background); }
+
 @theme inline {
   --color-onyx-50: #f8f8f8;
   --color-onyx-100: #eeeeee;

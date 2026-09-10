@@ -15,6 +15,22 @@ export function candidateMatchLabel(candidate: CandidateDashboardResponse) {
   return match === null ? "Not available" : `${Math.round(match * 100)}%`;
 }
 
+export function candidateSubmissions(candidate: CandidateDashboardResponse) {
+  return [
+    { label: "Design", data: candidate.designSubmission },
+    { label: "Programming", data: candidate.programmingSubmission },
+    { label: "SQL", data: candidate.sqlSubmission },
+  ].flatMap(({ label, data }) => (data ? [{ label, data }] : []));
+}
+
+export function reviewScore(value?: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
+        value,
+      )
+    : "Not available";
+}
+
 export function reviewDate(value?: string) {
   return value && !Number.isNaN(Date.parse(value))
     ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(

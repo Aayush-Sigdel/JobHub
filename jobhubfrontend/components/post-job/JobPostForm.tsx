@@ -31,6 +31,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import MarkdownEditor from "./MarkdownEditor";
+import DeadlinePicker from "./DeadlinePicker";
+import AssessmentPicker from "./AssessmentPicker";
+import JobMarkdown from "@/components/jobs/JobMarkdown";
+import { LocationPopover } from "@/app/(applier)/candidate-profile/_components/location-popover";
+import type { TaskLibraryOption } from "@/types/api/tasks";
 import {
   Sheet,
   SheetContent,
@@ -46,10 +52,7 @@ import type {
   WorkplaceType,
 } from "@/types/api/jobs";
 
-interface TaskOption {
-  id: string;
-  title: string;
-}
+type TaskOption = TaskLibraryOption;
 
 interface JobPostFormProps {
   designTasks: TaskOption[];
@@ -425,6 +428,10 @@ export function JobPostForm({
       newErrors.tabLock = "Tab-switch limit must be at least 1.";
     }
 
+    if (deadline && (Number.isNaN(Date.parse(deadline)) || (( !initialJob || deadline !== toDateTimeLocal(initialJob.deadline)) && new Date(deadline).getTime() <= Date.now()))) {
+      newErrors.deadline = "Choose a closing date and time in the future.";
+    }
+
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -699,61 +706,83 @@ export function JobPostForm({
   };
 
   if (embedded) {
-    const inputClass = "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    const inputClass = "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-none outline-none focus-visible:ring-2 focus-visible:ring-ring";
     const field = (id: string, label: string, value: string, change: (value: string) => void, type = "text", placeholder?: string) => (
       <div className="space-y-2" key={id}>
-        <Label htmlFor={id}>{label}</Label>
-        <Input id={id} type={type} value={value} onChange={(event) => change(event.target.value)} placeholder={placeholder}
+        <Label htmlFor={id} className="text-xs font-medium">{label}</Label>
+        <Input id={id} type={type} className={inputClass} value={value} onChange={(event) => { change(event.target.value); if (errors[id]) setErrors((previous) => ({ ...previous, [id]: "" })); }} placeholder={placeholder}
           aria-invalid={Boolean(errors[id])} aria-describedby={errors[id] ? `${id}-error` : undefined} />
         {errors[id] && <p id={`${id}-error`} className="text-xs text-destructive">{errors[id]}</p>}
       </div>
     );
+    const locationParts = location.split(",").map((part) => part.trim());
+    const assessmentCount = [designTaskId, programmingTaskId, sqlTaskId].filter(Boolean).length;
     return (
-      <form className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <fieldset disabled={isPending} className="min-w-0 space-y-8">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">{isEditing ? "Edit job" : "Tell candidates about the role"}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{isEditing ? "Update the details below and save when you’re ready." : "Add the essentials, then publish when you’re ready."}</p>
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2">
-            {field("title", "Job title *", title, setTitle, "text", "e.g. Frontend developer")}
-            {field("companyName", "Company name *", companyName, setCompanyName)}
-            {field("location", "Location", location, setLocation, "text", "City or region")}
-            <div className="space-y-2"><Label htmlFor="workplaceType">Workplace</Label><select id="workplaceType" className={inputClass} value={workplaceType} onChange={(e) => setWorkplaceType(e.target.value as WorkplaceType)}>{workplaceTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-            <div className="space-y-2"><Label htmlFor="jobType">Employment type</Label><select id="jobType" className={inputClass} value={jobType} onChange={(e) => setJobType(e.target.value as JobType)}>{jobTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-            <div className="space-y-2"><Label htmlFor="experienceLevel">Experience level</Label><select id="experienceLevel" className={inputClass} value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value as CreateJobPostRequest["experienceLevel"])}>{experienceLevels.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Role description *</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={7} placeholder="What will this person work on? What does success look like?" aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? "description-error" : undefined} />
-            {errors.description && <p id="description-error" className="text-xs text-destructive">{errors.description}</p>}
-          </div>
-          <div className="space-y-2"><Label htmlFor="requirements">Requirements</Label><Textarea id="requirements" value={requirements} onChange={(e) => setRequirements(e.target.value)} rows={4} placeholder="Skills and experience candidates will need" /></div>
-          <details className="group border-t border-border pt-5" open={Boolean(initialJob?.salaryMin || initialJob?.salaryMax || initialJob?.deadline)}>
-            <summary className="cursor-pointer text-sm font-semibold">Compensation & application deadline <span className="ml-2 font-normal text-muted-foreground">Optional</span></summary>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              {field("salaryMin", "Minimum salary", salaryMin, setSalaryMin, "number")}
-              {field("salaryMax", "Maximum salary", salaryMax, setSalaryMax, "number")}
-              <div className="space-y-2"><Label htmlFor="salaryCurrency">Currency</Label><select id="salaryCurrency" className={inputClass} value={salaryCurrency} onChange={(e) => setSalaryCurrency(e.target.value)}>{Array.from(new Set([...popularCurrencies, salaryCurrency])).map((currency) => <option key={currency}>{currency}</option>)}</select></div>
-              {field("deadline", "Application deadline", deadline, setDeadline, "datetime-local")}
+      <form className="@container/job-form mx-auto w-full max-w-6xl px-5 py-7 sm:px-8" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <fieldset disabled={isPending} className="min-w-0">
+          <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
+            <div><h2 className="text-2xl font-semibold tracking-tight">{isEditing ? "Edit your listing" : "Create a job listing"}</h2><p className="mt-2 text-sm text-muted-foreground">Define the role, set expectations, and choose how candidates apply.</p></div>
+            {!isEditing && lastSavedTime && <span className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground"><IconCheck className="size-3.5" />Draft saved</span>}
+          </header>
+          <div className="grid items-start gap-6 @4xl/job-form:grid-cols-[minmax(0,1fr)_250px]">
+            <div className="min-w-0 space-y-6">
+              <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
+                <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold"><IconBriefcase className="size-4 text-muted-foreground" />Role details</h3>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  {field("title", "Job title *", title, setTitle, "text", "e.g. Frontend developer")}
+                  {field("companyName", "Company name *", companyName, setCompanyName, "text", "Your company")}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between"><Label htmlFor="location" className="text-xs font-medium">Location</Label>{location && <button type="button" className="rounded text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setLocation("")}>Clear</button>}</div>
+                    <LocationPopover
+                      profileLocation={location ? { city: locationParts[0], state: locationParts.length > 2 ? locationParts.slice(1, -1).join(", ") : "", country: locationParts.length > 1 ? locationParts.at(-1)! : "" } : null}
+                      setProfileLocation={(value) => setLocation([value.city, value.state, value.country].filter(Boolean).join(", "))}
+                      description="Choose where this role is based, or enter the city and country."
+                      trigger={<Button type="button" id="location" disabled={isPending} variant="outline" className="h-11 w-full justify-start rounded-lg px-3 font-normal"><IconMapPin className="size-4 shrink-0 text-muted-foreground" /><span className="truncate">{location || "Choose a location"}</span></Button>}
+                    />
+                  </div>
+                  <div className="space-y-2"><Label htmlFor="workplaceType" className="text-xs font-medium">Workplace</Label><select id="workplaceType" className={inputClass} value={workplaceType} onChange={(e) => setWorkplaceType(e.target.value as WorkplaceType)}>{workplaceTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+                  <div className="space-y-2"><Label htmlFor="jobType" className="text-xs font-medium">Employment type</Label><select id="jobType" className={inputClass} value={jobType} onChange={(e) => setJobType(e.target.value as JobType)}>{jobTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+                  <div className="space-y-2"><Label htmlFor="experienceLevel" className="text-xs font-medium">Experience level</Label><select id="experienceLevel" className={inputClass} value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value as CreateJobPostRequest["experienceLevel"])}>{experienceLevels.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+                </div>
+              </section>
+              <section className="space-y-6 rounded-xl border border-border bg-background p-5 sm:p-6">
+                <div><h3 className="flex items-center gap-2 text-sm font-semibold"><IconFileDescription className="size-4 text-muted-foreground" />Describe the opportunity</h3><p className="mt-1.5 text-xs leading-5 text-muted-foreground">Use headings and lists to make the role easy to understand.</p></div>
+                <div className="space-y-2"><Label htmlFor="description" className="text-xs font-medium">Role description *</Label><MarkdownEditor id="description" value={description} onChange={(value) => { setDescription(value); if (errors.description) setErrors((previous) => ({ ...previous, description: "" })); }} placeholder="Describe the team, responsibilities, and what success looks like…" error={errors.description} disabled={isPending} />{errors.description && <p id="description-error" className="text-xs text-destructive">{errors.description}</p>}</div>
+                <div className="space-y-2"><Label htmlFor="requirements" className="text-xs font-medium">Requirements</Label><MarkdownEditor id="requirements" value={requirements} onChange={setRequirements} placeholder="List the skills and experience candidates need…" disabled={isPending} /></div>
+              </section>
+              <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
+                <div className="mb-5 flex items-center justify-between gap-3"><h3 className="flex items-center gap-2 text-sm font-semibold"><IconCurrencyDollar className="size-4 text-muted-foreground" />Compensation & deadline</h3><span className="text-xs text-muted-foreground">Optional</span></div>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  {field("salaryMin", "Minimum salary", salaryMin, setSalaryMin, "number", "e.g. 50000")}
+                  {field("salaryMax", "Maximum salary", salaryMax, setSalaryMax, "number", "e.g. 80000")}
+                  <div className="space-y-2"><Label htmlFor="salaryCurrency" className="text-xs font-medium">Currency</Label><select id="salaryCurrency" className={inputClass} value={salaryCurrency} onChange={(e) => setSalaryCurrency(e.target.value)}>{Array.from(new Set([...popularCurrencies, salaryCurrency])).map((currency) => <option key={currency}>{currency}</option>)}</select></div>
+                  <div className="space-y-2"><Label htmlFor="deadline" className="text-xs font-medium">Application deadline</Label><DeadlinePicker value={deadline} onChange={(value) => { setDeadline(value); setErrors((previous) => ({ ...previous, deadline: "" })); }} disabled={isPending} error={errors.deadline} />{errors.deadline && <p id="deadline-error" className="text-xs text-destructive">{errors.deadline}</p>}</div>
+                </div>
+              </section>
+              <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
+                <AssessmentPicker value={{ designTaskId, programmingTaskId, sqlTaskId }} onChange={(value) => { setDesignTaskId(value.designTaskId); setProgrammingTaskId(value.programmingTaskId); setSqlTaskId(value.sqlTaskId); }} library={{ designTasks, programmingTasks, sqlTasks }} disabled={isPending} />
+                <div className="mt-5 border-t border-border pt-5"><label className="flex cursor-pointer items-start gap-3 text-sm"><input className="mt-0.5 size-4 shrink-0 accent-foreground" type="checkbox" checked={tabLock} onChange={(e) => setTabLock(e.target.checked)} /><span><span className="block text-xs font-medium">Track tab switching</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">Record when candidates leave the assessment tab.</span></span></label>{tabLock && <div className="mt-4 max-w-xs">{field("tabLock", "Tab-switch warning limit", tabLockWarningLimit, setTabLockWarningLimit, "number")}</div>}</div>
+              </section>
             </div>
-          </details>
-          <details className="border-t border-border pt-5" open={Boolean(initialJob?.hasDesignTask || initialJob?.hasProgrammingTask || initialJob?.hasSqlTask || initialJob?.tabLock)}>
-            <summary className="cursor-pointer text-sm font-semibold">Assessments & screening <span className="ml-2 font-normal text-muted-foreground">Optional</span></summary>
-            <div className="mt-5 space-y-5">
-              {[
-                { id: "designTaskId", label: "Design assessment", value: designTaskId, set: setDesignTaskId, options: designTasks },
-                { id: "programmingTaskId", label: "Programming assessment", value: programmingTaskId, set: setProgrammingTaskId, options: programmingTasks },
-                { id: "sqlTaskId", label: "SQL assessment", value: sqlTaskId, set: setSqlTaskId, options: sqlTasks },
-              ].map((task) => <div key={task.id} className="space-y-2"><Label htmlFor={task.id}>{task.label}</Label><select id={task.id} disabled={tasksUnavailable} className={inputClass} value={task.value} onChange={(e) => task.set(e.target.value)}><option value="">No assessment</option>{task.value && !task.options.some((option) => option.id === task.value) && <option value={task.value}>Currently attached assessment</option>}{task.options.map((option) => <option key={option.id} value={option.id}>{option.title}</option>)}</select></div>)}
-              <label className="flex items-start gap-3 text-sm"><input className="mt-0.5 size-4 accent-primary" type="checkbox" checked={tabLock} onChange={(e) => setTabLock(e.target.checked)} /><span>Track tab switching during assessments</span></label>
-              {tabLock && field("tabLock", "Tab-switch warning limit", tabLockWarningLimit, setTabLockWarningLimit, "number")}
-            </div>
-          </details>
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+            <aside className="sticky top-6 hidden space-y-5 @4xl/job-form:block">
+              <div className="rounded-xl border border-border bg-muted/20 p-5">
+                <p className="text-xs font-medium text-muted-foreground">Your listing</p>
+                <h3 className="mt-4 break-words text-lg font-semibold tracking-tight">{title.trim() || "Job title"}</h3>
+                <p className="mt-1 break-words text-sm text-muted-foreground">{companyName.trim() || "Company name"}</p>
+                <dl className="mt-5 space-y-4 border-t border-border pt-4 text-xs">
+                  <div><dt className="text-muted-foreground">Workplace</dt><dd className="mt-1 font-medium">{workplaceTypes.find((item) => item.value === workplaceType)?.label}{location ? ` · ${location}` : ""}</dd></div>
+                  <div><dt className="text-muted-foreground">Employment</dt><dd className="mt-1 font-medium">{jobTypes.find((item) => item.value === jobType)?.label}</dd></div>
+                  <div><dt className="text-muted-foreground">Assessments</dt><dd className="mt-1 font-medium">{assessmentCount ? `${assessmentCount} attached` : "Profile application"}</dd></div>
+                  <div><dt className="text-muted-foreground">Applications close</dt><dd className="mt-1 font-medium">{deadline && !Number.isNaN(Date.parse(deadline)) ? new Date(deadline).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Open until filled"}</dd></div>
+                </dl>
+              </div>
+              <div className="px-1"><p className="text-xs font-medium">Ready to publish</p><ul className="mt-3 space-y-3">{[{ label: "Job title", complete: Boolean(title.trim()) }, { label: "Company name", complete: Boolean(companyName.trim()) }, { label: "Role description", complete: description.trim().length >= 20 }].map((item) => <li key={item.label} className="flex items-center gap-2 text-xs text-muted-foreground"><span className={`flex size-4 items-center justify-center rounded-full border ${item.complete ? "border-foreground bg-foreground text-background" : "border-border"}`}>{item.complete && <IconCheck className="size-3" />}</span>{item.label}</li>)}</ul></div>
+            </aside>
+          </div>
+          <footer className="sticky bottom-0 mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-border bg-background py-4">
             <span className="text-xs text-muted-foreground">{isEditing ? "Changes apply after saving." : lastSavedTime ? "Draft saved on this device" : "* Required fields"}</span>
-            <div className="flex gap-2"><Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button><Button type="submit" className="bg-primary text-primary-foreground">{isPending ? "Saving…" : isEditing ? "Save changes" : "Publish job"}<IconArrowRight className="size-4" /></Button></div>
-          </div>
+            <div className="flex gap-2"><Button type="button" variant="ghost" className="rounded-lg" onClick={onCancel}>Cancel</Button><Button type="submit" className="rounded-lg bg-primary text-primary-foreground">{isPending ? "Saving…" : isEditing ? "Save changes" : "Publish job"}<IconArrowRight className="size-4" /></Button></div>
+          </footer>
         </fieldset>
       </form>
     );

@@ -4,6 +4,7 @@ import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
 import { loadRecruiterJob } from "@/lib/recruiter-job-loader";
 import { revalidatePath } from "next/cache";
 import type { ApplicationStatus } from "@/types/api/jobs";
+import type { TaskLibraryOption } from "@/types/api/tasks";
 import type {
   CandidateDashboardResponse,
   CandidateSocialSnapshotDto,
@@ -54,15 +55,19 @@ export async function getCandidateSnapshotsAction(
 }
 
 export async function getJobTaskOptionsAction() {
-  type TaskOption = { id: string; title: string };
   const results = await Promise.allSettled(
-    ["design", "programming", "sql"].map((type) =>
-      fetchWithAuth<TaskOption[]>(`/task/${type}/get`, { cache: "no-store" }),
-    ),
+    ["design", "programming", "sql"].map(async (type) => {
+      const [available, owned] = await Promise.all([
+        fetchWithAuth<TaskLibraryOption[]>(`/task/${type}/getAll`, { cache: "no-store" }),
+        fetchWithAuth<TaskLibraryOption[]>(`/task/${type}/get`, { cache: "no-store" }),
+      ]);
+      const ownedIds = new Set(owned.map((task) => task.id));
+      return available.map(({ id, title, instructions, skillLevel, scope }) => ({ id, title, instructions, skillLevel, scope, isOwned: ownedIds.has(id) }));
+    }),
   );
   const options = results.map((result) =>
     result.status === "fulfilled"
-      ? result.value.map(({ id, title }) => ({ id, title }))
+      ? result.value
       : [],
   );
   return {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { MapPin, Pencil, Navigation, Search, X } from "lucide-react";
 import { Location } from "@/types/user";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,16 @@ interface LocationPopoverProps {
   profileLocation: Location | null;
   setProfileLocation: (loc: Location) => void;
   className?: string;
+  trigger?: ReactElement;
+  description?: string;
 }
 
 export function LocationPopover({
   profileLocation,
   setProfileLocation,
   className = "",
+  trigger,
+  description = "Set your location so employers know your timezone.",
 }: LocationPopoverProps) {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
@@ -123,55 +127,56 @@ export function LocationPopover({
   };
 
   return (
-    <Popover open={isLocationOpen} onOpenChange={setIsLocationOpen}>
+    <Popover open={isLocationOpen} onOpenChange={(open) => { if (open) handleOpen(); else setIsLocationOpen(false); }}>
       <PopoverTrigger asChild>
-        <button
+        {trigger || <button
           type="button"
           onClick={handleOpen}
           className={`flex items-center gap-2 cursor-pointer text-left focus:outline-none group ${className}`}
         >
-          <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 border border-orange-100 group-hover:bg-orange-100 transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 text-foreground flex items-center justify-center shrink-0 border border-border group-hover:bg-primary/20 transition-colors">
             <MapPin className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             {profileLocation?.city || profileLocation?.country ? (
-              <span className="text-sm font-bold text-neutral-900 truncate block">
+              <span className="text-sm font-bold text-foreground truncate block">
                 {profileLocation.city}
                 {profileLocation.city && profileLocation.country ? ", " : ""}
                 {profileLocation.state ? profileLocation.state + ", " : ""}
                 {profileLocation.country}
               </span>
             ) : (
-              <span className="text-sm font-medium text-neutral-400 block">
+              <span className="text-sm font-medium text-muted-foreground block">
                 Select location on map or search...
               </span>
             )}
           </div>
-          <Pencil className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-900 transition-colors shrink-0" />
-        </button>
+          <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+        </button>}
       </PopoverTrigger>
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-[360px] sm:w-[400px] p-0 bg-white border border-neutral-200 shadow-2xl rounded-2xl flex flex-col overflow-hidden z-[100]"
+        className="w-[360px] max-w-[calc(100vw-2rem)] sm:w-[400px] p-0 bg-popover text-popover-foreground border border-border shadow-xl rounded-xl flex flex-col overflow-hidden z-[100]"
       >
-        <div className="p-4 bg-neutral-50 border-b border-neutral-200/80 flex items-center justify-between">
+        <div className="p-4 bg-muted/30 border-b border-border flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-neutral-900 text-sm">Location Pin</h3>
-            <p className="text-xs text-neutral-500 font-medium mt-0.5">
-              Set your location so employers know your timezone.
+            <h3 className="font-extrabold text-foreground text-sm">Location Pin</h3>
+            <p className="text-xs text-muted-foreground font-medium mt-0.5">
+              {description}
             </p>
           </div>
           <button
             type="button"
+            aria-label="Close location picker"
             onClick={() => setIsLocationOpen(false)}
-            className="text-neutral-400 hover:text-neutral-800 p-1 rounded-lg hover:bg-neutral-200/60 transition-colors cursor-pointer"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="h-48 w-full border-b border-neutral-200 bg-neutral-100 relative z-0">
+        <div className="h-48 w-full border-b border-border bg-muted relative z-0">
           <LocationMap
             onLocationSelect={handleMapClick}
             defaultLat={mapLat}
@@ -184,26 +189,26 @@ export function LocationPopover({
             type="button"
             onClick={handleGetCurrentLocation}
             disabled={isLocating}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-orange-50 text-orange-600 font-bold text-xs rounded-xl border border-orange-200 hover:bg-orange-100 transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-primary/10 text-foreground font-bold text-xs rounded-xl border border-border hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Navigation className="w-3.5 h-3.5" />
             <span>{isLocating ? "Detecting location..." : "Use Current GPS Location"}</span>
           </button>
 
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
               value={tempLocation.city}
               onChange={(e) =>
                 setTempLocation({ ...tempLocation, city: e.target.value })
               }
               placeholder="Search city..."
-              className="pl-9 bg-neutral-50 border-neutral-200 text-neutral-900 focus-visible:ring-neutral-900 h-10 text-sm rounded-xl"
+              className="pl-9 bg-muted/30 border-border text-foreground focus-visible:ring-ring h-10 text-sm rounded-xl"
             />
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <div>
-              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1 block">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
                 State / Province
               </label>
               <Input
@@ -212,11 +217,11 @@ export function LocationPopover({
                   setTempLocation({ ...tempLocation, state: e.target.value })
                 }
                 placeholder="State"
-                className="bg-neutral-50 border-neutral-200 text-neutral-900 focus-visible:ring-neutral-900 h-9 text-xs rounded-lg"
+                className="bg-muted/30 border-border text-foreground focus-visible:ring-ring h-9 text-xs rounded-lg"
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1 block">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
                 Country
               </label>
               <Input
@@ -225,22 +230,22 @@ export function LocationPopover({
                   setTempLocation({ ...tempLocation, country: e.target.value })
                 }
                 placeholder="Country"
-                className="bg-neutral-50 border-neutral-200 text-neutral-900 focus-visible:ring-neutral-900 h-9 text-xs rounded-lg"
+                className="bg-muted/30 border-border text-foreground focus-visible:ring-ring h-9 text-xs rounded-lg"
               />
             </div>
           </div>
         </div>
-        <div className="p-3.5 border-t border-neutral-200 bg-neutral-50 flex justify-end gap-2">
+        <div className="p-3.5 border-t border-border bg-muted/30 flex justify-end gap-2">
           <button
             type="button"
-            className="px-3.5 py-1.5 text-xs font-bold text-neutral-600 hover:text-neutral-900 rounded-lg transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
             onClick={() => setIsLocationOpen(false)}
           >
             Cancel
           </button>
           <button
             type="button"
-            className="px-4 py-1.5 text-xs font-bold text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer shadow-xs"
+            className="px-4 py-1.5 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors cursor-pointer shadow-xs"
             onClick={saveLocation}
           >
             Confirm Location
