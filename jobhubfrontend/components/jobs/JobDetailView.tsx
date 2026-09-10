@@ -13,6 +13,7 @@ import {
 import { LinkedInEasyApplyModal } from "@/components/jobs/LinkedInEasyApplyModal";
 import { getJobApplicationAvailability } from "@/lib/job-application-availability";
 import { Badge } from "@/components/ui/badge";
+import JobMarkdown from "./JobMarkdown";
 import { Button } from "@/components/ui/button";
 import type { JobPostDetailResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
@@ -153,9 +154,7 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
           {/* About the Role */}
           <section className="rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-foreground">About the Role</h2>
-            <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground text-sm">
-              {job.description}
-            </div>
+            <JobMarkdown>{job.description}</JobMarkdown>
           </section>
 
           {/* Requirements */}
@@ -164,9 +163,7 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
               <h2 className="text-xl font-bold text-foreground">
                 Requirements &amp; Qualifications
               </h2>
-              <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground text-sm">
-                {job.requirements}
-              </div>
+              <JobMarkdown>{job.requirements}</JobMarkdown>
             </section>
           )}
 

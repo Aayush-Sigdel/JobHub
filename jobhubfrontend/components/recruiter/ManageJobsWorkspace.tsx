@@ -32,6 +32,7 @@ import { JobPostForm } from "@/components/post-job/JobPostForm";
 import CandidateDetailDrawer from "@/components/recruiter/CandidateDetailDrawer";
 import KanbanView from "@/components/recruiter/KanbanView";
 import CandidateList from "@/components/recruiter/CandidateList";
+import JobMarkdown from "@/components/jobs/JobMarkdown";
 import {
   getJobCandidatesAction,
   getJobTaskOptionsAction,
@@ -806,18 +807,14 @@ export default function ManageJobsWorkspace({
                   </dl>
                   <section className="mt-8">
                     <h3 className="text-base font-semibold">About the role</h3>
-                    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                      {job.description}
-                    </p>
+                    <div className="mt-3"><JobMarkdown>{job.description}</JobMarkdown></div>
                   </section>
                   {job.requirements && (
                     <section className="mt-8">
                       <h3 className="text-base font-semibold">
                         What we’re looking for
                       </h3>
-                      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                        {job.requirements}
-                      </p>
+                      <div className="mt-3"><JobMarkdown>{job.requirements}</JobMarkdown></div>
                     </section>
                   )}
                   <section className="mt-8">

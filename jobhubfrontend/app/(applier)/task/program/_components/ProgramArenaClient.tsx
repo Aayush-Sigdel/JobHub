@@ -1,5 +1,7 @@
 "use client";
 
+import JobMarkdown from "@/components/jobs/JobMarkdown";
+
 import React, { useEffect, useState, useTransition } from "react";
 import { submitTaskAction } from "@/lib/actions/tasks";
 import { applyJobAction } from "@/lib/actions/jobs";
@@ -245,7 +247,7 @@ export default function ProgramArenaClient({
                       Description
                     </h3>
                     <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/30 p-4 rounded-2xl border border-border">
-                      {selectedTask.instructions}
+                      <JobMarkdown>{selectedTask.instructions}</JobMarkdown>
                     </div>
                   </div>
 

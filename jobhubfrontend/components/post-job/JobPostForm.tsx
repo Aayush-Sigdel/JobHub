@@ -149,71 +149,6 @@ function toDateTimeLocal(value?: string) {
   return local.toISOString().slice(0, 16);
 }
 
-function TaskSelect({
-  label,
-  icon: Icon,
-  tasks,
-  value,
-  onChange,
-  createHref,
-}: {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tasks: TaskOption[];
-  value: string;
-  onChange: (value: string) => void;
-  createHref: string;
-}) {
-  const selectedTask = tasks.find((t) => t.id === value);
-
-  return (
-    <div className="space-y-2.5 rounded-xl border border-border bg-card/60 p-5 transition-all hover:border-foreground/20">
-      <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={`${label}-task`} className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Icon className="size-4.5 text-primary" />
-          <span>{label}</span>
-        </Label>
-        {value && (
-          <Badge variant="secondary" className="text-xs font-semibold px-2 py-0.5 bg-primary/20 text-foreground border-primary/30">
-            Attached
-          </Badge>
-        )}
-      </div>
-
-      <select
-        id={`${label}-task`}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-base sm:text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
-      >
-        <option value="">No {label.toLowerCase()} assessment</option>
-        {tasks.map((task) => (
-          <option key={task.id} value={task.id}>
-            {task.title}
-          </option>
-        ))}
-      </select>
-
-      <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground pt-1">
-        <span className="truncate">
-          {tasks.length === 0
-            ? "0 tasks in library."
-            : selectedTask
-            ? `Selected: "${selectedTask.title}"`
-            : `${tasks.length} task${tasks.length === 1 ? "" : "s"} available.`}
-        </span>
-        <Link
-          href={createHref}
-          target="_blank"
-          className="shrink-0 font-semibold text-primary hover:underline text-xs"
-        >
-          + New Task
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 export function JobPostForm({
   designTasks,
   programmingTasks,
@@ -224,7 +159,6 @@ export function JobPostForm({
   onSaved,
   onCancel,
   onPendingChange,
-  tasksUnavailable = false,
   restoreDraft = true,
 }: JobPostFormProps) {
   const router = useRouter();
@@ -666,9 +600,7 @@ export function JobPostForm({
               <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 About the Role
               </h4>
-              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
-                {description.trim() || "No description provided yet."}
-              </p>
+              <JobMarkdown>{description.trim() || "No description provided yet."}</JobMarkdown>
             </div>
 
             {requirements.trim() && (
@@ -676,9 +608,7 @@ export function JobPostForm({
                 <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
                   Requirements & Qualifications
                 </h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
-                  {requirements}
-                </p>
+                <JobMarkdown>{requirements}</JobMarkdown>
               </div>
             )}
 
@@ -1226,33 +1156,16 @@ export function JobPostForm({
               </div>
             </div>
 
-            {/* Task Selectors Grid */}
-            <div className="grid gap-4.5 md:grid-cols-3">
-              <TaskSelect
-                label="Design Task"
-                icon={IconPalette}
-                tasks={designTasks}
-                value={designTaskId}
-                onChange={setDesignTaskId}
-                createHref="/post-task/css"
-              />
-              <TaskSelect
-                label="Coding Task"
-                icon={IconCode}
-                tasks={programmingTasks}
-                value={programmingTaskId}
-                onChange={setProgrammingTaskId}
-                createHref="/post-task/programming"
-              />
-              <TaskSelect
-                label="SQL Task"
-                icon={IconDatabase}
-                tasks={sqlTasks}
-                value={sqlTaskId}
-                onChange={setSqlTaskId}
-                createHref="/post-task/sql"
-              />
-            </div>
+            <AssessmentPicker
+              value={{ designTaskId, programmingTaskId, sqlTaskId }}
+              onChange={(value) => {
+                setDesignTaskId(value.designTaskId);
+                setProgrammingTaskId(value.programmingTaskId);
+                setSqlTaskId(value.sqlTaskId);
+              }}
+              library={{ designTasks, programmingTasks, sqlTasks }}
+              disabled={isPending}
+            />
 
             {/* Tab Lock Monitoring */}
             <div className="rounded-xl border border-border/80 bg-muted/20 p-5 space-y-4">

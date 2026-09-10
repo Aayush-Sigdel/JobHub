@@ -127,32 +127,40 @@ export function LocationPopover({
   };
 
   return (
-    <Popover open={isLocationOpen} onOpenChange={(open) => { if (open) handleOpen(); else setIsLocationOpen(false); }}>
+    <Popover
+      open={isLocationOpen}
+      onOpenChange={(open) => {
+        if (open) handleOpen();
+        else setIsLocationOpen(false);
+      }}
+    >
       <PopoverTrigger asChild>
-        {trigger || <button
-          type="button"
-          onClick={handleOpen}
-          className={`flex items-center gap-2 cursor-pointer text-left focus:outline-none group ${className}`}
-        >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-foreground flex items-center justify-center shrink-0 border border-border group-hover:bg-primary/20 transition-colors">
-            <MapPin className="w-4 h-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            {profileLocation?.city || profileLocation?.country ? (
-              <span className="text-sm font-bold text-foreground truncate block">
-                {profileLocation.city}
-                {profileLocation.city && profileLocation.country ? ", " : ""}
-                {profileLocation.state ? profileLocation.state + ", " : ""}
-                {profileLocation.country}
-              </span>
-            ) : (
-              <span className="text-sm font-medium text-muted-foreground block">
-                Select location on map or search...
-              </span>
-            )}
-          </div>
-          <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-        </button>}
+        {trigger || (
+          <button
+            type="button"
+            onClick={handleOpen}
+            className={`flex items-center gap-2 cursor-pointer text-left focus:outline-none group ${className}`}
+          >
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-foreground flex items-center justify-center shrink-0 border border-border group-hover:bg-primary/20 transition-colors">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              {profileLocation?.city || profileLocation?.country ? (
+                <span className="text-sm font-bold text-foreground truncate block">
+                  {profileLocation.city}
+                  {profileLocation.city && profileLocation.country ? ", " : ""}
+                  {profileLocation.state ? profileLocation.state + ", " : ""}
+                  {profileLocation.country}
+                </span>
+              ) : (
+                <span className="text-sm font-medium text-muted-foreground block">
+                  Select location on map or search...
+                </span>
+              )}
+            </div>
+            <Pencil className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -161,7 +169,9 @@ export function LocationPopover({
       >
         <div className="p-4 bg-muted/30 border-b border-border flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-foreground text-sm">Location Pin</h3>
+            <h3 className="font-extrabold text-foreground text-sm">
+              Location Pin
+            </h3>
             <p className="text-xs text-muted-foreground font-medium mt-0.5">
               {description}
             </p>
@@ -192,7 +202,11 @@ export function LocationPopover({
             className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-primary/10 text-foreground font-bold text-xs rounded-xl border border-border hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Navigation className="w-3.5 h-3.5" />
-            <span>{isLocating ? "Detecting location..." : "Use Current GPS Location"}</span>
+            <span>
+              {isLocating
+                ? "Detecting location..."
+                : "Use Current GPS Location"}
+            </span>
           </button>
 
           <div className="relative">

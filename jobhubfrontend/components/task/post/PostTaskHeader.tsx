@@ -1,102 +1,84 @@
 "use client";
 
-import React, { memo } from "react";
-import {
-  ArrowLeft,
-  Braces,
-  Code2,
-  Flame,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { IconArrowLeft, IconLoader2, IconPlus } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
 
 interface PostTaskHeaderProps {
   onPublish: () => void;
+  onCancel?: () => void;
   isSubmitting?: boolean;
-  assessmentType?: "design" | "programming";
+  assessmentType?: "design" | "programming" | "sql";
 }
 
-export const PostTaskHeader = memo(
-  ({
-    onPublish,
-    isSubmitting = false,
-    assessmentType = "design",
-  }: PostTaskHeaderProps) => {
-    const router = useRouter();
-    const isProgramming = assessmentType === "programming";
-    const AssessmentIcon = isProgramming ? Braces : Flame;
-    const ActionIcon = isProgramming ? Code2 : Sparkles;
+const taskCopy = {
+  design: {
+    title: "Create a CSS assessment",
+    description:
+      "Set a visual target and define what a successful match looks like.",
+  },
+  programming: {
+    title: "Create a programming assessment",
+    description:
+      "Define the problem, method signature, and test cases for your candidates.",
+  },
+  sql: {
+    title: "Create a SQL assessment",
+    description:
+      "Build a dataset and define the query results you want candidates to produce.",
+  },
+};
 
-    return (
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back</span>
-            </button>
-            <span className="text-muted-foreground/30">/</span>
-            <span>Task Management</span>
-            <span className="text-muted-foreground/30">/</span>
-            <span className="text-foreground font-semibold">
-              {isProgramming
-                ? "Create Programming Task"
-                : "Post CSS Battle Challenge"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2.5 pt-1">
-            <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-tomato-500 shadow-2xs">
-              <AssessmentIcon
-                className={`w-4 h-4 ${isProgramming ? "" : "fill-tomato-500"}`}
-              />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {isProgramming
-                ? "Create Programming Task"
-                : "Create CSS Battle Challenge"}
-            </h1>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {isProgramming
-              ? "Publish a typed method contract with private test cases for automated code evaluation."
-              : "Publish automated pixel-accuracy frontend assessment challenges (400 × 300 px) for job applicants."}
+export default function PostTaskHeader({
+  onPublish,
+  onCancel,
+  isSubmitting = false,
+  assessmentType = "design",
+}: PostTaskHeaderProps) {
+  const copy = taskCopy[assessmentType];
+  return (
+    <header className="space-y-5 border-b border-border pb-6">
+      {onCancel ? (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="px-0 text-muted-foreground"
+        >
+          <IconArrowLeft className="size-4" /> Back to library
+        </Button>
+      ) : (
+        <Link
+          href="/post-task"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <IconArrowLeft className="size-4" /> Assessments
+        </Link>
+      )}
+      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {copy.title}
+          </h1>
+          <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            {copy.description}
           </p>
         </div>
-
-        {/* Quick Actions Header */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-4 py-2 rounded-xl text-xs font-semibold border border-border bg-card hover:bg-muted active:scale-[0.98] transition-all cursor-pointer text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            onClick={onPublish}
-            disabled={isSubmitting}
-            className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-tomato-500 hover:bg-tomato-600 active:scale-[0.98] shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <ActionIcon className="w-4 h-4" />
-            )}
-            <span>{isProgramming ? "Create Task" : "Publish Challenge"}</span>
-          </button>
-        </div>
+        <Button
+          type="button"
+          onClick={onPublish}
+          disabled={isSubmitting}
+          className="h-11 shrink-0 rounded-lg px-5"
+        >
+          {isSubmitting ? (
+            <IconLoader2 className="size-4 animate-spin" />
+          ) : (
+            <IconPlus className="size-4" />
+          )}
+          {isSubmitting ? "Creating…" : "Create assessment"}
+        </Button>
       </div>
-    );
-  },
-);
-
-PostTaskHeader.displayName = "PostTaskHeader";
-export default PostTaskHeader;
+    </header>
+  );
+}

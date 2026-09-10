@@ -58,17 +58,28 @@ export async function getJobTaskOptionsAction() {
   const results = await Promise.allSettled(
     ["design", "programming", "sql"].map(async (type) => {
       const [available, owned] = await Promise.all([
-        fetchWithAuth<TaskLibraryOption[]>(`/task/${type}/getAll`, { cache: "no-store" }),
-        fetchWithAuth<TaskLibraryOption[]>(`/task/${type}/get`, { cache: "no-store" }),
+        fetchWithAuth<TaskLibraryOption[]>(`/task/${type}/getAll`, {
+          cache: "no-store",
+        }),
+        fetchWithAuth<TaskLibraryOption[]>(`/task/${type}/get`, {
+          cache: "no-store",
+        }),
       ]);
       const ownedIds = new Set(owned.map((task) => task.id));
-      return available.map(({ id, title, instructions, skillLevel, scope }) => ({ id, title, instructions, skillLevel, scope, isOwned: ownedIds.has(id) }));
+      return available.map(
+        ({ id, title, instructions, skillLevel, scope }) => ({
+          id,
+          title,
+          instructions,
+          skillLevel,
+          scope,
+          isOwned: ownedIds.has(id),
+        }),
+      );
     }),
   );
   const options = results.map((result) =>
-    result.status === "fulfilled"
-      ? result.value
-      : [],
+    result.status === "fulfilled" ? result.value : [],
   );
   return {
     designTasks: options[0],
