@@ -21,3 +21,17 @@ data class TaskSubmissionResponse(
     val requiredScore: Double,
     val message: String? = null
 )
+
+// For SQL submissions the code is returned exactly as stored, i.e. every query wrapped
+// in <query></query> tags and concatenated. Splitting them is left to the caller.
+data class TaskSubmissionCodeResponse(
+    val id: UUID,
+    val taskId: UUID,
+    val taskType: TaskType,
+    val code: String,
+    val submittedById: UUID,
+    val passed: Boolean,
+    val achievedScore: Double,
+    val requiredScore: Double,
+    val message: String? = null
+)
