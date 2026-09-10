@@ -26,6 +26,7 @@ export async function createProgrammingTaskAction(payload: CreateProgrammingTask
     body: JSON.stringify(payload),
   });
   revalidatePath('/post-job');
+  revalidatePath('/manage-jobs');
   return result;
 }
 
@@ -35,6 +36,7 @@ export async function createSQLTaskAction(payload: CreateSQLTask): Promise<SQLTa
     body: JSON.stringify(payload),
   });
   revalidatePath('/post-job');
+  revalidatePath('/manage-jobs');
   return result;
 }
 
@@ -44,5 +46,6 @@ export async function createDesignTaskAction(payload: FormData): Promise<DesignT
     body: payload,
   });
   revalidatePath('/post-job');
+  revalidatePath('/manage-jobs');
   return result;
 }

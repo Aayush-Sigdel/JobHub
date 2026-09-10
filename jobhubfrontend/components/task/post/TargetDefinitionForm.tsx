@@ -56,20 +56,19 @@ export const TargetDefinitionForm = memo(
     };
 
     return (
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-2xs space-y-5">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <span className="text-xs font-mono font-bold text-foreground uppercase tracking-wider">
-            3. Target Goal Definition
-          </span>
+      <div className="bg-card border border-border rounded-xl p-5 sm:p-6 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
+          <h2 className="text-base font-semibold">Reference target</h2>
 
           {/* Mode Toggle Pills */}
           <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
             <button
               type="button"
               onClick={() => onModeChange("upload")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              aria-pressed={mode === "upload"}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                 mode === "upload"
-                  ? "bg-card text-foreground shadow-2xs"
+                  ? "bg-card text-foreground "
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -80,9 +79,10 @@ export const TargetDefinitionForm = memo(
             <button
               type="button"
               onClick={() => onModeChange("code")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              aria-pressed={mode === "code"}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                 mode === "code"
-                  ? "bg-card text-foreground shadow-2xs"
+                  ? "bg-card text-foreground "
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -107,23 +107,24 @@ export const TargetDefinitionForm = memo(
               className="hidden"
             />
 
-            <div
+            <button
+              type="button"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-3 transition-all cursor-pointer ${
+              className={`w-full border border-dashed rounded-lg p-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col items-center justify-center text-center gap-3 transition-all cursor-pointer ${
                 isDragging
-                  ? "border-tomato-500 bg-muted/40"
+                  ? "border-foreground/40 bg-muted/40"
                   : "border-border hover:border-foreground/30 bg-card hover:bg-muted"
               }`}
             >
-              <div className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground shadow-2xs">
-                <Upload className="w-6 h-6 text-tomato-500" />
+              <div className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground ">
+                <Upload className="w-6 h-6 text-foreground" />
               </div>
 
               <div className="space-y-1">
-                <span className="text-sm font-bold text-foreground block">
+                <span className="text-sm font-medium text-foreground block">
                   Click or drag target image here
                 </span>
                 <span className="text-xs text-muted-foreground block">
@@ -131,16 +132,16 @@ export const TargetDefinitionForm = memo(
                   <strong>400 × 300 px</strong> resolution.
                 </span>
               </div>
-            </div>
+            </button>
 
             {selectedFile && (
               <div className="p-4 rounded-xl border border-border bg-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-tomato-500 shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-foreground shrink-0">
                     <ImageIcon className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-foreground block truncate max-w-[200px]">
+                    <span className="font-medium text-foreground block truncate max-w-[200px]">
                       {selectedFile.name}
                     </span>
                     <span className="text-[11px] font-mono text-muted-foreground">
@@ -152,7 +153,7 @@ export const TargetDefinitionForm = memo(
                 <div className="flex items-center gap-2">
                   {imageDimensions && (
                     <span
-                      className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md border ${
+                      className={`font-mono text-xs font-medium px-2.5 py-1 rounded-md border ${
                         imageDimensions.width === 400 &&
                         imageDimensions.height === 300
                           ? "bg-card text-emerald-600 dark:text-emerald-400 border-emerald-500/40"
@@ -169,7 +170,7 @@ export const TargetDefinitionForm = memo(
                       <button
                         type="button"
                         onClick={onAutoFitImage}
-                        className="px-3 py-1 rounded-md bg-tomato-500 hover:bg-tomato-600 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+                        className="px-3 py-1 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs transition-all shadow-xs cursor-pointer"
                       >
                         Auto-Fit to 400×300
                       </button>
@@ -182,15 +183,18 @@ export const TargetDefinitionForm = memo(
           /* Mode 2: Write HTML/CSS & Auto-generate 400x300 PNG */
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <label className="font-semibold text-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                <label
+                  htmlFor="target-markup"
+                  className="font-medium text-foreground"
+                >
                   Reference HTML &amp; CSS Markup
                 </label>
                 <button
                   type="button"
                   onClick={onGeneratePngFromCode}
-                  disabled={isGeneratingPng}
-                  className="px-3 py-1 rounded-lg bg-tomato-500 hover:bg-tomato-600 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  disabled={isGeneratingPng || !targetHtmlCode.trim()}
+                  className="px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isGeneratingPng ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -202,10 +206,12 @@ export const TargetDefinitionForm = memo(
               </div>
 
               <textarea
+                id="target-markup"
+                spellCheck={false}
                 value={targetHtmlCode}
                 onChange={(e) => onTargetHtmlCodeChange(e.target.value)}
                 rows={10}
-                className="w-full p-4 rounded-xl border border-border bg-background text-foreground font-mono text-xs focus:outline-none focus:ring-2 focus:ring-tomato-500/20 focus:border-tomato-500 transition-all leading-relaxed resize-y"
+                className="w-full p-4 rounded-xl border border-border bg-background text-foreground font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-foreground/40 transition-all leading-relaxed resize-y"
                 placeholder="<div>...</div><style>...</style>"
               />
             </div>
@@ -213,7 +219,7 @@ export const TargetDefinitionForm = memo(
         )}
       </div>
     );
-  }
+  },
 );
 
 TargetDefinitionForm.displayName = "TargetDefinitionForm";

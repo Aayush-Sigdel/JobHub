@@ -2,6 +2,15 @@ export type SkillLevel = "BEGINNER" | "INTERMEDIATE" | "EXPERT";
 export type TaskType = "DESIGN" | "SQL" | "PROGRAMMING";
 export type Language = "JAVA" | "PYTHON";
 export type TaskScope = "PUBLIC" | "PRIVATE";
+
+export interface TaskLibraryOption {
+  id: string;
+  title: string;
+  instructions?: string;
+  skillLevel?: SkillLevel;
+  scope?: TaskScope;
+  isOwned?: boolean;
+}
 export type DataType = "INT" | "INT_ARRAY" | "STRING" | "STRING_ARRAY" | "DOUBLE" | "BOOLEAN";
 
 export interface Parameter {

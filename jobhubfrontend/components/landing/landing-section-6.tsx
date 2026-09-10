@@ -1,101 +1,92 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { IconArrowRight } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { LandingReveal } from "./landing-motion";
+import { landing } from "./landing-styles";
 
-const LandingSectionSix = () => {
+export default function LandingSectionSix() {
   return (
-    <footer className="w-full flex flex-col">
-      {/* CTA Section with Image */}
-      <section className="py-24 md:py-32 px-6 flex justify-center bg-muted border-b-2 border-border overflow-hidden">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20 w-full">
-          {/* Text Content */}
-          <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left z-10">
-            <motion.h2
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 text-foreground uppercase leading-[1.05]"
-            >
-              Ready to revolutionize hiring?
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-xl font-bold text-muted-foreground max-w-xl mb-12 leading-relaxed"
-            >
-              Join the platform that puts skills first. Transparent, unbiased,
-              and powered by intelligent data.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Button className="bg-foreground text-tomato-500 hover:bg-background hover:text-foreground border-2 border-border font-black uppercase tracking-widest text-lg px-12 py-8 rounded-none transition-all">
-                Get Started Now
+    <footer>
+      <section
+        className={landing.section + " border-y border-border bg-muted/50"}
+      >
+        <div
+          className={
+            landing.container +
+            " grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16"
+          }
+        >
+          <LandingReveal className="text-center lg:text-left">
+            <h2 className={landing.heading}>
+              Ready for your
+              <br className="hidden sm:block" /> next chapter?
+            </h2>
+            <p className={landing.body + " mx-auto mt-6 max-w-lg lg:mx-0"}>
+              Bring your skills. Find your people. Take the next step toward
+              work that fits you.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-5 lg:justify-start">
+              <Button asChild className={landing.button}>
+                <Link href="/sign-up">
+                  Join JobHub
+                  <IconArrowRight className="size-4" />
+                </Link>
               </Button>
-            </motion.div>
-          </div>
-
-          <div className="flex w-1/2 justify-center lg:justify-end">
-            <Image
-              src="/landing-illustrate-two.png"
-              alt="JobHub Platform Preview"
-              width={1000}
-              height={800}
-              className="object-cover z-10 transition-transform duration-500 group-hover:scale-105"
-            />
-          </div>
+              <Link href="/manage-jobs" className={landing.link}>
+                I’m here to hire
+                <IconArrowRight className="size-4" />
+              </Link>
+            </div>
+          </LandingReveal>
+          <Image
+            src="/landing-illustrate-two.png"
+            alt="People sharing ideas and learning together"
+            width={613}
+            height={350}
+            sizes="(max-width: 1024px) 90vw, 500px"
+            className="mx-auto h-auto w-full max-w-lg object-contain"
+          />
         </div>
       </section>
-
-      {/* Footer Details */}
-      <section className="w-full bg-background py-16 px-6 lg:px-24 flex flex-col items-center">
-        <div className="text-4xl font-black text-foreground mb-10 tracking-tighter uppercase">
+      <div
+        className={
+          landing.container +
+          " flex flex-col items-center py-12 text-center sm:py-16"
+        }
+      >
+        <Link
+          href="/"
+          aria-label="JobHub home"
+          className="rounded-md text-4xl font-extrabold tracking-tight focus-visible:outline-2 focus-visible:outline-foreground"
+        >
           JobHub.
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-x-10 gap-y-6 mb-12 font-bold text-sm uppercase tracking-widest text-muted-foreground">
-          <Link
-            href="#"
-            className="hover:text-foreground transition-colors hover:underline underline-offset-4"
-          >
+        </Link>
+        <nav
+          aria-label="Footer navigation"
+          className="mt-6 flex flex-wrap justify-center gap-x-8 gap-y-2"
+        >
+          <Link href="/find-job" className={landing.link}>
             Candidates
           </Link>
-          <Link
-            href="#"
-            className="hover:text-foreground transition-colors hover:underline underline-offset-4"
-          >
+          <Link href="/manage-jobs" className={landing.link}>
             Employers
           </Link>
-          <Link
-            href="#"
-            className="hover:text-foreground transition-colors hover:underline underline-offset-4"
-          >
-            AI Specifications
+          <Link href="#how-it-works" className={landing.link}>
+            How it works
           </Link>
-          <Link
-            href="#"
-            className="hover:text-foreground transition-colors hover:underline underline-offset-4"
-          >
-            Privacy Policy
+          <Link href="/privacy-policy" className={landing.link}>
+            Privacy policy
           </Link>
-        </div>
-
-        <p className="text-gray-400 text-xs font-bold text-center uppercase tracking-widest max-w-2xl leading-relaxed">
+          <Link href="/terms-of-service" className={landing.link}>
+            Terms of service
+          </Link>
+        </nav>
+        <p className="mt-8 max-w-2xl text-xs leading-6 text-muted-foreground">
           © {new Date().getFullYear()} JobHub. A Project by Aayush Sigdel,
           Sugham Kharel, and Kamal Subedi. All rights reserved.
         </p>
-      </section>
+      </div>
     </footer>
   );
-};
-
-export default LandingSectionSix;
+}

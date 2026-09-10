@@ -29,7 +29,9 @@ export function clampSimilarity(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
-export function getSimilaritySources(evidence: SimilarityEvidence): SimilaritySource[] {
+export function getSimilaritySources(
+  evidence: SimilarityEvidence,
+): SimilaritySource[] {
   return similaritySources.flatMap(({ key, label }) => {
     const value = evidence[key];
     return typeof value === "number" && Number.isFinite(value)
@@ -38,7 +40,24 @@ export function getSimilaritySources(evidence: SimilarityEvidence): SimilaritySo
   });
 }
 
-export function calculateSupportedOverallSimilarity(evidence: SimilarityEvidence): number | null {
+export function getSimilarityContributions(evidence: SimilarityEvidence) {
+  const available = similaritySources.flatMap(({ key, weight }) => {
+    const value = evidence[key];
+    return typeof value === "number" && Number.isFinite(value)
+      ? [{ key, value: clampSimilarity(value), weight }]
+      : [];
+  });
+  const totalWeight = available.reduce((sum, source) => sum + source.weight, 0);
+  return available.map((source) => ({
+    ...source,
+    normalizedWeight: source.weight / totalWeight,
+    points: (source.value * source.weight * 100) / totalWeight,
+  }));
+}
+
+export function calculateSupportedOverallSimilarity(
+  evidence: SimilarityEvidence,
+): number | null {
   const availableSources = similaritySources.flatMap(({ key, weight }) => {
     const value = evidence[key];
     return typeof value === "number" && Number.isFinite(value)
@@ -46,7 +65,10 @@ export function calculateSupportedOverallSimilarity(evidence: SimilarityEvidence
       : [];
   });
 
-  const totalWeight = availableSources.reduce((total, source) => total + source.weight, 0);
+  const totalWeight = availableSources.reduce(
+    (total, source) => total + source.weight,
+    0,
+  );
   if (totalWeight === 0) return null;
 
   const weightedValue = availableSources.reduce(

@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Briefcase,
   Users,
-  BarChart,
   Settings,
   PlusCircle,
 } from "lucide-react";
@@ -32,16 +31,6 @@ const navItems = [
     title: "Manage Jobs",
     href: "/manage-jobs",
     icon: Briefcase,
-  },
-  {
-    title: "My Candidates",
-    href: "/candidates",
-    icon: Users,
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    icon: BarChart,
   },
   {
     title: "Settings",

@@ -1,5 +1,7 @@
 "use client";
 
+import JobMarkdown from "@/components/jobs/JobMarkdown";
+
 import React, { useRef, useState, memo } from "react";
 import {
   Star,
@@ -298,7 +300,7 @@ export const CodeOutputCanvas = memo(
 
             {showChallengeDetails && (
               <div className="p-3.5 border-t border-border bg-card text-xs text-muted-foreground space-y-2 leading-relaxed">
-                <p>• {task.instructions}</p>
+                <JobMarkdown>{task.instructions}</JobMarkdown>
                 <p>
                   • Use <strong>Test Code</strong> to evaluate pixel accuracy
                   against the target ({task.viewport.width} × {task.viewport.height} px).
