@@ -12,7 +12,6 @@ class JavaSolutionTemplateGenerator : SolutionTemplateGenerator {
     override val language = Language.JAVA
 
     override val className = "Solution"
-    override val fileName = "Solution.java"
 
     override fun generate(task: ProgrammingTask): String {
         val signature = task.parameters.joinToString(", ") { "${javaType(it.type)} ${it.name}" }

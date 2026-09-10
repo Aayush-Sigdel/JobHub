@@ -10,6 +10,5 @@ interface SolutionTemplateGenerator {
 
     val language: Language
     val className: String
-    val fileName: String
     fun generate(task: ProgrammingTask): String
 }

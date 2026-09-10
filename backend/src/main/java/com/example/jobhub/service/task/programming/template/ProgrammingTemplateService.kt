@@ -39,11 +39,6 @@ class ProgrammingTemplateService(
     private fun toDto(task: ProgrammingTask, generator: SolutionTemplateGenerator) = ProgrammingTemplateDto(
         taskId = task.id,
         language = generator.language,
-        fileName = generator.fileName,
-        className = generator.className,
-        methodName = task.methodName,
-        parameters = task.parameters,
-        returnType = task.returnType,
         code = generator.generate(task)
     )
 
