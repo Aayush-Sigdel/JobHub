@@ -15,9 +15,6 @@ export default function ProgramArenaHeader({
   isSubmitting: boolean;
   isSubmitted: boolean;
   jobId?: string | null;
-  tabLockEnabled?: boolean;
-  tabSwitchCount?: number;
-  tabLockWarningLimit?: number;
 }) {
   return (
     <TaskHeader

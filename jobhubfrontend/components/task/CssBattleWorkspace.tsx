@@ -5,6 +5,7 @@ import { ChevronsLeftRight, CircleHelp } from "lucide-react";
 import CodeEditor from "@/components/task/CodeEditor";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { TaskResult } from "@/components/task/TaskResult";
+import { useAssessmentSession } from "@/components/task/AssessmentSession";
 import type { DesignTaskDto, TaskSubmissionResponse } from "@/types/api/tasks";
 
 // Keep rendering at the evaluator's 400 × 300 viewport; only scale the display.
@@ -50,10 +51,13 @@ export function CssBattleWorkspace({
   const [difference, setDifference] = useState(false);
   const [position, setPosition] = useState(50);
   const [opacity, setOpacity] = useState(100);
+  const { expanded } = useAssessmentSession();
   const targetSrc = `data:${task.imageContentType || "image/png"};base64,${task.imageBytes}`;
 
   return (
-    <div className="mx-auto flex max-w-[1800px] flex-col overflow-hidden rounded-xl border bg-background text-foreground xl:h-[calc(100dvh-112px)] xl:min-h-[650px]">
+    <div className={expanded
+      ? "flex min-h-0 w-full flex-1 flex-col bg-background text-foreground xl:overflow-hidden"
+      : "mx-auto flex max-w-[1800px] flex-col overflow-hidden rounded-xl border bg-background text-foreground xl:h-[calc(100dvh-112px)] xl:min-h-[650px]"}>
       {header}
       <main className="grid min-h-0 flex-1 md:grid-cols-2 xl:grid-cols-[minmax(320px,1.1fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <section aria-label="HTML and CSS editor" className="flex h-[540px] min-w-0 flex-col overflow-hidden border-b md:col-span-2 xl:col-span-1 xl:h-auto xl:min-h-0 xl:border-b-0 xl:border-r">

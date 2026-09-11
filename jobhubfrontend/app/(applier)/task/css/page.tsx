@@ -15,7 +15,7 @@ import {
   saveJobAssessmentSubmission,
 } from "@/lib/job-assessment-submissions";
 import { getJobApplicationAvailability } from "@/lib/job-application-availability";
-import { useTabLock } from "@/lib/hooks/use-tab-lock";
+import { AssessmentSession } from "@/components/task/AssessmentSession";
 import { toast } from "sonner";
 import type {
   DesignTaskDto,
@@ -52,11 +52,6 @@ function CSSAssessment() {
   const [tabLock, setTabLock] = useState(false);
   const [warningLimit, setWarningLimit] = useState(0);
   const [requiredTaskTypes, setRequiredTaskTypes] = useState<TaskType[]>([]);
-  const { tabSwitchCount } = useTabLock({
-    jobId: jobId || "",
-    enabled: Boolean(jobId && tabLock),
-    warningLimit,
-  });
 
   useEffect(() => {
     const timer = window.setTimeout(() => setPreview(code), 150);
@@ -208,30 +203,38 @@ function CSSAssessment() {
     );
 
   return (
-    <CssBattleWorkspace
-      key={task.id}
-      header={
-        <TaskHeader
-          title={task.title}
-          kind="HTML & CSS"
-          jobId={jobId}
-          onSubmit={submit}
-          isSubmitting={isSubmitting}
-          isSubmitted={Boolean(result?.id)}
-          tabLockEnabled={tabLock}
-          tabSwitchCount={tabSwitchCount}
-          tabLockWarningLimit={warningLimit}
-        />
-      }
-      task={task}
-      code={code}
-      preview={preview}
-      onCodeChange={setCode}
-      isSubmitting={isSubmitting}
-      result={result}
-      error={error}
+    <AssessmentSession
+      key={`${jobId}:${task.id}`}
       jobId={jobId}
-    />
+      taskId={task.id}
+      title={task.title}
+      kind="HTML & CSS"
+      monitored={tabLock}
+      warningLimit={warningLimit}
+      completed={Boolean(result?.id)}
+    >
+      <CssBattleWorkspace
+        key={task.id}
+        header={
+          <TaskHeader
+            title={task.title}
+            kind="HTML & CSS"
+            jobId={jobId}
+            onSubmit={submit}
+            isSubmitting={isSubmitting}
+            isSubmitted={Boolean(result?.id)}
+          />
+        }
+        task={task}
+        code={code}
+        preview={preview}
+        onCodeChange={setCode}
+        isSubmitting={isSubmitting}
+        result={result}
+        error={error}
+        jobId={jobId}
+      />
+    </AssessmentSession>
   );
 }
 

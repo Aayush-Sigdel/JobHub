@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAssessmentSession } from "@/components/task/AssessmentSession";
 import {
   Dialog,
   DialogContent,
@@ -27,8 +28,11 @@ export function TaskWorkspace({
   sidebar: ReactNode;
   children: ReactNode;
 }) {
+  const { expanded } = useAssessmentSession();
   return (
-    <div className="mx-auto flex min-h-[720px] max-w-[1600px] flex-col overflow-hidden rounded-xl border bg-background text-foreground lg:h-[calc(100dvh-112px)] lg:min-h-[600px]">
+    <div className={expanded
+      ? "flex min-h-0 w-full flex-1 flex-col bg-background text-foreground lg:overflow-hidden"
+      : "mx-auto flex min-h-[720px] max-w-[1600px] flex-col overflow-hidden rounded-xl border bg-background text-foreground lg:h-[calc(100dvh-112px)] lg:min-h-[600px]"}>
       {header}
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(320px,38%)_minmax(0,1fr)]">
         <aside className="min-w-0 overflow-y-auto border-b lg:border-r lg:border-b-0">
@@ -50,9 +54,6 @@ export function TaskHeader({
   isSubmitting,
   isSubmitted,
   disabled,
-  tabLockEnabled,
-  tabSwitchCount = 0,
-  tabLockWarningLimit = 0,
   children,
 }: {
   title: string;
@@ -62,12 +63,10 @@ export function TaskHeader({
   isSubmitting: boolean;
   isSubmitted: boolean;
   disabled?: boolean;
-  tabLockEnabled?: boolean;
-  tabSwitchCount?: number;
-  tabLockWarningLimit?: number;
   children?: ReactNode;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { monitoring, tabSwitchCount, warningLimit } = useAssessmentSession();
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-5">
       <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-64">
@@ -97,13 +96,14 @@ export function TaskHeader({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        {tabLockEnabled && (
+        {monitoring && (
           <span
-            className={`inline-flex items-center gap-1.5 text-xs ${tabSwitchCount >= tabLockWarningLimit ? "text-destructive" : "text-muted-foreground"}`}
-            title="Tab switches during this assessment"
+            className={`inline-flex items-center gap-1.5 text-xs ${tabSwitchCount > 0 && tabSwitchCount >= warningLimit ? "text-destructive" : "text-muted-foreground"}`}
+            title="Tab and app switches since starting this assignment in this browser tab"
+            role="status"
           >
             <ShieldCheck className="size-3.5" /> Monitored · {tabSwitchCount}/
-            {tabLockWarningLimit}
+            {warningLimit}
           </span>
         )}
         {children}

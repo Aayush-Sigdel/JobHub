@@ -10,9 +10,6 @@ export default function SQLArenaHeader({
   isSubmitting: boolean;
   isSubmitted: boolean;
   jobId?: string | null;
-  tabLockEnabled?: boolean;
-  tabSwitchCount?: number;
-  tabLockWarningLimit?: number;
 }) {
   return (
     <TaskHeader
