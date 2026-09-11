@@ -30,9 +30,12 @@ export default async function SQLArenaPage({
   // 1. Fetch exact job attached SQL task if jobId is provided
   if (jobId) {
     try {
-      const detail = await fetchWithAuth<JobPostDetailResponse>(`/jobs/${jobId}`, {
-        cache: "no-store",
-      });
+      const detail = await fetchWithAuth<JobPostDetailResponse>(
+        `/jobs/${jobId}`,
+        {
+          cache: "no-store",
+        },
+      );
       const availability = getJobApplicationAvailability(detail.job);
       applicationClosedReason = availability.reason;
       if (detail?.sqlTask) {
@@ -65,12 +68,21 @@ export default async function SQLArenaPage({
 
   const selectedTaskId = jobTask?.id || taskId;
 
-  if (jobId && applicationClosedReason) {
+  if (
+    jobId &&
+    (applicationClosedReason || !jobTask || (taskId && taskId !== jobTask.id))
+  ) {
     return (
       <div className="mx-auto mt-16 max-w-md rounded-lg border bg-card p-6 text-center">
         <h1 className="text-lg font-semibold">Assessment unavailable</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{applicationClosedReason}</p>
-        <Link href={`/find-job/${jobId}`} className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+        <p className="mt-2 text-sm text-muted-foreground">
+          {applicationClosedReason ||
+            "The SQL assessment assigned to this job could not be loaded. Return to the job and try again."}
+        </p>
+        <Link
+          href={`/find-job/${jobId}`}
+          className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
           Return to job
         </Link>
       </div>

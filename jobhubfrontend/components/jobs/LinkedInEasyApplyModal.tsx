@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
+import { useState, useEffect, useTransition, useCallback, useId } from "react";
 import Link from "next/link";
 import {
   Dialog,
+  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -12,33 +13,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
+  ArrowRight,
+  Check,
   CheckCircle2,
   CircleAlert,
   Code2,
   Database,
-  PenTool,
   ExternalLink,
-  ShieldCheck,
-  Mail,
-  Phone,
-  MapPin,
-  ArrowRight,
-  ArrowLeft,
   Loader2,
-  Send,
+  PenTool,
+  ShieldCheck,
 } from "lucide-react";
 import { applyJobAction } from "@/lib/actions/jobs";
 import { getJobApplicationAvailability } from "@/lib/job-application-availability";
-import { loadJobAssessmentSubmission, saveJobApplicationDraft } from "@/lib/job-assessment-submissions";
-import type {
-  JobPostDetailResponse,
-} from "@/types/api/jobs";
+import {
+  loadJobAssessmentSubmission,
+  saveJobApplicationDraft,
+} from "@/lib/job-assessment-submissions";
+import type { JobPostDetailResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
 import type { TaskSubmissionResponse } from "@/types/api/tasks";
-import { toast } from "sonner";
 
 interface LinkedInEasyApplyModalProps {
   detail: JobPostDetailResponse;
@@ -50,33 +45,51 @@ export function LinkedInEasyApplyModal({
   profile,
 }: LinkedInEasyApplyModalProps) {
   const { job } = detail;
+  const noteId = useId();
   const [isOpen, setIsOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [coverNote, setCoverNote] = useState<string>("");
+  const [coverNote, setCoverNote] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  // Track recorded task submissions from localStorage/state
   const [submissions, setSubmissions] = useState<{
-    design?: TaskSubmissionResponse | null;
-    programming?: TaskSubmissionResponse | null;
-    sql?: TaskSubmissionResponse | null;
+    design?: TaskSubmissionResponse;
+    programming?: TaskSubmissionResponse;
+    sql?: TaskSubmissionResponse;
   }>({});
 
   const loadSubmissions = useCallback(() => {
     setSubmissions({
-      design: loadJobAssessmentSubmission(job.id, "DESIGN", detail.designTask?.id),
-      programming: loadJobAssessmentSubmission(job.id, "PROGRAMMING", detail.programmingTask?.id),
-      sql: loadJobAssessmentSubmission(job.id, "SQL", detail.sqlTask?.id),
+      design: loadJobAssessmentSubmission(
+        job.id,
+        "DESIGN",
+        detail.designTask?.id ?? job.designTaskId,
+      ),
+      programming: loadJobAssessmentSubmission(
+        job.id,
+        "PROGRAMMING",
+        detail.programmingTask?.id ?? job.programmingTaskId,
+      ),
+      sql: loadJobAssessmentSubmission(
+        job.id,
+        "SQL",
+        detail.sqlTask?.id ?? job.sqlTaskId,
+      ),
     });
-  }, [detail.designTask?.id, detail.programmingTask?.id, detail.sqlTask?.id, job.id]);
+  }, [
+    detail.designTask?.id,
+    detail.programmingTask?.id,
+    detail.sqlTask?.id,
+    job.designTaskId,
+    job.programmingTaskId,
+    job.sqlTaskId,
+    job.id,
+  ]);
 
   useEffect(() => {
     const refreshTimer = window.setTimeout(loadSubmissions, 0);
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") loadSubmissions();
     };
-
     window.addEventListener("storage", loadSubmissions);
     window.addEventListener("job-assessment-submission", loadSubmissions);
     window.addEventListener("focus", loadSubmissions);
@@ -92,108 +105,97 @@ export function LinkedInEasyApplyModal({
     };
   }, [loadSubmissions]);
 
-  const hasTasks =
-    job.hasDesignTask || job.hasProgrammingTask || job.hasSqlTask;
-
-  // Check required completion status
-  const isDesignCompleted = !job.hasDesignTask || Boolean(submissions.design?.id);
-  const isProgrammingCompleted =
-    !job.hasProgrammingTask || Boolean(submissions.programming?.id);
-  const isSqlCompleted = !job.hasSqlTask || Boolean(submissions.sql?.id);
-
-  const allTasksCompleted =
-    isDesignCompleted && isProgrammingCompleted && isSqlCompleted;
-
-  const totalRequiredTasksCount = [
-    job.hasDesignTask,
-    job.hasProgrammingTask,
-    job.hasSqlTask,
-  ].filter(Boolean).length;
-
-  const completedTasksCount = [
-    job.hasDesignTask && submissions.design?.id,
-    job.hasProgrammingTask && submissions.programming?.id,
-    job.hasSqlTask && submissions.sql?.id,
-  ].filter(Boolean).length;
-
-  // Task IDE links
-  const cssTaskUrl = `/task/css?jobId=${job.id}${job.designTaskId ? `&taskId=${job.designTaskId}` : ""}`;
-  const programTaskUrl = `/task/program?jobId=${job.id}${job.programmingTaskId ? `&taskId=${job.programmingTaskId}` : ""}`;
-  const sqlTaskUrl = `/task/sql?jobId=${job.id}${job.sqlTaskId ? `&taskId=${job.sqlTaskId}` : ""}`;
-
-  const userName = profile?.name || "Candidate";
-  const userEmail = profile?.email || "";
-  const userTitle = profile?.title || "Applicant";
-  const userPhone = profile?.contactNumbers?.[0] || "";
-  const userLocation = profile?.location || "";
-  const userImage = profile?.imageUrl;
-
-  const totalSteps = hasTasks ? 4 : 3;
-
-  const handleNextStep = () => {
-    const availability = getJobApplicationAvailability(job);
-    if (!availability.canApply) {
-      toast.error(availability.reason);
-      setIsOpen(false);
-      return;
-    }
-
-    if (currentStep === 2 && hasTasks && !allTasksCompleted) {
-      toast.error("Please complete all required assessments before proceeding.");
-      return;
-    }
-    setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-  };
-
-  const handlePrevStep = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
+  const assessmentUrl = (path: string, taskId?: string) =>
+    `/task/${path}?jobId=${job.id}${taskId ? `&taskId=${taskId}` : ""}`;
+  const assessments = [
+    {
+      type: "design",
+      required: job.hasDesignTask,
+      title: detail.designTask?.title || "Design assessment",
+      icon: PenTool,
+      submission: submissions.design,
+      href: assessmentUrl("css", detail.designTask?.id ?? job.designTaskId),
+    },
+    {
+      type: "programming",
+      required: job.hasProgrammingTask,
+      title: detail.programmingTask?.title || "Programming assessment",
+      icon: Code2,
+      submission: submissions.programming,
+      href: assessmentUrl(
+        "program",
+        detail.programmingTask?.id ?? job.programmingTaskId,
+      ),
+    },
+    {
+      type: "sql",
+      required: job.hasSqlTask,
+      title: detail.sqlTask?.title || "SQL assessment",
+      icon: Database,
+      submission: submissions.sql,
+      href: assessmentUrl("sql", detail.sqlTask?.id ?? job.sqlTaskId),
+    },
+  ].filter((assessment) => assessment.required);
+  const remainingAssessments = assessments.filter(
+    (assessment) => !assessment.submission?.id,
+  );
+  const allTasksCompleted = remainingAssessments.length === 0;
+  const completedTasksCount = assessments.length - remainingAssessments.length;
+  const hasApplied = detail.hasApplied || isSuccess;
+  const availability = getJobApplicationAvailability(job);
+  const userName = profile?.name || "Your profile";
 
   const handleSubmitApplication = () => {
-    const availability = getJobApplicationAvailability(job);
-    if (!availability.canApply) {
-      toast.error(availability.reason);
-      setIsOpen(false);
+    if (isPending || hasApplied) return;
+    const currentAvailability = getJobApplicationAvailability(job);
+    if (!currentAvailability.canApply) {
+      setSubmitError(
+        currentAvailability.reason || "Applications for this role are closed.",
+      );
       return;
     }
-
-    if (hasTasks && !allTasksCompleted) {
-      toast.error("Please complete all required assessments in the IDE before applying.");
+    if (!allTasksCompleted) {
+      setSubmitError("Complete the required assessments before submitting.");
       return;
     }
-
+    setSubmitError(null);
     startTransition(async () => {
-      const result = await applyJobAction(job.id, {
-        coverNote,
-        designSubmissionId: submissions.design?.id,
-        programmingSubmissionId: submissions.programming?.id,
-        sqlSubmissionId: submissions.sql?.id,
-      });
-
-      if (result.success) {
-        setIsSuccess(true);
-        toast.success(`Application submitted to ${job.companyName}!`);
-      } else {
-        toast.error(result.error || "Unable to submit application.");
+      try {
+        const result = await applyJobAction(job.id, {
+          coverNote: coverNote.trim() || undefined,
+          designSubmissionId: submissions.design?.id,
+          programmingSubmissionId: submissions.programming?.id,
+          sqlSubmissionId: submissions.sql?.id,
+        });
+        if (result.success) {
+          setIsSuccess(true);
+        } else {
+          setSubmitError(
+            "Your application couldn't be sent. Please try again. Your note is still here.",
+          );
+        }
+      } catch {
+        setSubmitError(
+          "Your application couldn't be sent. Please try again. Your note is still here.",
+        );
       }
     });
   };
 
-  if (detail.hasApplied) {
+  if (hasApplied && !isOpen) {
     return (
       <Button
         disabled
         size="lg"
-        className="h-11 w-full gap-2 rounded-lg border-border bg-muted text-sm font-medium text-foreground disabled:opacity-100"
+        className="h-11 w-full gap-2 rounded-lg bg-muted text-sm font-medium text-foreground disabled:opacity-100"
       >
-        <CheckCircle2 className="size-4.5" />
-        <span>Application Submitted</span>
+        <CheckCircle2 className="size-4" />
+        Application submitted
       </Button>
     );
   }
 
-  const availability = getJobApplicationAvailability(job);
-  if (!availability.canApply) {
+  if (!availability.canApply && !isOpen) {
     return (
       <div className="space-y-2">
         <Button
@@ -201,486 +203,306 @@ export function LinkedInEasyApplyModal({
           size="lg"
           className="h-11 w-full gap-2 rounded-lg bg-muted text-sm font-medium text-muted-foreground disabled:opacity-100"
         >
-          <CircleAlert className="size-4.5" />
-          <span>Applications Closed</span>
+          <CircleAlert className="size-4" />
+          Applications closed
         </Button>
-        <p className="text-center text-xs text-muted-foreground">{availability.reason}</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {availability.reason}
+        </p>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Primary Easy Apply CTA button */}
-      <Button
-        size="lg"
-        onClick={() => {
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (isPending) return;
+        if (open) {
           loadSubmissions();
-          setIsOpen(true);
-        }}
-        className="h-11 w-full gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
-      >
-        <span>
-          {hasTasks && completedTasksCount > 0 ? "Continue application" : "Apply for this role"}
-        </span>
-        <ArrowRight className="size-4" />
-      </Button>
-
-      {/* LinkedIn Style Easy Apply Dialog */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-xl p-0 overflow-hidden rounded-lg border-border bg-background shadow-lg">
-          {isSuccess ? (
-            /* Success State */
-            <div className="py-12 px-8 text-center space-y-4">
-              <div className="h-16 w-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
-                <CheckCircle2 className="w-10 h-10" />
-              </div>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">
-                Application Submitted!
-              </h2>
-              <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
-                Your profile, attached assessment scores, and application for{" "}
-                <strong className="text-foreground">{job.title}</strong> have been sent to{" "}
-                <strong className="text-foreground">{job.companyName}</strong>.
-              </p>
-
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-full sm:w-auto rounded-xl font-bold text-xs h-10"
-                >
-                  <Link href="/job-tracker">View Application in Tracker</Link>
-                </Button>
-                <Button
-                  onClick={() => setIsOpen(false)}
-                  className="w-full sm:w-auto rounded-xl font-bold text-xs h-10"
-                >
-                  Done
-                </Button>
-              </div>
-            </div>
+          setSubmitError(null);
+        }
+        setIsOpen(open);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          size="lg"
+          className="h-11 w-full gap-2 rounded-lg text-sm font-medium"
+        >
+          {hasApplied
+            ? "Application submitted"
+            : completedTasksCount > 0
+              ? "Continue application"
+              : "Apply for this role"}
+          {hasApplied ? (
+            <CheckCircle2 className="size-4" />
           ) : (
-            /* Multi-Step Flow */
-            <div className="flex flex-col max-h-[85vh]">
-              {/* Header */}
-              <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/70 text-left">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Easy Apply
-                    </span>
-                    <DialogTitle className="text-lg font-bold text-foreground">
-                      {job.title}
-                    </DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                      {job.companyName} • {job.location || "Remote"}
-                    </DialogDescription>
-                  </div>
+            <ArrowRight className="size-4" />
+          )}
+        </Button>
+      </DialogTrigger>
 
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-muted-foreground">
-                      Step {currentStep} of {totalSteps}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="mt-3">
-                  <Progress
-                    value={(currentStep / totalSteps) * 100}
-                    className="h-1.5 bg-muted rounded-full"
-                  />
-                </div>
-              </DialogHeader>
-
-              {/* Step Contents */}
-              <div className="p-6 overflow-y-auto space-y-6 flex-1">
-                {/* STEP 1: Contact & Profile Info */}
-                {currentStep === 1 && (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">
-                        Contact Information
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Recruiters will use these details to contact you regarding your application.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-border bg-muted/40">
-                      <Avatar className="h-14 w-14 rounded-xl border border-border">
-                        <AvatarImage src={userImage} alt={userName} className="object-cover" />
-                        <AvatarFallback className="font-bold text-primary bg-primary/10 rounded-xl">
-                          {userName.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-foreground truncate">
-                          {userName}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">{userTitle}</p>
-                        {userLocation && (
-                          <p className="text-[11px] text-muted-foreground/80 flex items-center gap-1 mt-0.5">
-                            <MapPin className="h-3 w-3" />
-                            <span>{userLocation}</span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 pt-1">
-                      <div className="p-3 rounded-xl border border-border bg-card flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] font-semibold text-muted-foreground">
-                            Email Address
-                          </p>
-                          <p className="text-xs font-bold text-foreground truncate">
-                            {userEmail || "Not provided"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-3 rounded-xl border border-border bg-card flex items-center gap-3">
-                        <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] font-semibold text-muted-foreground">
-                            Phone Number
-                          </p>
-                          <p className="text-xs font-bold text-foreground truncate">
-                            {userPhone || "Not provided (optional)"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 text-right">
-                      <Link
-                        href="/candidate-profile"
-                        target="_blank"
-                        className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        <span>Update profile details</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  </div>
+      <DialogContent
+        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[560px]"
+        showCloseButton={!isPending}
+      >
+        {hasApplied ? (
+          <div className="px-6 py-10 sm:px-8">
+            <div className="mb-6 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Check className="size-6" />
+            </div>
+            <DialogHeader className="text-left">
+              <DialogTitle className="text-2xl font-semibold tracking-tight">
+                You’re in the running.
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-sm leading-relaxed">
+                Your application for{" "}
+                <span className="font-medium text-foreground">{job.title}</span>{" "}
+                at {job.companyName} has been submitted.
+              </DialogDescription>
+            </DialogHeader>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Follow its progress in your application tracker.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild className="rounded-lg">
+                <Link href="/job-tracker">
+                  Track application <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-lg"
+                onClick={() => setIsOpen(false)}
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form
+            className="flex min-h-0 flex-col"
+            aria-busy={isPending}
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSubmitApplication();
+            }}
+          >
+            <DialogHeader className="shrink-0 border-b px-6 pb-5 pt-6 text-left sm:px-8">
+              <p className="mb-1 text-xs text-muted-foreground">
+                Your application
+              </p>
+              <DialogTitle className="pr-6 text-2xl font-semibold leading-snug tracking-tight">
+                {job.title}
+              </DialogTitle>
+              <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <span>{job.companyName}</span>
+                {job.location && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>{job.location}</span>
+                  </>
                 )}
+              </DialogDescription>
+            </DialogHeader>
 
-                {/* STEP 2: Required Task Assessments (If applicable) */}
-                {currentStep === 2 && hasTasks && (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">
-                        Practical Skill Assessments
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        This role requires practical coding/design assessments. Open each specialized
-                        IDE to complete the challenge.
-                      </p>
-                    </div>
-
-                    {job.tabLock && (
-                      <div className="flex gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-muted-foreground">
-                        <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                        <span>
-                          Anti-cheat monitoring is active for this job. Warning limit:{" "}
-                          <strong className="text-foreground">{job.tabLockWarningLimit}</strong> tab
-                          switches.
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      {/* CSS / Design Task */}
-                      {job.hasDesignTask && (
-                        <div
-                          className={`p-4 rounded-2xl border transition-all ${
-                            submissions.design?.id
-                              ? "bg-emerald-500/5 border-emerald-500/30"
-                              : "bg-card border-border hover:border-pink-500/40"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400">
-                                <PenTool className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-bold text-xs text-foreground">
-                                  {detail.designTask?.title || "CSS & HTML UI Challenge"}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  Target Match: ≥ {detail.designTask?.minimumMatchingScore || 90}%
-                                </p>
-                              </div>
-                            </div>
-
-                            {submissions.design?.id ? (
-                              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                <span>Completed</span>
-                              </Badge>
-                            ) : (
-                              <Button
-                                asChild
-                                size="sm"
-                                className="h-8 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white gap-1"
-                              >
-                                <Link href={cssTaskUrl} onClick={() => saveJobApplicationDraft(job.id, coverNote)}>
-                                  <span>Launch IDE</span>
-                                  <ExternalLink className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Programming Task */}
-                      {job.hasProgrammingTask && (
-                        <div
-                          className={`p-4 rounded-2xl border transition-all ${
-                            submissions.programming?.id
-                              ? "bg-emerald-500/5 border-emerald-500/30"
-                              : "bg-card border-border hover:border-blue-500/40"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                                <Code2 className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-bold text-xs text-foreground">
-                                  {detail.programmingTask?.title || "Programming Assessment"}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  Algorithm & Unit Tests
-                                </p>
-                              </div>
-                            </div>
-
-                            {submissions.programming?.id ? (
-                              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                <span>Completed</span>
-                              </Badge>
-                            ) : (
-                              <Button
-                                asChild
-                                size="sm"
-                                className="h-8 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1"
-                              >
-                                <Link href={programTaskUrl} onClick={() => saveJobApplicationDraft(job.id, coverNote)}>
-                                  <span>Launch IDE</span>
-                                  <ExternalLink className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* SQL Task */}
-                      {job.hasSqlTask && (
-                        <div
-                          className={`p-4 rounded-2xl border transition-all ${
-                            submissions.sql?.id
-                              ? "bg-emerald-500/5 border-emerald-500/30"
-                              : "bg-card border-border hover:border-amber-500/40"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                                <Database className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-bold text-xs text-foreground">
-                                  {detail.sqlTask?.title || "SQL Database Challenge"}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  Database Queries
-                                </p>
-                              </div>
-                            </div>
-
-                            {submissions.sql?.id ? (
-                              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                <span>Completed</span>
-                              </Badge>
-                            ) : (
-                              <Button
-                                asChild
-                                size="sm"
-                                className="h-8 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white gap-1"
-                              >
-                                <Link href={sqlTaskUrl} onClick={() => saveJobApplicationDraft(job.id, coverNote)}>
-                                  <span>Launch IDE</span>
-                                  <ExternalLink className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {!allTasksCompleted && (
-                      <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
-                        <CircleAlert className="h-4 w-4 shrink-0" />
-                        <span>
-                          Complete the {totalRequiredTasksCount - completedTasksCount} remaining
-                          assessment(s) to unlock final submission.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* STEP 3: Cover Pitch */}
-                {((currentStep === 2 && !hasTasks) ||
-                  (currentStep === 3 && hasTasks)) && (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">
-                        Cover Pitch to Hiring Team
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Add an optional brief message highlighting your motivation and relevant experience.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Textarea
-                        value={coverNote}
-                        onChange={(e) => setCoverNote(e.target.value)}
-                        placeholder={`Hi ${job.companyName} team,\n\nI am excited to apply for the ${job.title} role. My experience in ${profile?.skills?.slice(0, 3).map((s) => s.name).join(", ") || "software engineering"} makes me a great fit...`}
-                        className="min-h-[160px] rounded-2xl p-4 text-sm resize-none bg-muted/30 border-border"
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        Keep it brief and focused on what makes you a standout candidate.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* FINAL STEP: Review & Submit */}
-                {currentStep === totalSteps && (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">
-                        Review Application
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Please review your application summary before sending to {job.companyName}.
-                      </p>
-                    </div>
-
-                    <div className="p-4 rounded-2xl border border-border bg-muted/30 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          Candidate
-                        </span>
-                        <span className="text-xs font-bold text-foreground">{userName}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          Email
-                        </span>
-                        <span className="text-xs font-bold text-foreground">{userEmail}</span>
-                      </div>
-                      {hasTasks && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground">
-                            Assessments
-                          </span>
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> All {totalRequiredTasksCount} Tasks Completed
-                          </span>
-                        </div>
-                      )}
-                      {coverNote && (
-                        <div className="pt-2 border-t border-border/60">
-                          <span className="text-xs font-semibold text-muted-foreground block mb-1">
-                            Cover Pitch
-                          </span>
-                          <p className="text-xs text-foreground/90 whitespace-pre-wrap line-clamp-3 bg-card p-2.5 rounded-xl border border-border">
-                            {coverNote}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      By selecting &quot;Submit Application&quot;, you agree to share your JobHub verified
-                      profile, skills, and assessment results with {job.companyName}.
+            <div className="min-h-0 overflow-y-auto overscroll-contain px-6 sm:px-8">
+              <section aria-label="Application profile" className="py-5">
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-10 shrink-0 rounded-full border">
+                    <AvatarImage
+                      src={profile?.imageUrl}
+                      alt=""
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-muted text-sm text-foreground">
+                      {userName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold break-words">
+                      {userName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {profile?.title || "JobHub applicant"}
                     </p>
                   </div>
-                )}
-              </div>
+                  <Link
+                    href="/candidate-profile"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md text-xs font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                    aria-label="Edit profile (opens in a new tab)"
+                  >
+                    Edit profile <ExternalLink className="size-3" />
+                  </Link>
+                </div>
+                <dl className="mt-5 space-y-2.5 text-sm">
+                  <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-4">
+                    <dt className="text-muted-foreground">Email</dt>
+                    <dd className="break-all">
+                      {profile?.email || (
+                        <span className="text-muted-foreground">Not added</span>
+                      )}
+                    </dd>
+                  </div>
+                  <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-4">
+                    <dt className="text-muted-foreground">Phone</dt>
+                    <dd>
+                      {profile?.contactNumbers?.[0] || (
+                        <span className="text-muted-foreground">Not added</span>
+                      )}
+                    </dd>
+                  </div>
+                  {profile?.location && (
+                    <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-4">
+                      <dt className="text-muted-foreground">Location</dt>
+                      <dd className="break-words">{profile.location}</dd>
+                    </div>
+                  )}
+                </dl>
+              </section>
 
-              {/* Footer Actions */}
-              <div className="px-6 py-4 border-t border-border/70 flex items-center justify-between gap-3 bg-muted/20">
-                {currentStep > 1 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handlePrevStep}
-                    disabled={isPending}
-                    className="rounded-xl font-bold text-xs gap-1.5 h-10"
+              <section className="border-t py-5" aria-labelledby={noteId}>
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <label
+                    id={noteId}
+                    htmlFor={`${noteId}-input`}
+                    className="text-sm font-medium"
                   >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Back</span>
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setIsOpen(false)}
-                    className="rounded-xl font-bold text-xs h-10"
-                  >
-                    Cancel
-                  </Button>
-                )}
+                    A note to the hiring team
+                  </label>
+                  <span className="text-xs text-muted-foreground">
+                    Optional
+                  </span>
+                </div>
+                <Textarea
+                  id={`${noteId}-input`}
+                  value={coverNote}
+                  onChange={(event) => setCoverNote(event.target.value)}
+                  disabled={isPending}
+                  placeholder="What interests you about this role? Share a little about what you'd bring."
+                  className="min-h-28 resize-y rounded-lg bg-muted/20 px-3.5 py-3 text-sm leading-relaxed placeholder:text-muted-foreground"
+                />
+              </section>
 
-                {currentStep < totalSteps ? (
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    className="rounded-xl font-bold text-xs gap-1.5 h-10 px-5"
-                  >
-                    <span>Next</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={handleSubmitApplication}
-                    disabled={isPending || (hasTasks && !allTasksCompleted)}
-                    className="rounded-xl font-bold text-xs gap-2 h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-                  >
-                    {isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Submitting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-3.5 w-3.5" />
-                        <span>Submit Application</span>
-                      </>
-                    )}
-                  </Button>
-                )}
+              {assessments.length > 0 && (
+                <section
+                  aria-label="Required assessments"
+                  className="border-t py-5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium">
+                      Required assessments
+                    </h3>
+                    <span
+                      className="text-xs text-muted-foreground"
+                      aria-live="polite"
+                    >
+                      {completedTasksCount}/{assessments.length} submitted
+                    </span>
+                  </div>
+                  {!allTasksCompleted && (
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      Add your note before starting. Submitting the final
+                      required assessment also sends your application to{" "}
+                      {job.companyName}.
+                    </p>
+                  )}
+                  <div className="mt-2 divide-y">
+                    {assessments.map((assessment) => (
+                      <div
+                        key={assessment.type}
+                        className="flex items-center gap-3 py-3"
+                      >
+                        <assessment.icon className="size-4 shrink-0 text-muted-foreground" />
+                        <p className="min-w-0 flex-1 text-sm break-words">
+                          {assessment.title}
+                        </p>
+                        {assessment.submission?.id ? (
+                          <span className="inline-flex shrink-0 items-center gap-1.5 text-xs">
+                            <Check className="size-3.5" /> Submitted
+                          </span>
+                        ) : (
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-8 shrink-0 rounded-lg text-xs"
+                            disabled={isPending}
+                          >
+                            <Link
+                              href={assessment.href}
+                              onClick={() =>
+                                saveJobApplicationDraft(job.id, coverNote)
+                              }
+                            >
+                              Start <ArrowRight className="size-3.5" />
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {job.tabLock && (
+                    <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+                      <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
+                      Tab switching is monitored during assessments. Warning
+                      limit: {job.tabLockWarningLimit}.
+                    </p>
+                  )}
+                </section>
+              )}
+            </div>
+
+            <div className="shrink-0 space-y-4 border-t bg-muted/20 px-6 py-4 sm:px-8">
+              {submitError && (
+                <p
+                  role="alert"
+                  className="flex items-start gap-2 text-sm text-destructive"
+                >
+                  <CircleAlert className="mt-0.5 size-4 shrink-0" />{" "}
+                  {submitError}
+                </p>
+              )}
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {allTasksCompleted
+                  ? `Submitting shares your profile${assessments.length > 0 ? ", assessment results," : ""} and note with ${job.companyName}.`
+                  : `Complete ${remainingAssessments.length === 1 ? "the remaining assessment" : `the ${remainingAssessments.length} remaining assessments`} to submit your application.`}
+              </p>
+              <div className="flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-lg text-sm"
+                  disabled={isPending}
+                  onClick={() => setIsOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="h-10 gap-2 rounded-lg px-5 text-sm font-medium"
+                  disabled={
+                    isPending || !allTasksCompleted || !availability.canApply
+                  }
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" /> Submitting…
+                    </>
+                  ) : (
+                    <>
+                      Submit application <ArrowRight className="size-4" />
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

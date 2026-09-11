@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 import { fetchWithAuth } from "@/lib/service-api";
 import { revalidatePath } from "next/cache";
@@ -12,7 +12,9 @@ import type {
   TaskSubmissionResponse,
 } from "@/types/api/tasks";
 
-export async function submitTaskAction(payload: SubmitTaskRequest): Promise<TaskSubmissionResponse> {
+export async function submitTaskAction(
+  payload: SubmitTaskRequest,
+): Promise<TaskSubmissionResponse> {
   const result = await fetchWithAuth<TaskSubmissionResponse>("/task/submit", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -20,32 +22,47 @@ export async function submitTaskAction(payload: SubmitTaskRequest): Promise<Task
   return result;
 }
 
-export async function createProgrammingTaskAction(payload: CreateProgrammingTask): Promise<ProgrammingTaskDto> {
-  const result = await fetchWithAuth<ProgrammingTaskDto>("/task/programming/create", {
-    method: "POST",
-    body: JSON.stringify(payload),
+export async function getDesignTasksAction(): Promise<DesignTaskDto[]> {
+  return fetchWithAuth<DesignTaskDto[]>("/task/design/getAll", {
+    cache: "no-store",
   });
-  revalidatePath('/post-job');
-  revalidatePath('/manage-jobs');
+}
+
+export async function createProgrammingTaskAction(
+  payload: CreateProgrammingTask,
+): Promise<ProgrammingTaskDto> {
+  const result = await fetchWithAuth<ProgrammingTaskDto>(
+    "/task/programming/create",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+  revalidatePath("/post-job");
+  revalidatePath("/manage-jobs");
   return result;
 }
 
-export async function createSQLTaskAction(payload: CreateSQLTask): Promise<SQLTaskDto> {
+export async function createSQLTaskAction(
+  payload: CreateSQLTask,
+): Promise<SQLTaskDto> {
   const result = await fetchWithAuth<SQLTaskDto>("/task/sql/create", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  revalidatePath('/post-job');
-  revalidatePath('/manage-jobs');
+  revalidatePath("/post-job");
+  revalidatePath("/manage-jobs");
   return result;
 }
 
-export async function createDesignTaskAction(payload: FormData): Promise<DesignTaskDto> {
+export async function createDesignTaskAction(
+  payload: FormData,
+): Promise<DesignTaskDto> {
   const result = await fetchWithAuth<DesignTaskDto>("/task/design/create", {
     method: "POST",
     body: payload,
   });
-  revalidatePath('/post-job');
-  revalidatePath('/manage-jobs');
+  revalidatePath("/post-job");
+  revalidatePath("/manage-jobs");
   return result;
 }
