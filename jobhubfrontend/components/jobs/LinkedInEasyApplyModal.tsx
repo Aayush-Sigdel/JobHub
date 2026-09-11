@@ -28,7 +28,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Loader2,
-  Sparkles,
   Send,
 } from "lucide-react";
 import { applyJobAction } from "@/lib/actions/jobs";
@@ -185,7 +184,7 @@ export function LinkedInEasyApplyModal({
       <Button
         disabled
         size="lg"
-        className="w-full h-12 rounded-2xl bg-emerald-600 text-white opacity-100 font-bold text-sm shadow-sm gap-2"
+        className="h-11 w-full gap-2 rounded-lg border-border bg-muted text-sm font-medium text-foreground disabled:opacity-100"
       >
         <CheckCircle2 className="size-4.5" />
         <span>Application Submitted</span>
@@ -200,7 +199,7 @@ export function LinkedInEasyApplyModal({
         <Button
           disabled
           size="lg"
-          className="w-full h-12 rounded-2xl bg-muted text-muted-foreground opacity-100 font-bold text-sm gap-2"
+          className="h-11 w-full gap-2 rounded-lg bg-muted text-sm font-medium text-muted-foreground disabled:opacity-100"
         >
           <CircleAlert className="size-4.5" />
           <span>Applications Closed</span>
@@ -219,21 +218,17 @@ export function LinkedInEasyApplyModal({
           loadSubmissions();
           setIsOpen(true);
         }}
-        className="w-full h-12 rounded-2xl font-bold text-sm shadow-md transition-all gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+        className="h-11 w-full gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
       >
-        <Sparkles className="size-4 text-amber-300 fill-amber-300" />
         <span>
-          {hasTasks
-            ? allTasksCompleted
-              ? "Easy Apply (Assessments Ready)"
-              : `Easy Apply (${completedTasksCount}/${totalRequiredTasksCount} Tasks Done)`
-            : "Easy Apply"}
+          {hasTasks && completedTasksCount > 0 ? "Continue application" : "Apply for this role"}
         </span>
+        <ArrowRight className="size-4" />
       </Button>
 
       {/* LinkedIn Style Easy Apply Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-xl p-0 overflow-hidden rounded-3xl border-border bg-card shadow-2xl">
+        <DialogContent className="sm:max-w-xl p-0 overflow-hidden rounded-lg border-border bg-background shadow-lg">
           {isSuccess ? (
             /* Success State */
             <div className="py-12 px-8 text-center space-y-4">
@@ -272,7 +267,7 @@ export function LinkedInEasyApplyModal({
               <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/70 text-left">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Easy Apply
                     </span>
                     <DialogTitle className="text-lg font-bold text-foreground">

@@ -997,7 +997,10 @@ function OnboardingContent() {
                 </div>
 
                 <div className="pt-3 space-y-2.5">
-                  <Link href="/candidate-profile" className="block w-full">
+                  <Link
+                    href={session?.user?.employer ? "/preview/me" : "/candidate-profile"}
+                    className="block w-full"
+                  >
                     <button
                       type="button"
                       className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full font-bold text-xs sm:text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
@@ -1007,7 +1010,10 @@ function OnboardingContent() {
                     </button>
                   </Link>
 
-                  <Link href="/home" className="block w-full">
+                  <Link
+                    href={session?.user?.employer ? "/dashboard" : "/home"}
+                    className="block w-full"
+                  >
                     <button
                       type="button"
                       className="w-full h-11 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-full font-bold text-xs sm:text-sm transition-colors cursor-pointer"

@@ -15,6 +15,7 @@ declare module "next-auth" {
   }
 
   interface User {
+    isVerified?: boolean;
     accessToken?: string;
     refreshToken?: string;
     imageUrl?: string;
@@ -31,6 +32,7 @@ declare module "next-auth/jwt" {
     refreshToken?: string;
     accessTokenExpires?: number;
     error?: string;
+    roleChecked?: boolean;
     user?: {
       id?: string;
       email?: string | null;

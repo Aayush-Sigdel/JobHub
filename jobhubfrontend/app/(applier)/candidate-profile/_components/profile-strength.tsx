@@ -48,8 +48,14 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
   const readinessItems: ReadinessItem[] = [
     { label: "Professional title", complete: Boolean(profile.title?.trim()) },
     { label: "About summary", complete: Boolean(profile.bio?.trim()) },
-    { label: "At least 3 skills", complete: (profile.skills?.length ?? 0) >= 3 },
-    { label: "Work experience", complete: (profile.experiences?.length ?? 0) > 0 },
+    {
+      label: "At least 3 skills",
+      complete: (profile.skills?.length ?? 0) >= 3,
+    },
+    {
+      label: "Work experience",
+      complete: (profile.experiences?.length ?? 0) > 0,
+    },
     { label: "Education", complete: (profile.educations?.length ?? 0) > 0 },
     { label: "Location", complete: Boolean(profile.location?.trim()) },
     { label: "Matching data source", complete: matchingSources.length > 0 },
@@ -63,10 +69,14 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
         if (result.profileEmbeddingUpdated) {
           toast.success("Matching data refreshed.");
         } else {
-          toast.error("Your profile was saved, but matching data could not be fully refreshed.");
+          toast.error(
+            "Your profile was saved, but matching data could not be fully refreshed.",
+          );
         }
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Unable to refresh matching data.");
+      } catch {
+        toast.error(
+          "Matching data could not be refreshed right now. Please try again in a moment.",
+        );
       }
     });
   };
@@ -81,7 +91,9 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
             </p>
             <h2 className="mt-1 text-lg font-bold">Evidence checklist</h2>
           </div>
-          <span className="text-sm font-semibold tabular-nums">{completedItems} of {readinessItems.length}</span>
+          <span className="text-sm font-semibold tabular-nums">
+            {completedItems} of {readinessItems.length}
+          </span>
         </div>
 
         <div className="mt-5 space-y-2.5">
@@ -92,7 +104,11 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
               ) : (
                 <Circle className="size-4 shrink-0 text-muted-foreground/50" />
               )}
-              <span className={item.complete ? "text-foreground" : "text-muted-foreground"}>
+              <span
+                className={
+                  item.complete ? "text-foreground" : "text-muted-foreground"
+                }
+              >
                 {item.label}
               </span>
             </div>
@@ -105,7 +121,9 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
           onClick={handleRefresh}
           disabled={isPending}
         >
-          <RefreshCw className={`mr-2 size-4 ${isPending ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`mr-2 size-4 ${isPending ? "animate-spin" : ""}`}
+          />
           {isPending ? "Refreshing…" : "Refresh matching data"}
         </Button>
       </section>
@@ -113,7 +131,8 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-base font-bold">Matching evidence</h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Job relevance uses JobHub platform data, GitHub, Dev.to, Stack Overflow, and ORCID.
+          Job relevance uses JobHub platform data, GitHub, Dev.to, Stack
+          Overflow, and ORCID.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -132,27 +151,36 @@ export function ProfileStrength({ profile }: { profile: MatchProfileData }) {
 
         {hasLinkedIn && (
           <p className="mt-4 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
-            LinkedIn remains visible on your profile, but it is not included in job matching.
+            LinkedIn remains visible on your profile, but it is not included in
+            job matching.
           </p>
         )}
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          Portfolio, website, and other profile links remain available to recruiters without affecting similarity.
+          Portfolio, website, and other profile links remain available to
+          recruiters without affecting similarity.
         </p>
       </section>
 
-      <nav className="rounded-2xl border border-border bg-card p-3 shadow-sm" aria-label="Candidate shortcuts">
+      <nav
+        className="rounded-2xl border border-border bg-card p-3 shadow-sm"
+        aria-label="Candidate shortcuts"
+      >
         <Link
           href="/job-tracker"
           className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold transition-colors hover:bg-muted"
         >
-          <span className="flex items-center gap-2"><BriefcaseBusiness className="size-4" /> My applications</span>
+          <span className="flex items-center gap-2">
+            <BriefcaseBusiness className="size-4" /> My applications
+          </span>
           <ArrowUpRight className="size-4 text-muted-foreground" />
         </Link>
         <Link
           href="/find-job"
           className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold transition-colors hover:bg-muted"
         >
-          <span className="flex items-center gap-2"><Search className="size-4" /> Find matching jobs</span>
+          <span className="flex items-center gap-2">
+            <Search className="size-4" /> Find matching jobs
+          </span>
           <ArrowUpRight className="size-4 text-muted-foreground" />
         </Link>
       </nav>

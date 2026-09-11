@@ -1,5 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth-option";
+import { cache } from "react";
+
+const readServerSession = cache(() => getServerSession(authOptions));
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -18,9 +21,16 @@ export async function fetchWithAuth<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const session = await getServerSession(authOptions);
+  const session = await readServerSession();
 
-  if (!session?.accessToken) {
+  if (session?.error === "RefreshAccessTokenTemporaryError") {
+    throw new ServiceApiError(
+      503,
+      "Your session could not be refreshed. Please try again.",
+    );
+  }
+
+  if (!session?.accessToken || session.error === "RefreshAccessTokenError") {
     throw new ServiceApiError(401, "Please sign in again.");
   }
 

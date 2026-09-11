@@ -1,24 +1,30 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, X, Target, SlidersHorizontal } from "lucide-react";
+import { Search, MapPin, X, Loader2 } from "lucide-react";
 
 export function SearchBar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  const [queryInput, setQueryInput] = useState(searchParams.get("query") || "");
-  const [locationInput, setLocationInput] = useState(searchParams.get("location") || "");
+  const requestedQuery = searchParams.get("query") || "";
+  const requestedLocation = searchParams.get("location") || "";
+  const searchKey = JSON.stringify([requestedQuery, requestedLocation]);
+  const [previousSearchKey, setPreviousSearchKey] = useState(searchKey);
+  const [queryInput, setQueryInput] = useState(requestedQuery);
+  const [locationInput, setLocationInput] = useState(requestedLocation);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setQueryInput(searchParams.get("query") || "");
-    setLocationInput(searchParams.get("location") || "");
-  }, [searchParams]);
+  if (searchKey !== previousSearchKey) {
+    setPreviousSearchKey(searchKey);
+    setQueryInput(requestedQuery);
+    setLocationInput(requestedLocation);
+  }
 
   // Keyboard shortcut (⌘K or Ctrl+K) to focus search
   useEffect(() => {
@@ -48,33 +54,20 @@ export function SearchBar() {
       params.delete("location");
     }
 
-    router.push(`${pathname}?${params.toString()}`);
+    startTransition(() =>
+      router.push(`${pathname}?${params.toString()}`, { scroll: false }),
+    );
   };
-
-  const toggleParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const current = params.get(key);
-
-    if (current === value) {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
-  const isRemote = searchParams.get("workplaceType") === "REMOTE";
-  const isFullTime = searchParams.get("jobType") === "FULL_TIME";
-  const hasTasks = searchParams.get("hasTasks") === "true";
-  const hasSalary = Boolean(searchParams.get("salaryMin"));
 
   return (
     <div className="flex flex-col gap-3">
       {/* Search Inputs Bar */}
       <form
         onSubmit={handleSearch}
-        className="rounded-2xl border border-border bg-card p-2 shadow-xs flex flex-col md:flex-row items-center gap-2"
+        role="search"
+        aria-label="Find jobs"
+        aria-busy={isPending}
+        className="rounded-2xl border border-border bg-muted/25 p-2 flex flex-col md:flex-row items-center gap-2"
       >
         {/* Role & Keyword Input */}
         <div className="relative w-full flex-1">
@@ -82,10 +75,11 @@ export function SearchBar() {
           <Input
             ref={searchInputRef}
             type="text"
+            aria-label="Role, skill, or company"
             placeholder="Role, tech stack, or company..."
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
-            className="pl-10 pr-14 h-11 rounded-xl bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
+            className="pl-10 pr-14 h-11 rounded-xl bg-transparent border-transparent shadow-none text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
           />
           {queryInput ? (
             <button
@@ -109,10 +103,11 @@ export function SearchBar() {
           <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
           <Input
             type="text"
-            placeholder="City, country, or remote..."
+            aria-label="Job location"
+            placeholder="City or country"
             value={locationInput}
             onChange={(e) => setLocationInput(e.target.value)}
-            className="pl-10 pr-9 h-11 rounded-xl bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
+            className="pl-10 pr-9 h-11 rounded-xl bg-transparent border-transparent shadow-none text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
           />
           {locationInput && (
             <button
@@ -129,72 +124,17 @@ export function SearchBar() {
         {/* Search Action Button */}
         <Button
           type="submit"
+          disabled={isPending}
           className="w-full md:w-auto h-11 px-7 rounded-xl bg-primary text-black font-bold hover:bg-primary/90 shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0"
         >
-          <Search className="h-4 w-4" />
-          <span>Search Jobs</span>
+          {isPending ? (
+            <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+          ) : (
+            <Search className="h-4 w-4" />
+          )}
+          <span>{isPending ? "Searching…" : "Search jobs"}</span>
         </Button>
       </form>
-
-      {/* Quick Filter Discovery Pills */}
-      <div className="flex items-center flex-wrap gap-1.5 px-0.5">
-        <span className="text-xs text-muted-foreground font-medium mr-1 shrink-0">
-          Quick filters:
-        </span>
-
-        <button
-          type="button"
-          onClick={() => toggleParam("workplaceType", "REMOTE")}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            isRemote
-              ? "bg-primary text-black border border-primary shadow-xs font-bold"
-              : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
-          }`}
-        >
-          <span>Remote</span>
-          {isRemote && <X className="h-3 w-3 text-black" />}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => toggleParam("jobType", "FULL_TIME")}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            isFullTime
-              ? "bg-primary text-black border border-primary shadow-xs font-bold"
-              : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
-          }`}
-        >
-          <span>Full-time</span>
-          {isFullTime && <X className="h-3 w-3 text-black" />}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => toggleParam("hasTasks", "true")}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            hasTasks
-              ? "bg-primary text-black border border-primary shadow-xs font-bold"
-              : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
-          }`}
-        >
-          <Target className="h-3 w-3" />
-          <span>With Assessments</span>
-          {hasTasks && <X className="h-3 w-3 text-black" />}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => toggleParam("salaryMin", "50000")}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            hasSalary
-              ? "bg-primary text-black border border-primary shadow-xs font-bold"
-              : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border"
-          }`}
-        >
-          <span>$50k+ Salary</span>
-          {hasSalary && <X className="h-3 w-3 text-black" />}
-        </button>
-      </div>
     </div>
   );
 }

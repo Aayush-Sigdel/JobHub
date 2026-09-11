@@ -1,20 +1,6 @@
-import React from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import {
-  Building2,
-  Clock,
-  Send,
-  Sparkles,
-  CheckCircle2,
-  XCircle,
-  Code,
-  PenTool,
-  Database,
-  AlertTriangle,
-  ArrowRight,
-} from 'lucide-react';
+import Link from "next/link";
+import { ChevronDown } from "lucide-react";
+import { formatJobDate } from "@/lib/job-display";
 
 interface TaskSubmissionResponse {
   taskId: string;
@@ -25,7 +11,12 @@ interface TaskSubmissionResponse {
   message?: string;
 }
 
-type ApplicationStatus = 'APPLIED' | 'IN_REVIEW' | 'SHORTLISTED' | 'ACCEPTED' | 'REJECTED';
+type ApplicationStatus =
+  | "APPLIED"
+  | "IN_REVIEW"
+  | "SHORTLISTED"
+  | "ACCEPTED"
+  | "REJECTED";
 
 export interface JobApplicationResponse {
   id: string;
@@ -46,263 +37,144 @@ export interface JobApplicationResponse {
   updatedAt: string;
 }
 
-const statusConfig: Record<
-  ApplicationStatus,
-  { label: string; badgeClass: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  APPLIED: {
-    label: 'Applied',
-    badgeClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-bold',
-    icon: Send,
-  },
-  IN_REVIEW: {
-    label: 'In Review',
-    badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold',
-    icon: Clock,
-  },
-  SHORTLISTED: {
-    label: 'Shortlisted',
-    badgeClass: 'bg-primary text-black font-bold border border-primary shadow-xs',
-    icon: Sparkles,
-  },
-  ACCEPTED: {
-    label: 'Accepted',
-    badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold',
-    icon: CheckCircle2,
-  },
-  REJECTED: {
-    label: 'Not Selected',
-    badgeClass: 'bg-destructive/10 text-destructive border border-destructive/20 font-bold',
-    icon: XCircle,
-  },
+const statuses: Record<ApplicationStatus, { label: string; dot: string }> = {
+  APPLIED: { label: "Applied", dot: "bg-muted-foreground" },
+  IN_REVIEW: { label: "In review", dot: "bg-amber-500" },
+  SHORTLISTED: { label: "Shortlisted", dot: "bg-primary" },
+  ACCEPTED: { label: "Accepted", dot: "bg-emerald-500" },
+  REJECTED: { label: "Not selected", dot: "bg-muted-foreground/50" },
 };
 
-export const ApplicationCard: React.FC<{ application: JobApplicationResponse }> = ({ application }) => {
-  const config = statusConfig[application.status] || statusConfig.APPLIED;
-  const StatusIcon = config.icon;
-  const appliedDate = format(new Date(application.createdAt), 'MMM dd, yyyy');
-
-  const matchPercent =
-    application.similarityScore != null
-      ? application.similarityScore <= 1
-        ? Math.round(application.similarityScore * 100)
-        : Math.round(application.similarityScore)
+export function ApplicationCard({
+  application,
+}: {
+  application: JobApplicationResponse;
+}) {
+  const status = statuses[application.status] || statuses.APPLIED;
+  const date = formatJobDate(application.createdAt);
+  const match =
+    application.similarityScore != null &&
+    Number.isFinite(application.similarityScore)
+      ? Math.round(
+          application.similarityScore <= 1
+            ? application.similarityScore * 100
+            : application.similarityScore,
+        )
       : null;
-
-  const STAGES: { key: ApplicationStatus; label: string }[] = [
-    { key: 'APPLIED', label: 'Applied' },
-    { key: 'IN_REVIEW', label: 'In Review' },
-    { key: 'SHORTLISTED', label: 'Shortlisted' },
-    { key: 'ACCEPTED', label: 'Offer' },
-  ];
-
-  const getStageIndex = (status: ApplicationStatus): number => {
-    switch (status) {
-      case 'APPLIED':
-        return 0;
-      case 'IN_REVIEW':
-        return 1;
-      case 'SHORTLISTED':
-        return 2;
-      case 'ACCEPTED':
-        return 3;
-      default:
-        return -1;
-    }
-  };
-
-  const currentStageIndex = getStageIndex(application.status);
+  const submissions = [
+    { label: "Programming", submission: application.programmingSubmission },
+    { label: "Design", submission: application.designSubmission },
+    { label: "SQL", submission: application.sqlSubmission },
+  ].filter((item) => item.submission !== null);
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-200 hover:border-foreground/20 hover:shadow-md flex flex-col justify-between">
-      <div className="space-y-4">
-        {/* Header: Title, Company Name & Status Badge */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
+    <article className="border-b border-border/70 py-5 last:border-b-0">
+      <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_130px_130px] sm:gap-6">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold">
             <Link
               href={`/find-job/${application.jobPostId}`}
-              className="font-bold text-lg sm:text-[19px] leading-snug text-foreground hover:underline line-clamp-1 block"
+              className="hover:underline underline-offset-4"
             >
               {application.jobTitle}
             </Link>
-
-            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5 font-medium">
-              <Building2 className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
-              <span className="truncate">{application.companyName}</span>
-            </p>
-          </div>
-
-          {/* Status Badge */}
-          <span
-            className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg shrink-0 ${config.badgeClass}`}
-          >
-            <StatusIcon className="h-3.5 w-3.5 shrink-0" />
-            <span>{config.label}</span>
-          </span>
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {application.companyName}
+          </p>
         </div>
-
-        {/* Mobbin-style Application Stage Stepper */}
-        {application.status !== 'REJECTED' ? (
-          <div className="pt-2 pb-1 px-1">
-            <div className="relative flex items-center justify-between">
-              {/* Background track */}
-              <div className="absolute left-2 right-2 top-2.5 h-0.5 -translate-y-1/2 bg-muted/80" />
-              {/* Active filled track */}
-              <div
-                className="absolute left-2 top-2.5 h-0.5 -translate-y-1/2 bg-primary transition-all duration-300"
-                style={{
-                  width: `calc(${(Math.max(0, currentStageIndex) / (STAGES.length - 1)) * 100}% - 16px)`,
-                }}
-              />
-              {STAGES.map((stage, idx) => {
-                const isCompleted = idx < currentStageIndex;
-                const isCurrent = idx === currentStageIndex;
-                return (
-                  <div key={stage.key} className="relative z-10 flex flex-col items-center">
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
-                        isCurrent
-                          ? 'bg-primary text-black ring-4 ring-primary/20 shadow-xs'
-                          : isCompleted
-                          ? 'bg-primary text-black'
-                          : 'bg-muted text-muted-foreground/80 border border-border/80'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-black" />
-                      ) : (
-                        <span>{idx + 1}</span>
-                      )}
-                    </div>
-                    <span
-                      className={`mt-1.5 text-[11px] tracking-tight ${
-                        isCurrent
-                          ? 'text-foreground font-bold'
-                          : isCompleted
-                          ? 'text-muted-foreground font-semibold'
-                          : 'text-muted-foreground/60 font-medium'
-                      }`}
-                    >
-                      {stage.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs">
-            <XCircle className="h-4 w-4 shrink-0" />
-            <span className="font-semibold">This application was not selected and is archived.</span>
-          </div>
-        )}
-
-        {/* Highlight Row: Match Score if available */}
-        {matchPercent != null && matchPercent >= 40 && (
-          <div>
-            <span
-              className="inline-flex items-center gap-1.5 bg-primary text-black font-bold px-2.5 py-1 rounded-lg text-xs shadow-xs"
-              title={`Raw match similarity: ${application.similarityScore?.toFixed(3)}`}
-            >
-              <Sparkles className="h-3.5 w-3.5 text-black shrink-0" />
-              <span>{matchPercent}% Match</span>
-            </span>
-          </div>
-        )}
-
-        {/* Assessment Tasks Row if any were submitted */}
-        {(application.programmingSubmission || application.designSubmission || application.sqlSubmission) && (
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-              Assessment Results
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              {application.programmingSubmission && (
-                <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                    application.programmingSubmission.passed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                      : 'bg-destructive/10 text-destructive border-destructive/20'
-                  }`}
-                >
-                  <Code className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    Code: {application.programmingSubmission.passed ? 'Passed' : 'Failed'} (
-                    {application.programmingSubmission.achievedScore}/{application.programmingSubmission.requiredScore})
-                  </span>
-                </span>
-              )}
-              {application.designSubmission && (
-                <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                    application.designSubmission.passed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                      : 'bg-destructive/10 text-destructive border-destructive/20'
-                  }`}
-                >
-                  <PenTool className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    Design: {application.designSubmission.passed ? 'Passed' : 'Failed'} (
-                    {application.designSubmission.achievedScore}/{application.designSubmission.requiredScore})
-                  </span>
-                </span>
-              )}
-              {application.sqlSubmission && (
-                <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                    application.sqlSubmission.passed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                      : 'bg-destructive/10 text-destructive border-destructive/20'
-                  }`}
-                >
-                  <Database className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    SQL: {application.sqlSubmission.passed ? 'Passed' : 'Failed'} (
-                    {application.sqlSubmission.achievedScore}/{application.sqlSubmission.requiredScore})
-                  </span>
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab switch warning if recorded */}
-        {application.tabSwitchCount > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg w-fit">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              {application.tabSwitchCount} tab {application.tabSwitchCount === 1 ? 'switch' : 'switches'} during assessment
-            </span>
-          </div>
-        )}
-
-        {/* Cover note preview if provided */}
-        {application.coverNote && (
-          <div className="bg-muted/40 border border-border/60 rounded-xl p-3 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground/80 block mb-0.5">Note attached:</span>
-            <p className="line-clamp-2 italic leading-relaxed">&ldquo;{application.coverNote}&rdquo;</p>
-          </div>
-        )}
-      </div>
-
-      {/* Footer: Date & Primary Action */}
-      <div className="mt-5 pt-4 border-t border-border/60 flex items-center justify-between gap-3">
-        <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground/70" />
-          <span>Applied {appliedDate}</span>
+        <span className="inline-flex items-center gap-2 text-sm">
+          <span
+            aria-hidden="true"
+            className={`size-1.5 shrink-0 rounded-full ${status.dot}`}
+          />
+          {status.label}
         </span>
-
-        <Button
-          asChild
-          size="sm"
-          className="h-9 px-4 rounded-xl font-bold text-sm gap-1.5 bg-primary text-black hover:bg-primary/90 shadow-xs transition-all cursor-pointer shrink-0"
-        >
-          <Link href={`/find-job/${application.jobPostId}`}>
-            <span>View Role</span>
-            <ArrowRight className="h-4 w-4 text-black" />
-          </Link>
-        </Button>
+        <span className="text-sm text-muted-foreground sm:text-right">
+          {date ? (
+            <>
+              <span className="sm:sr-only">Applied </span>
+              {date}
+            </>
+          ) : (
+            "Date unavailable"
+          )}
+        </span>
       </div>
-    </div>
+      <details className="group mt-3">
+        <summary className="inline-flex min-h-8 cursor-pointer list-none items-center gap-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+          Application details{" "}
+          <ChevronDown className="size-3.5 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+        </summary>
+        <div className="mt-3 space-y-5 rounded-xl bg-muted/30 p-4 sm:p-5">
+          <dl className="flex flex-wrap gap-x-10 gap-y-3 text-sm">
+            <div>
+              <dt className="text-xs text-muted-foreground">Applied on</dt>
+              <dd className="mt-1">{date || "Not available"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Last updated</dt>
+              <dd className="mt-1">
+                {formatJobDate(application.updatedAt) || "Not available"}
+              </dd>
+            </div>
+            {match !== null && (
+              <div>
+                <dt className="text-xs text-muted-foreground">Profile match</dt>
+                <dd className="mt-1">{match}%</dd>
+              </div>
+            )}
+          </dl>
+          {submissions.length > 0 ? (
+            <section aria-label="Assessment results">
+              <h3 className="mb-2 text-sm font-medium">Assessment results</h3>
+              <div className="divide-y divide-border/60">
+                {submissions.map(
+                  ({ label, submission }) =>
+                    submission && (
+                      <div key={label} className="py-2 text-sm">
+                        <div className="flex flex-wrap justify-between gap-2">
+                          <span>{label}</span>
+                          <span className="text-muted-foreground">
+                            {submission.passed ? "Passed" : "Not passed"} ·
+                            Score {submission.achievedScore} / required{" "}
+                            {submission.requiredScore}
+                          </span>
+                        </div>
+                        {submission.message && (
+                          <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-muted-foreground">
+                            {submission.message}
+                          </p>
+                        )}
+                      </div>
+                    ),
+                )}
+              </div>
+            </section>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No assessment submissions attached.
+            </p>
+          )}
+          {application.coverNote && (
+            <div>
+              <h3 className="text-sm font-medium">Your cover note</h3>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+                {application.coverNote}
+              </p>
+            </div>
+          )}
+          {application.tabSwitchCount > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {application.tabSwitchCount} tab{" "}
+              {application.tabSwitchCount === 1
+                ? "switch recorded"
+                : "switches recorded"}{" "}
+              during assessment.
+            </p>
+          )}
+        </div>
+      </details>
+    </article>
   );
-};
+}

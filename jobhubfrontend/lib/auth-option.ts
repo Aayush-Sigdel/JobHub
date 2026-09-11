@@ -1,54 +1,12 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import { createBackendTokenRefresher } from "./backend-token-refresh";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-const refreshBackendToken = async (token: any) => {
-  if (!token?.refreshToken) {
-    return token;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: token.refreshToken }),
-    });
-
-    if (!response.ok) {
-      console.warn("Token refresh failed: server responded with", response.status);
-      return {
-        ...token,
-        refreshToken: undefined,
-        accessTokenExpires: Date.now() + 60 * 60 * 1000,
-        error: "RefreshAccessTokenError",
-      };
-    }
-
-    const text = await response.text();
-    if (!text) return token;
-
-    const refreshedTokens = JSON.parse(text);
-
-    return {
-      ...token,
-      accessToken: refreshedTokens.accessToken || token.accessToken,
-      refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
-      accessTokenExpires: Date.now() + 15 * 60 * 1000,
-      error: undefined,
-    };
-  } catch (error) {
-    console.error("Error refreshing access token:", error);
-    return {
-      ...token,
-      refreshToken: undefined,
-      accessTokenExpires: Date.now() + 60 * 60 * 1000,
-      error: "RefreshAccessTokenError",
-    };
-  }
-};
+const refreshBackendToken = createBackendTokenRefresher(API_BASE_URL);
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -81,7 +39,33 @@ export const authOptions: NextAuthOptions = {
             }),
           });
           if (!res.ok) return null;
-          return await res.json();
+          const loginData = await res.json();
+          let employer = loginData.employer;
+          let onboardingCompleted = loginData.onboardingCompleted;
+
+          // If employer flag is missing from login response, fetch profile directly
+          if (employer === undefined && loginData.accessToken) {
+            try {
+              const profRes = await fetch(`${API_BASE_URL}/user/profile`, {
+                headers: { Authorization: `Bearer ${loginData.accessToken}` },
+              });
+              if (profRes.ok) {
+                const profile = await profRes.json();
+                employer = profile.employer;
+                if (onboardingCompleted === undefined) {
+                  onboardingCompleted = profile.onboardingCompleted;
+                }
+              }
+            } catch {
+              // Ignore network error on fallback
+            }
+          }
+
+          return {
+            ...loginData,
+            employer: employer ?? false,
+            onboardingCompleted: onboardingCompleted ?? false,
+          };
         } catch {
           return null;
         }
@@ -96,10 +80,13 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, trigger, session }) {
       if (trigger === "update" && session) {
         if (session.user) {
-          token.user = { ...(token.user as any), ...session.user };
+          token.user = { ...token.user, ...session.user };
         }
         if (session.onboardingCompleted !== undefined && token.user) {
-          (token.user as any).onboardingCompleted = session.onboardingCompleted;
+          token.user.onboardingCompleted = session.onboardingCompleted;
+        }
+        if (session.employer !== undefined && token.user) {
+          token.user.employer = session.employer;
         }
         return token;
       }
@@ -108,17 +95,19 @@ export const authOptions: NextAuthOptions = {
         if (account.provider === "credentials") {
           return {
             provider: "credentials",
-            accessToken: (user as any).accessToken,
-            refreshToken: (user as any).refreshToken,
+            accessToken: user.accessToken,
+            refreshToken: user.refreshToken,
             accessTokenExpires: Date.now() + 15 * 60 * 1000,
+            roleChecked: true,
             user: {
               id: user.id,
               email: user.email,
               name: user.name,
-              imageUrl: (user as any).imageUrl || user.image,
-              onboardingCompleted: (user as any).onboardingCompleted ?? false,
-              employer: (user as any).employer ?? false,
-              verified: (user as any).verified ?? (user as any).isVerified ?? false,
+              imageUrl: user.imageUrl || user.image,
+              onboardingCompleted: user.onboardingCompleted ?? false,
+              employer: user.employer ?? false,
+              verified:
+                user.verified ?? user.isVerified ?? false,
             },
           };
         }
@@ -128,20 +117,43 @@ export const authOptions: NextAuthOptions = {
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: (account.expires_at ?? 0) * 1000,
+          roleChecked: true,
           user: {
             id: user.id,
             email: user.email,
             name: user.name,
             imageUrl: user.image,
-            onboardingCompleted: (user as any).onboardingCompleted ?? false,
-            employer: (user as any).employer ?? false,
+            onboardingCompleted: user.onboardingCompleted ?? false,
+            employer: user.employer ?? false,
             verified: true, // Google emails are pre-verified
           },
         };
       }
 
+      // For existing active sessions, self-heal employer flag if not yet checked
+      if (token.accessToken && token.user && !token.roleChecked) {
+        try {
+          const profRes = await fetch(`${API_BASE_URL}/user/profile`, {
+            headers: { Authorization: `Bearer ${token.accessToken}` },
+          });
+          if (profRes.ok) {
+            const profile = await profRes.json();
+            token.user.employer = Boolean(profile.employer);
+            if (profile.onboardingCompleted !== undefined) {
+              token.user.onboardingCompleted = Boolean(profile.onboardingCompleted);
+            }
+          }
+        } catch {
+          // Ignore network errors on background self-heal
+        }
+        token.roleChecked = true;
+      }
+
       // Check if token is still valid
-      if (token.accessTokenExpires && Date.now() < (token.accessTokenExpires as number)) {
+      if (
+        token.accessTokenExpires &&
+        Date.now() < (token.accessTokenExpires as number)
+      ) {
         return token;
       }
 
@@ -157,7 +169,12 @@ export const authOptions: NextAuthOptions = {
       session.accessToken = token.accessToken as string;
       session.error = token.error as string | undefined;
       if (token.user) {
-        session.user = token.user as any;
+        session.user = {
+          ...session.user,
+          ...token.user,
+          employer: token.user.employer ?? false,
+          imageUrl: token.user.imageUrl ?? undefined,
+        };
       }
       return session;
     },

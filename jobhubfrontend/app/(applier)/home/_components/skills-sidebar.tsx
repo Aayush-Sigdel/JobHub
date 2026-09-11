@@ -2,9 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { Zap, Plus, Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, TrendingUp, Users } from "lucide-react";
+import { Plus, CheckCircle2, ArrowUpRight, TrendingUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatSkillName } from "@/lib/utils";
 import type { UserProfileResponse } from "@/types/api/user";
 
@@ -77,7 +76,7 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
   };
 
   return (
-    <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0 flex flex-col gap-5">
+    <aside className="order-3 lg:col-start-1 2xl:col-start-3 min-w-0 w-full flex flex-col gap-5">
       {/* Sticky container */}
       <div className="sticky top-20 flex flex-col gap-5">
         {/* Your Skills Card */}

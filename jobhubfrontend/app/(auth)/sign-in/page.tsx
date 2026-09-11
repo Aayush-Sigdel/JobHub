@@ -97,12 +97,37 @@ function SignInContent() {
     }
 
     const session = await getSession();
-    if (session?.user?.employer) {
-      router.push("/dashboard");
+    const callbackUrl = searchParams.get("callbackUrl");
+    const isEmployer = Boolean(session?.user?.employer);
+
+    if (isEmployer) {
+      const isCandidateUrl =
+        callbackUrl &&
+        ["/home", "/job-tracker", "/find-job", "/task"].some((route) =>
+          callbackUrl.startsWith(route),
+        );
+      const target =
+        callbackUrl && !isCandidateUrl && callbackUrl !== "/"
+          ? callbackUrl
+          : "/dashboard";
+      window.location.href = target;
     } else {
-      router.push("/home");
+      const isEmployerUrl =
+        callbackUrl &&
+        [
+          "/dashboard",
+          "/candidates",
+          "/manage-jobs",
+          "/manage-job",
+          "/post-job",
+          "/post-task",
+        ].some((route) => callbackUrl.startsWith(route));
+      const target =
+        callbackUrl && !isEmployerUrl && callbackUrl !== "/"
+          ? callbackUrl
+          : "/home";
+      window.location.href = target;
     }
-    router.refresh();
   };
 
   const handleGoogleSignIn = () => {
@@ -334,7 +359,7 @@ function SignInContent() {
 
           {/* Footer Link */}
           <div className="text-center mt-8 text-sm text-neutral-500 font-medium">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/sign-up"
               className="font-bold text-neutral-900 hover:underline transition-colors ml-1"

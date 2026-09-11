@@ -42,7 +42,13 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
         {/* Left: Logo & Primary Candidate Links */}
         <div className="flex items-center gap-6 shrink-0">
           <Link
-            href={isUserLoggedIn ? "/home" : "/"}
+            href={
+              isUserLoggedIn
+                ? profile?.employer || session?.user?.employer
+                  ? "/dashboard"
+                  : "/home"
+                : "/"
+            }
             className="flex items-center transition-opacity hover:opacity-90"
             aria-label="JobHub Home"
           >

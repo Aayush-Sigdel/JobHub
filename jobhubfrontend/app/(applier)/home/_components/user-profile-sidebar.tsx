@@ -1,274 +1,138 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  MapPin,
-  Bookmark,
-  Briefcase,
-  TrendingUp,
-  Building2,
-  Code2,
-  CheckCircle2,
-  FileText,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
-import { useLocalSavedJobs } from "@/lib/hooks/use-local-jobs";
+import { formatSkillName } from "@/lib/utils";
+import { formatJobDate, jobLabel } from "@/lib/job-display";
 import type { UserProfileResponse } from "@/types/api/user";
 import type { JobApplicationResponse } from "@/types/api/jobs";
-
-interface UserProfileSidebarProps {
-  profile: UserProfileResponse | null;
-  applications: JobApplicationResponse[];
-  activeTab?: string;
-  onTabChange?: (tab: string) => void;
-}
 
 export function UserProfileSidebar({
   profile,
   applications,
-  activeTab,
-  onTabChange,
-}: UserProfileSidebarProps) {
-  const { savedJobs } = useLocalSavedJobs();
-  const userName = profile?.name || "Candidate";
-  const userTitle = profile?.title || "Professional Developer";
-  const userImage = profile?.imageUrl;
-  const userLocation = profile?.location;
-  const isVerified = profile?.isVerified ?? true;
-  const skillsCount = profile?.skills?.length || 0;
-  const experienceCount = profile?.experiences?.length || 0;
-  const applicationsCount = applications.length;
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    return name.slice(0, 2).toUpperCase();
-  };
+  activityUnavailable = false,
+}: {
+  profile: UserProfileResponse | null;
+  applications: JobApplicationResponse[];
+  activityUnavailable?: boolean;
+}) {
+  const recentActivity = [...applications]
+    .sort(
+      (a, b) =>
+        (Date.parse(b.updatedAt || b.createdAt || "") || 0) -
+        (Date.parse(a.updatedAt || a.createdAt || "") || 0),
+    )
+    .slice(0, 3);
+  const name = profile?.name || "Your profile";
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
+  const nextStep = !profile?.title
+    ? "Add a title so employers know what you do."
+    : !profile.skills?.length
+      ? "Add your skills for more relevant recommendations."
+      : !profile.bio
+        ? "Introduce yourself with a short bio."
+        : null;
 
   return (
-    <aside className="w-full lg:w-[280px] xl:w-[300px] shrink-0 flex flex-col gap-5">
-      {/* Sticky container */}
-      <div className="sticky top-20 flex flex-col gap-5">
-        {/* User Mini Profile Card */}
-        <div className="overflow-hidden border border-border bg-card rounded-2xl shadow-xs hover:border-primary/30 transition-all duration-300">
-          {/* Header Banner */}
-          <div className="h-16 bg-primary border-b border-black/10 relative">
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-card p-1 shadow-xs border border-border">
-              <Avatar className="h-16 w-16 ring-2 ring-background">
-                <AvatarImage src={userImage} alt={userName} className="object-cover" />
-                <AvatarFallback className="bg-muted text-foreground font-bold text-base">
-                  {getInitials(userName)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-
-          {/* Profile Details */}
-          <div className="pt-10 pb-5 px-5 text-center">
-            <div className="flex items-center justify-center gap-1.5">
-              <Link
-                href="/candidate-profile"
-                className="font-bold text-[17px] hover:underline transition-colors text-foreground truncate max-w-[200px]"
-              >
-                {userName}
-              </Link>
-              {isVerified && (
-                <ShieldCheck className="h-4.5 w-4.5 text-emerald-600 dark:text-primary shrink-0" />
-              )}
-            </div>
-
-            <p className="text-sm text-muted-foreground font-normal mt-0.5 line-clamp-1">
-              {userTitle}
+    <aside
+      aria-label="Your profile and activity"
+      className="min-w-0 lg:sticky lg:top-24"
+    >
+      <Link
+        href="/candidate-profile"
+        className="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+      >
+        <Avatar className="size-11 shrink-0">
+          <AvatarImage src={profile?.imageUrl} alt="" />
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{name}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {profile?.title || "Edit your profile"}
+          </p>
+        </div>
+      </Link>
+      <div className="my-5 border-b border-border/70 pb-5">
+        {profile?.location && (
+          <p className="mb-3 text-xs text-muted-foreground">
+            {profile.location}
+          </p>
+        )}
+        {Boolean(profile?.skills?.length) && (
+          <>
+            <h3 className="text-xs font-medium">What you bring</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {profile!
+                .skills!.slice(0, 4)
+                .map((skill) => formatSkillName(skill.name))
+                .join(" · ")}
             </p>
-
-            {userLocation && (
-              <p className="text-sm text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground/70" />
-                <span className="truncate">{userLocation}</span>
-              </p>
-            )}
-
-            {/* Profile Stats Matrix */}
-            <div className="mt-5 py-3.5 border-y border-border/60 grid grid-cols-3 divide-x divide-border/60 bg-muted/20 rounded-xl">
-              <div className="text-center px-1">
-                <p className="text-base font-bold text-foreground">{applicationsCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Applied</p>
-              </div>
-              <div className="text-center px-1">
-                <p className="text-base font-bold text-foreground">{skillsCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Skills</p>
-              </div>
-              <div className="text-center px-1">
-                <p className="text-base font-bold text-foreground">{experienceCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Roles</p>
-              </div>
-            </div>
-
-            {/* Quick Profile Actions */}
-            <div className="mt-4 flex flex-col gap-2">
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="w-full text-sm font-semibold justify-between h-10 rounded-xl border-border/80 hover:bg-muted text-foreground transition-all"
-              >
-                <Link href="/candidate-profile">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    Edit Profile & Resume
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="w-full text-sm font-semibold justify-between h-10 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
-              >
-                <Link href="/job-tracker">
-                  <span className="flex items-center gap-2">
-                    <Bookmark className="h-4 w-4 text-muted-foreground" />
-                    My Applications & Tracker
-                  </span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-black">
-                    {applicationsCount}
-                  </span>
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Navigation / Discovery Card */}
-        <div className="border border-border bg-card rounded-2xl shadow-xs overflow-hidden p-3.5 hover:border-primary/30 transition-all duration-300">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground/80 mb-2.5 px-2.5">
-            Discover & Explore
-          </h3>
-          <nav className="flex flex-col gap-1.5">
-            <button
-              onClick={() => onTabChange?.("recommended")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
-                activeTab === "recommended"
-                  ? "bg-primary text-black font-bold shadow-xs border border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Sparkles className="h-4 w-4" />
-                Recommended Matches
-              </span>
-            </button>
-
-            <button
-              onClick={() => onTabChange?.("collaboration")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
-                activeTab === "collaboration"
-                  ? "bg-primary text-black font-bold shadow-xs border border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Users className="h-4 w-4" />
-                Collaboration Hub
-              </span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === "collaboration"
-                    ? "bg-black text-white"
-                    : "bg-muted text-foreground border border-border"
-                }`}
-              >
-                Peer
-              </span>
-            </button>
-
-            <button
-              onClick={() => onTabChange?.("saved")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
-                activeTab === "saved"
-                  ? "bg-primary text-black font-bold shadow-xs border border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Bookmark className="h-4 w-4" />
-                Saved Jobs
-              </span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === "saved"
-                    ? "bg-black text-white"
-                    : "bg-muted text-foreground border border-border"
-                }`}
-              >
-                {savedJobs.length}
-              </span>
-            </button>
-
-            <Link
-              href="/find-job"
-              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
-            >
-              <span className="flex items-center gap-2.5">
-                <Briefcase className="h-4 w-4" />
-                Explore All Jobs
-              </span>
-            </Link>
-
-            <button
-              onClick={() => onTabChange?.("tasks")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
-                activeTab === "tasks"
-                  ? "bg-primary text-black font-bold shadow-xs border border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Code2 className="h-4 w-4" />
-                Assessment Challenges
-              </span>
-            </button>
-
-            <button
-              onClick={() => onTabChange?.("recent")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
-                activeTab === "recent"
-                  ? "bg-primary text-black font-bold shadow-xs border border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <TrendingUp className="h-4 w-4" />
-                Recently Posted
-              </span>
-            </button>
-
-            <button
-              onClick={() => onTabChange?.("remote")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
-                activeTab === "remote"
-                  ? "bg-primary text-black font-bold shadow-xs border border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Remote Opportunities
-              </span>
-            </button>
-          </nav>
-        </div>
+          </>
+        )}
       </div>
+      {nextStep && (
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {nextStep}
+        </p>
+      )}
+      <Link
+        href="/candidate-profile"
+        className="mt-3 inline-flex min-h-9 items-center gap-1.5 text-sm font-medium hover:underline underline-offset-4"
+      >
+        {nextStep ? "Update profile" : "Manage profile"}{" "}
+        <ArrowUpRight className="size-3.5" />
+      </Link>
+      {!activityUnavailable && (
+        <section
+          aria-label="Recent application activity"
+          className="mt-7 border-t border-border/70 pt-5"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Recent activity</h2>
+            <Link
+              href="/job-tracker"
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              View all
+            </Link>
+          </div>
+          {recentActivity.length ? (
+            <div className="mt-2 divide-y divide-border/50">
+              {recentActivity.map((application) => (
+                <Link
+                  key={application.id}
+                  href={`/job-tracker?tab=${application.status.toLowerCase().replaceAll("_", "-")}`}
+                  className="block rounded-lg py-3 hover:bg-muted/30"
+                >
+                  <p className="text-xs font-medium">
+                    {application.status === "REJECTED"
+                      ? "Not selected"
+                      : jobLabel(application.status)}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                    {application.jobTitle}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground/80">
+                    {formatJobDate(
+                      application.updatedAt || application.createdAt,
+                    )}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Your application progress will appear here after you apply.
+            </p>
+          )}
+        </section>
+      )}
     </aside>
   );
 }
