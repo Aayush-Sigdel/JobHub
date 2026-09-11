@@ -1,6 +1,6 @@
-'use server';
+"use server";
 
-import { fetchWithAuth } from "@/lib/service-api";
+import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
 import { revalidatePath } from "next/cache";
 import type {
   CreateEducationRequest,
@@ -12,29 +12,30 @@ import type {
   UpdateEducationRequest,
   UpdateExperienceRequest,
   UserProfileResponse,
+  CollaboratorMatchResponse,
 } from "@/types/api/user";
 
 async function refreshPlatformMatchingData() {
   try {
-    await fetchWithAuth('/user/embedding/sync/platform', { method: 'POST' });
+    await fetchWithAuth("/user/embedding/sync/platform", { method: "POST" });
   } catch (error) {
-    console.error('Failed to refresh platform matching data', error);
+    console.error("Failed to refresh platform matching data", error);
   }
 }
 
 async function refreshAllMatchingData() {
   try {
-    await fetchWithAuth('/user/embedding/sync', { method: 'POST' });
+    await fetchWithAuth("/user/embedding/sync", { method: "POST" });
   } catch (error) {
-    console.error('Failed to refresh matching data', error);
+    console.error("Failed to refresh matching data", error);
   }
 }
 
 function revalidateMatchingViews() {
-  revalidatePath('/candidate-profile');
-  revalidatePath('/profile');
-  revalidatePath('/home');
-  revalidatePath('/find-job');
+  revalidatePath("/candidate-profile");
+  revalidatePath("/profile");
+  revalidatePath("/home");
+  revalidatePath("/find-job");
 }
 
 // ─── Profile Updates ───────────────────────────────
@@ -49,11 +50,11 @@ export async function updateProfileAction(data: {
   socialLinks?: { platform: string; url: string }[];
   contactNumbers?: string[];
 }) {
-  const result = await fetchWithAuth<UserProfileResponse>('/user/profile', {
-    method: 'PUT',
+  const result = await fetchWithAuth<UserProfileResponse>("/user/profile", {
+    method: "PUT",
     body: JSON.stringify(data),
   });
-  
+
   if (data.socialLinks) {
     await refreshAllMatchingData();
   } else {
@@ -64,8 +65,8 @@ export async function updateProfileAction(data: {
 }
 
 export async function updateBioAction(bio: string) {
-  const result = await fetchWithAuth<UserProfileResponse>('/user/profile/bio', {
-    method: 'PUT',
+  const result = await fetchWithAuth<UserProfileResponse>("/user/profile/bio", {
+    method: "PUT",
     body: JSON.stringify({ bio }),
   });
   await refreshPlatformMatchingData();
@@ -73,11 +74,54 @@ export async function updateBioAction(bio: string) {
   return result;
 }
 
+export async function updateDiscoverabilityAction(discoverable: boolean) {
+  const result = await fetchWithAuth<UserProfileResponse>(
+    "/user/profile/discoverable",
+    {
+      method: "PUT",
+      body: JSON.stringify({ discoverable }),
+    },
+  );
+  revalidatePath("/candidate-profile");
+  revalidatePath("/profile");
+  revalidatePath("/home");
+  return result;
+}
+
+export interface CollaboratorDirectoryResult {
+  collaborators: CollaboratorMatchResponse[];
+  error: string | null;
+}
+
+export async function getCollaboratorsAction(): Promise<CollaboratorDirectoryResult> {
+  try {
+    const collaborators = await fetchWithAuth<CollaboratorMatchResponse[]>(
+      "/collaborators?limit=50",
+      { cache: "no-store" },
+    );
+    return {
+      collaborators: Array.isArray(collaborators) ? collaborators : [],
+      error: null,
+    };
+  } catch (error) {
+    const status = error instanceof ServiceApiError ? error.status : undefined;
+    const message =
+      status === 409
+        ? "Your matching data is not ready yet. Refresh it from your profile, then try again."
+        : status === 401
+          ? "Your session has expired. Sign in again to find collaborators."
+          : status === 403
+            ? "Collaborator discovery is available to candidate accounts."
+            : "Collaborators could not be loaded right now. Please try again.";
+    return { collaborators: [], error: message };
+  }
+}
+
 // ─── Skills CRUD ────────────────────────────────────
 
 export async function createSkillAction(data: { name: string; level: string }) {
-  const result = await fetchWithAuth<SkillDto>('/user/profile/skills', {
-    method: 'POST',
+  const result = await fetchWithAuth<SkillDto>("/user/profile/skills", {
+    method: "POST",
     body: JSON.stringify(data),
   });
   await refreshPlatformMatchingData();
@@ -85,11 +129,17 @@ export async function createSkillAction(data: { name: string; level: string }) {
   return result;
 }
 
-export async function updateSkillAction(skillId: string, data: { name: string; level: string }) {
-  const result = await fetchWithAuth<SkillDto>(`/user/profile/skills/${skillId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+export async function updateSkillAction(
+  skillId: string,
+  data: { name: string; level: string },
+) {
+  const result = await fetchWithAuth<SkillDto>(
+    `/user/profile/skills/${skillId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
   return result;
@@ -97,7 +147,7 @@ export async function updateSkillAction(skillId: string, data: { name: string; l
 
 export async function deleteSkillAction(skillId: string) {
   await fetchWithAuth<void>(`/user/profile/skills/${skillId}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
@@ -106,29 +156,38 @@ export async function deleteSkillAction(skillId: string) {
 // ─── Contact Numbers ────────────────────────────────
 
 export async function addContactNumberAction(contactNumber: string) {
-  const result = await fetchWithAuth<UserProfileResponse>('/user/profile/contact-number', {
-    method: 'POST',
-    body: JSON.stringify({ contactNumber }),
-  });
-  revalidatePath('/candidate-profile');
+  const result = await fetchWithAuth<UserProfileResponse>(
+    "/user/profile/contact-number",
+    {
+      method: "POST",
+      body: JSON.stringify({ contactNumber }),
+    },
+  );
+  revalidatePath("/candidate-profile");
   return result;
 }
 
 export async function deleteContactNumberAction(contactNumber: string) {
-  await fetchWithAuth<UserProfileResponse>('/user/profile/contact-number', {
-    method: 'DELETE',
+  await fetchWithAuth<UserProfileResponse>("/user/profile/contact-number", {
+    method: "DELETE",
     body: JSON.stringify({ contactNumber }),
   });
-  revalidatePath('/candidate-profile');
+  revalidatePath("/candidate-profile");
 }
 
 // ─── Social Links ───────────────────────────────────
 
-export async function addSocialLinkAction(data: { platform: string; url: string }) {
-  const result = await fetchWithAuth<SocialLinkDto>('/user/profile/social-links', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function addSocialLinkAction(data: {
+  platform: string;
+  url: string;
+}) {
+  const result = await fetchWithAuth<SocialLinkDto>(
+    "/user/profile/social-links",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
   await refreshAllMatchingData();
   revalidateMatchingViews();
   return result;
@@ -138,10 +197,13 @@ export async function updateSocialLinkAction(
   linkId: string,
   data: { platform: string; url: string },
 ) {
-  const result = await fetchWithAuth<SocialLinkDto>(`/user/profile/social-links/${linkId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+  const result = await fetchWithAuth<SocialLinkDto>(
+    `/user/profile/social-links/${linkId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
   await refreshAllMatchingData();
   revalidateMatchingViews();
   return result;
@@ -149,7 +211,7 @@ export async function updateSocialLinkAction(
 
 export async function deleteSocialLinkAction(linkId: string) {
   await fetchWithAuth<void>(`/user/profile/social-links/${linkId}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
   await refreshAllMatchingData();
   revalidateMatchingViews();
@@ -158,10 +220,13 @@ export async function deleteSocialLinkAction(linkId: string) {
 // ─── Onboarding ─────────────────────────────────────
 
 export async function completeOnboardingAction() {
-  await fetchWithAuth<UserProfileResponse>('/user/profile/complete-onboarding', {
-    method: 'POST',
-  });
-  
+  await fetchWithAuth<UserProfileResponse>(
+    "/user/profile/complete-onboarding",
+    {
+      method: "POST",
+    },
+  );
+
   await refreshAllMatchingData();
   revalidateMatchingViews();
 }
@@ -169,27 +234,38 @@ export async function completeOnboardingAction() {
 // ─── Experience CRUD ────────────────────────────────
 
 export async function createExperienceAction(data: CreateExperienceRequest) {
-  const result = await fetchWithAuth<ExperienceDto>("/user/profile/experiences", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const result = await fetchWithAuth<ExperienceDto>(
+    "/user/profile/experiences",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
   return result;
 }
 
-export async function updateExperienceAction(id: string, data: UpdateExperienceRequest) {
-  const result = await fetchWithAuth<ExperienceDto>(`/user/profile/experiences/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+export async function updateExperienceAction(
+  id: string,
+  data: UpdateExperienceRequest,
+) {
+  const result = await fetchWithAuth<ExperienceDto>(
+    `/user/profile/experiences/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
   return result;
 }
 
 export async function deleteExperienceAction(id: string) {
-  await fetchWithAuth<void>(`/user/profile/experiences/${id}`, { method: "DELETE" });
+  await fetchWithAuth<void>(`/user/profile/experiences/${id}`, {
+    method: "DELETE",
+  });
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
   return { success: true };
@@ -207,18 +283,26 @@ export async function createEducationAction(data: CreateEducationRequest) {
   return result;
 }
 
-export async function updateEducationAction(id: string, data: UpdateEducationRequest) {
-  const result = await fetchWithAuth<EducationDto>(`/user/profile/educations/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+export async function updateEducationAction(
+  id: string,
+  data: UpdateEducationRequest,
+) {
+  const result = await fetchWithAuth<EducationDto>(
+    `/user/profile/educations/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
   return result;
 }
 
 export async function deleteEducationAction(id: string) {
-  await fetchWithAuth<void>(`/user/profile/educations/${id}`, { method: "DELETE" });
+  await fetchWithAuth<void>(`/user/profile/educations/${id}`, {
+    method: "DELETE",
+  });
   await refreshPlatformMatchingData();
   revalidateMatchingViews();
   return { success: true };

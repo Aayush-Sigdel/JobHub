@@ -16,14 +16,7 @@ interface HomeContainerProps {
   applicationError?: HomeApplicationError;
 }
 
-const feedTabs = [
-  "recommended",
-  "collaboration",
-  "saved",
-  "tasks",
-  "recent",
-  "remote",
-];
+const feedTabs = ["recommended", "saved", "tasks", "recent", "remote"];
 const resolveTab = (tab: string) =>
   feedTabs.includes(tab) ? tab : "recommended";
 

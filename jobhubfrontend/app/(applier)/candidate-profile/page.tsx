@@ -9,13 +9,17 @@ import { ProfileEducation } from "./_components/profile-education";
 import { EmployerShortcuts } from "./_components/employer-shortcuts";
 import type { UserProfileResponse } from "@/types/api/user";
 import { ProfileAccessError } from "./_components/profile-access-error";
+import { ProfileDiscoverability } from "./_components/profile-discoverability";
 
 export default async function CandidateProfilePage() {
   let profile: UserProfileResponse;
   try {
     profile = await fetchWithAuth<UserProfileResponse>("/user/profile");
   } catch (error) {
-    if (error instanceof ServiceApiError && (error.status === 401 || error.status === 403)) {
+    if (
+      error instanceof ServiceApiError &&
+      (error.status === 401 || error.status === 403)
+    ) {
       return <ProfileAccessError />;
     }
     throw error;
@@ -74,7 +78,12 @@ export default async function CandidateProfilePage() {
           {isEmployer ? (
             <EmployerShortcuts />
           ) : (
-            <ProfileStrength profile={profile ?? {}} />
+            <>
+              <ProfileDiscoverability
+                initialDiscoverable={profile.discoverable ?? false}
+              />
+              <ProfileStrength profile={profile ?? {}} />
+            </>
           )}
         </div>
       </div>

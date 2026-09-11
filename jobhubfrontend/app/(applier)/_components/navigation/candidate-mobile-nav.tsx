@@ -8,6 +8,7 @@ import {
   IconSearch,
   IconBookmark,
   IconCode,
+  IconUsers,
   IconUser,
 } from "@tabler/icons-react";
 import { useLocalSavedJobs } from "@/lib/hooks/use-local-jobs";
@@ -18,6 +19,7 @@ const mobileTabs = [
   { name: "Search", href: "/find-job", icon: IconSearch },
   { name: "Tracker", href: "/job-tracker", icon: IconBookmark },
   { name: "Tasks", href: "/task/program", icon: IconCode },
+  { name: "People", href: "/collaborators", icon: IconUsers },
   { name: "Profile", href: "/candidate-profile", icon: IconUser },
 ];
 
@@ -52,7 +54,7 @@ export default function CandidateMobileNav() {
                 "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center transition-colors",
                 isActive
                   ? "text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <div className="relative">

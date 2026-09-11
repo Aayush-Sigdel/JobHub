@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { SearchBar } from "@/components/web/search";
@@ -13,28 +13,29 @@ import Logo from "./logo";
 import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
 import { cn } from "@/lib/utils";
+import type { UserProfileResponse } from "@/types/api/user";
 
 const candidateLinks = [
   { name: "Home", href: "/home" },
   { name: "Find Jobs", href: "/find-job" },
   { name: "Track Applications", href: "/job-tracker" },
-  { name: "Collaboration", href: "/home?tab=collaboration" },
+  { name: "Collaboration", href: "/collaborators" },
 ];
 
 interface NavigationBarProps {
-  profile?: any;
+  profile?: UserProfileResponse | null;
 }
 
 const NavigationBarContent = ({ profile }: NavigationBarProps) => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab");
   const { data: session, status } = useSession();
   const isUserLoggedIn = status === "authenticated";
 
   // Hide the navbar search bar when the current page already contains an in-page search bar
   const hasInPageSearch =
-    pathname === "/home" || pathname === "/find-job" || pathname === "/job-tracker";
+    pathname === "/home" ||
+    pathname === "/find-job" ||
+    pathname === "/job-tracker";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -58,12 +59,10 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
           {isUserLoggedIn && (
             <nav className="hidden lg:flex items-center gap-1">
               {candidateLinks.map((link) => {
-                const isCollabLink = link.href === "/home?tab=collaboration";
-                const isActive = isCollabLink
-                  ? pathname === "/home" && currentTab === "collaboration"
-                  : link.href === "/home"
-                  ? pathname === "/home" && currentTab !== "collaboration"
-                  : pathname === link.href || pathname.startsWith(link.href);
+                const isActive =
+                  link.href === "/home"
+                    ? pathname === "/home"
+                    : pathname === link.href || pathname.startsWith(link.href);
 
                 return (
                   <Link
@@ -73,7 +72,7 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
                       "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                       isActive
                         ? "bg-muted text-foreground font-semibold"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
                     {link.name}

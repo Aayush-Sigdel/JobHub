@@ -59,7 +59,6 @@ export function PersonalizedFeed({
     saved: "Saved jobs",
     remote: "Remote",
     tasks: "Assessments",
-    collaboration: "Collaboration",
   };
   if (extraLabels[activeTab])
     tabs.push({ id: activeTab, label: extraLabels[activeTab] });
@@ -67,15 +66,9 @@ export function PersonalizedFeed({
   return (
     <section aria-label="Your job feed" className="min-w-0">
       <header className="mb-4">
-        <h2 className="text-lg font-semibold">
-          {activeTab === "collaboration"
-            ? "Connect with your peers"
-            : "Opportunities to explore"}
-        </h2>
+        <h2 className="text-lg font-semibold">Opportunities to explore</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {activeTab === "collaboration"
-            ? "Practice, learn, and build together."
-            : "Explore your recommendations or catch up on the latest roles."}
+          Explore your recommendations or catch up on the latest roles.
         </p>
       </header>
       <Tabs value={activeTab} onValueChange={onTabChange} className="gap-0">
@@ -103,212 +96,7 @@ export function PersonalizedFeed({
           </Link>
         </div>
         <TabsContent value={activeTab} className="mt-0">
-          {activeTab === "collaboration" ? (
-            <div className="flex flex-col gap-4">
-              {/* Collaboration Hub Header */}
-              <div className="rounded-2xl border border-border bg-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-                <div>
-                  <h2 className="text-lg font-bold text-foreground">
-                    Candidate Peer Collaboration Hub
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-xl leading-relaxed">
-                    Connect with fellow engineers for mock interviews, pair
-                    programming on real-world projects, or assemble teams for
-                    upcoming hackathons.
-                  </p>
-                </div>
-                <Button className="bg-primary text-black font-bold text-xs h-9 px-4 rounded-xl hover:bg-primary/90 shadow-xs shrink-0 cursor-pointer">
-                  + Host Collaboration Room
-                </Button>
-              </div>
-
-              {/* Active Collaboration Rooms */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Room 1 */}
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between hover:border-foreground/20 transition-all">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded text-foreground">
-                          Mock Technical Interview
-                        </span>
-                        <h3 className="font-bold text-base text-foreground mt-2">
-                          System Design & Frontend Architecture
-                        </h3>
-                      </div>
-                      <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        Active Now
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                      Practice 45-minute simulated system design for
-                      high-traffic web applications with peer review and rubric
-                      scoring.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-3.5">
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Next.js
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Web Performance
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        State Architecture
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Host: Sarah L. · 2/3 Slots Filled
-                    </span>
-                    <Button
-                      size="sm"
-                      className="bg-primary text-black font-bold text-xs h-8 px-3.5 rounded-xl hover:bg-primary/90 shadow-xs cursor-pointer"
-                    >
-                      Join Room
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Room 2 */}
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between hover:border-foreground/20 transition-all">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded text-foreground">
-                          Pair Coding Sprint
-                        </span>
-                        <h3 className="font-bold text-base text-foreground mt-2">
-                          Algorithms & Data Structures Prep
-                        </h3>
-                      </div>
-                      <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        Active Now
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                      Live pair coding session tackling LeetCode Medium/Hard
-                      problems on graphs, dynamic programming, and heaps.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-3.5">
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        TypeScript
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Python
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Graphs & DP
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Host: David M. · 1 Slot Available
-                    </span>
-                    <Button
-                      size="sm"
-                      className="bg-primary text-black font-bold text-xs h-8 px-3.5 rounded-xl hover:bg-primary/90 shadow-xs cursor-pointer"
-                    >
-                      Join Room
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Room 3 */}
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between hover:border-foreground/20 transition-all">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded text-foreground">
-                          Hackathon Project Squad
-                        </span>
-                        <h3 className="font-bold text-base text-foreground mt-2">
-                          AI Job Intelligence & Resume Screener
-                        </h3>
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
-                        Starting 6 PM
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                      Building an open-source evaluation dashboard for vector
-                      matching engines. Looking for 1 backend developer
-                      proficient in Python/FastAPI.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-3.5">
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        FastAPI
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        PostgreSQL
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Docker
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Host: Alex R. · 3/4 Members
-                    </span>
-                    <Button
-                      size="sm"
-                      className="bg-primary text-black font-bold text-xs h-8 px-3.5 rounded-xl hover:bg-primary/90 shadow-xs cursor-pointer"
-                    >
-                      Request to Join
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Room 4 */}
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between hover:border-foreground/20 transition-all">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded text-foreground">
-                          Peer Code Review
-                        </span>
-                        <h3 className="font-bold text-base text-foreground mt-2">
-                          Full-Stack Portfolio & PR Review
-                        </h3>
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
-                        Open Queue
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                      Bring your pull request or portfolio project to get
-                      actionable feedback from peer engineers on architecture,
-                      security, and clean code.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-3.5">
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Code Review
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Architecture
-                      </span>
-                      <span className="text-[11px] font-medium bg-muted text-foreground px-2 py-0.5 rounded-md border border-border">
-                        Testing
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Host: Elena K. · 2 Slots Open
-                    </span>
-                    <Button
-                      size="sm"
-                      className="bg-primary text-black font-bold text-xs h-8 px-3.5 rounded-xl hover:bg-primary/90 shadow-xs cursor-pointer"
-                    >
-                      Join Room
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : jobs.length ? (
+          {jobs.length ? (
             <div>
               {jobs.map((job) => (
                 <JobCard
