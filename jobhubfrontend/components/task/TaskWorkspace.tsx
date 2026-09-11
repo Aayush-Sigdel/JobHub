@@ -102,8 +102,9 @@ export function TaskHeader({
             title="Tab and app switches since starting this assignment in this browser tab"
             role="status"
           >
-            <ShieldCheck className="size-3.5" /> Monitored · {tabSwitchCount}/
-            {warningLimit}
+            <ShieldCheck className="size-3.5 shrink-0" />
+            <span>Tab/app switches</span>
+            <span className="tabular-nums">· {tabSwitchCount}/{warningLimit}</span>
           </span>
         )}
         {children}
