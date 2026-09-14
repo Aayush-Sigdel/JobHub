@@ -1,4 +1,5 @@
 import Link from "next/link";
+import JobHubLogo from "@/components/brand/JobHubLogo";
 import Image from "next/image";
 import { IconArrowRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export default function LandingSectionSix() {
           aria-label="JobHub home"
           className="rounded-md text-4xl font-extrabold tracking-tight focus-visible:outline-2 focus-visible:outline-foreground"
         >
-          JobHub.
+          <JobHubLogo markClassName="size-10" />
         </Link>
         <nav
           aria-label="Footer navigation"

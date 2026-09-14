@@ -109,9 +109,9 @@ export default function EnterprisePage() {
   };
 
   return (
-    <main className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-neutral-900 selection:text-white">
+    <main className="min-h-dvh w-full flex flex-col md:flex-row bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Left Column: Minimal character stage */}
-      <div className="w-full md:w-[50%] lg:w-[54%] bg-[#ECECEE] min-h-[440px] md:min-h-screen flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
+      <div className="w-full md:w-[50%] lg:w-[54%] bg-muted border-b border-border md:border-b-0 md:border-r min-h-[440px] md:min-h-dvh flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
         <div className="relative w-full flex-1 flex flex-col justify-end items-center pb-0">
           <AuthCharacters
             focusedField={focusedField}
@@ -128,17 +128,17 @@ export default function EnterprisePage() {
       </div>
 
       {/* Right Column: Clean, Minimalist Executive Flow */}
-      <div className="w-full md:w-[50%] lg:w-[46%] min-h-[calc(100vh-440px)] md:min-h-screen bg-white flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-neutral-900 overflow-y-auto">
+      <div className="w-full md:w-[50%] lg:w-[46%] min-h-[calc(100dvh-440px)] md:min-h-dvh bg-card flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-foreground overflow-y-auto">
         <div className="w-full max-w-sm">
           <AnimatePresence mode="wait">
             {!isSubmitted ? (
               <div className="space-y-7">
                 {/* Minimal Step Indicator */}
-                <div className="flex items-center justify-between text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground r">
                   <span>Step 0{currentStep} / 0{totalSteps}</span>
-                  <div className="w-16 h-1 bg-neutral-100 rounded-full overflow-hidden">
+                  <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-neutral-900 transition-all duration-300 rounded-full"
+                      className="h-full bg-primary transition-all duration-300 rounded-full"
                       style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                     />
                   </div>
@@ -161,11 +161,11 @@ export default function EnterprisePage() {
                     {currentStep === 1 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             What is your company name?
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
-                            We'll customize your candidate pipelines accordingly.
+                          <p className="text-sm text-muted-foreground font-medium">
+                            We&apos;ll customize your candidate pipelines accordingly.
                           </p>
                         </div>
 
@@ -183,7 +183,7 @@ export default function EnterprisePage() {
                             setCompanyName(e.target.value);
                             if (authError) setAuthError("");
                           }}
-                          className="w-full h-12 px-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                          className="w-full h-12 px-4 rounded-xl bg-background border border-border text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                         />
                       </div>
                     )}
@@ -192,10 +192,10 @@ export default function EnterprisePage() {
                     {currentStep === 2 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             What is your name and role?
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             Who will be our primary point of contact?
                           </p>
                         </div>
@@ -215,7 +215,7 @@ export default function EnterprisePage() {
                               setFullName(e.target.value);
                               if (authError) setAuthError("");
                             }}
-                            className="w-full h-12 px-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                            className="w-full h-12 px-4 rounded-xl bg-background border border-border text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                           />
                           <input
                             type="text"
@@ -225,7 +225,7 @@ export default function EnterprisePage() {
                               setJobTitle(e.target.value);
                               if (authError) setAuthError("");
                             }}
-                            className="w-full h-12 px-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                            className="w-full h-12 px-4 rounded-xl bg-background border border-border text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                           />
                         </div>
                       </div>
@@ -235,11 +235,11 @@ export default function EnterprisePage() {
                     {currentStep === 3 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             What is your work email?
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
-                            We'll send the quote and calendar link here.
+                          <p className="text-sm text-muted-foreground font-medium">
+                            We&apos;ll send the quote and calendar link here.
                           </p>
                         </div>
 
@@ -257,7 +257,7 @@ export default function EnterprisePage() {
                             setWorkEmail(e.target.value);
                             if (authError) setAuthError("");
                           }}
-                          className="w-full h-12 px-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                          className="w-full h-12 px-4 rounded-xl bg-background border border-border text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                         />
                       </div>
                     )}
@@ -266,10 +266,10 @@ export default function EnterprisePage() {
                     {currentStep === 4 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             Expected hiring volume?
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             Approximate hires over the next 12 months.
                           </p>
                         </div>
@@ -285,10 +285,10 @@ export default function EnterprisePage() {
                                   setHiringVolume(opt.id);
                                   if (authError) setAuthError("");
                                 }}
-                                className={`h-11 px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                                className={`h-11 px-3.5 rounded-xl text-xs font-medium border transition-all cursor-pointer text-center ${
                                   isSelected
-                                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                                    : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-300"
+                                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                                    : "bg-background text-foreground border-border hover:border-foreground/25"
                                 }`}
                               >
                                 {opt.label}
@@ -303,10 +303,10 @@ export default function EnterprisePage() {
                     {currentStep === 5 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             Any specific requirements?
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             Share any priority roles, stack, or ATS needs.
                           </p>
                         </div>
@@ -320,7 +320,7 @@ export default function EnterprisePage() {
                             setNotes(e.target.value);
                             if (authError) setAuthError("");
                           }}
-                          className="w-full p-3.5 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                          className="w-full p-3.5 rounded-xl bg-background border border-border text-foreground text-sm font-medium placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                         />
                       </div>
                     )}
@@ -333,7 +333,7 @@ export default function EnterprisePage() {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
                       <span>Back</span>
@@ -348,7 +348,7 @@ export default function EnterprisePage() {
                     disabled={isSubmitting}
                     onMouseEnter={() => setIsHoveringSubmit(true)}
                     onMouseLeave={() => setIsHoveringSubmit(false)}
-                    className="inline-flex items-center gap-2 px-6 h-11 rounded-full text-xs sm:text-sm font-bold text-white bg-neutral-900 hover:bg-neutral-800 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 h-11 rounded-xl text-xs sm:text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/85 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <>
@@ -379,16 +379,16 @@ export default function EnterprisePage() {
                 transition={{ duration: 0.2 }}
                 className="text-center py-6 space-y-4"
               >
-                <div className="w-14 h-14 bg-neutral-100 text-neutral-900 rounded-full flex items-center justify-center mx-auto border border-neutral-200">
+                <div className="w-14 h-14 bg-muted text-foreground rounded-full flex items-center justify-center mx-auto border border-border">
                   <Check className="w-6 h-6 stroke-[2.5]" />
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-extrabold text-neutral-900 tracking-tight mb-1">
+                  <h2 className="text-2xl font-semibold text-foreground tracking-tight mb-1">
                     Request Received
                   </h2>
-                  <p className="text-sm text-neutral-500 font-medium leading-relaxed">
-                    Thank you, {fullName}. Our enterprise team will reach out to <span className="font-bold text-neutral-900">{workEmail}</span> within 24 hours.
+                  <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                    Thank you, {fullName}. Our enterprise team will reach out to <span className="font-medium text-foreground">{workEmail}</span> within 24 hours.
                   </p>
                 </div>
 
@@ -396,7 +396,7 @@ export default function EnterprisePage() {
                   <Link href="/">
                     <button
                       type="button"
-                      className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+                      className="w-full h-11 bg-primary hover:bg-primary/85 text-primary-foreground rounded-xl font-medium text-xs sm:text-sm transition-colors cursor-pointer"
                     >
                       Return to Home
                     </button>

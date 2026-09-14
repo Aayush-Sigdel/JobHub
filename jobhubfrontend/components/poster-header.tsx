@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/motion/theme-toggle";
 import { cn } from "@/lib/utils";
+import JobHubLogo from "@/components/brand/JobHubLogo";
 import type { UserProfileResponse } from "@/types/api/user";
 
 interface PosterHeaderProps {
@@ -62,8 +63,7 @@ export function PosterHeader({ profile }: PosterHeaderProps) {
           href="/dashboard"
           className="flex items-center gap-1 font-black text-2xl tracking-tighter text-foreground hover:opacity-90 transition-opacity"
         >
-          <span>JobHub</span>
-          <span className="text-primary font-black">.</span>
+          <JobHubLogo />
           <span className="ml-2 text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-muted text-foreground border border-border">
             Employer
           </span>

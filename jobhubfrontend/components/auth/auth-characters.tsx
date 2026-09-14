@@ -124,7 +124,7 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
     if (errorMessage) {
       return {
         speaker: "Shadow",
-        color: "#EF4444",
+        color: "var(--destructive)",
         text: errorMessage,
       };
     }
@@ -394,25 +394,25 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
               >
                 <path
                   d="M 60 4 Q 180 2 300 5 M 315 5 L 335 6"
-                  stroke={errorMessage ? "#EF4444" : "#18181D"}
+                  stroke={errorMessage ? "var(--destructive)" : "var(--foreground)"}
                   strokeWidth="2.4"
                   strokeLinecap="round"
                 />
                 <path
                   d="M 6 30 Q 3 60 7 88"
-                  stroke={errorMessage ? "#EF4444" : "#18181D"}
+                  stroke={errorMessage ? "var(--destructive)" : "var(--foreground)"}
                   strokeWidth="2.4"
                   strokeLinecap="round"
                 />
                 <path
                   d="M 412 85 Q 415 100 405 115"
-                  stroke={errorMessage ? "#EF4444" : "#18181D"}
+                  stroke={errorMessage ? "var(--destructive)" : "var(--foreground)"}
                   strokeWidth="2.4"
                   strokeLinecap="round"
                 />
                 <path
                   d="M 175 118 Q 188 126 198 125"
-                  stroke={errorMessage ? "#EF4444" : "#18181D"}
+                  stroke={errorMessage ? "var(--destructive)" : "var(--foreground)"}
                   strokeWidth="2.2"
                   strokeLinecap="round"
                 />
@@ -420,30 +420,30 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
 
               {/* Main Hand-Drawn Styled Comic Bubble */}
               <div
-                className={`relative bg-white text-neutral-900 border-[3.2px] ${
+                className={`relative bg-card text-foreground border-2 ${
                   errorMessage
-                    ? "border-rose-500 shadow-[0_12px_24px_rgba(239,68,68,0.12)]"
-                    : "border-[#18181D] shadow-[0_12px_24px_rgba(0,0,0,0.06)]"
+                    ? "border-destructive shadow-sm"
+                    : "border-foreground/70 shadow-sm"
                 } rounded-[24px] sm:rounded-[28px] px-5 sm:px-6 py-3.5 max-w-sm sm:max-w-md flex items-center gap-3.5 z-10 transition-colors duration-200`}
               >
                 {/* Speaker Dot */}
                 <span
-                  className="w-3.5 h-3.5 rounded-full shrink-0 border-2 border-[#18181D] shadow-sm animate-pulse"
+                  className="w-3.5 h-3.5 rounded-full shrink-0 border border-foreground/30 motion-safe:animate-pulse"
                   style={{ backgroundColor: currentDialogue.color }}
                 />
 
                 {/* Speaker & Dialogue Copy */}
                 <div className="flex flex-col">
                   <span
-                    className={`text-[10px] sm:text-[11px] font-black uppercase tracking-widest ${
-                      errorMessage ? "text-rose-500" : "text-neutral-400"
+                    className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest ${
+                      errorMessage ? "text-destructive" : "text-muted-foreground"
                     }`}
                   >
                     {currentDialogue.speaker}
                   </span>
                   <p
-                    className={`text-sm sm:text-base font-extrabold leading-snug ${
-                      errorMessage ? "text-rose-700" : "text-neutral-900"
+                    className={`text-sm sm:text-base font-medium leading-snug ${
+                      errorMessage ? "text-destructive" : "text-foreground"
                     }`}
                   >
                     {currentDialogue.text}
@@ -452,16 +452,16 @@ export const AuthCharacters: React.FC<AuthCharactersProps> = ({
 
                 {/* Hand-Drawn Comic Tail */}
                 <div className="absolute -bottom-5 left-16 sm:left-20 w-8 h-6 overflow-visible pointer-events-none">
-                  <svg viewBox="0 0 32 24" className="w-8 h-6 fill-white">
+                  <svg viewBox="0 0 32 24" className="w-8 h-6 fill-card">
                     <path
                       d="M 0 0 C 4 8, 8 18, 16 22 C 14 14, 18 6, 28 0 Z"
-                      fill="#FFFFFF"
-                      stroke={errorMessage ? "#EF4444" : "#18181D"}
+                      fill="var(--card)"
+                      stroke={errorMessage ? "var(--destructive)" : "var(--foreground)"}
                       strokeWidth="3.2"
                       strokeLinejoin="round"
                       strokeLinecap="round"
                     />
-                    <rect x="1" y="-2" width="26" height="4" fill="#FFFFFF" />
+                    <rect x="1" y="-2" width="26" height="4" fill="var(--card)" />
                   </svg>
                 </div>
               </div>

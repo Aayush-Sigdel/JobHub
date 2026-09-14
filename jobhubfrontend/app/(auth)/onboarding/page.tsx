@@ -25,7 +25,7 @@ import { updateProfileAction, completeOnboardingAction } from "@/lib/actions/use
 import { getSession, useSession } from "next-auth/react";
 
 const GithubIcon = () => (
-  <svg className="w-4 h-4 shrink-0 text-neutral-700" viewBox="0 0 24 24" fill="currentColor">
+  <svg className="w-4 h-4 shrink-0 text-foreground" viewBox="0 0 24 24" fill="currentColor">
     <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
   </svg>
 );
@@ -333,9 +333,9 @@ function OnboardingContent() {
   };
 
   return (
-    <main className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-neutral-900 selection:text-white">
+    <main className="min-h-dvh w-full flex flex-col md:flex-row bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Left Column: Character Stage */}
-      <div className="w-full md:w-[50%] lg:w-[54%] bg-[#ECECEE] min-h-[440px] md:min-h-screen flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
+      <div className="w-full md:w-[50%] lg:w-[54%] bg-muted border-b border-border md:border-b-0 md:border-r min-h-[440px] md:min-h-dvh flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
         <div className="relative w-full flex-1 flex flex-col justify-end items-center pb-0">
           <AuthCharacters
             focusedField={focusedField}
@@ -352,17 +352,17 @@ function OnboardingContent() {
       </div>
 
       {/* Right Column: Minimalist Essential Onboarding Form */}
-      <div className="w-full md:w-[50%] lg:w-[46%] min-h-[calc(100vh-440px)] md:min-h-screen bg-white flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-neutral-900 overflow-y-auto">
+      <div className="w-full md:w-[50%] lg:w-[46%] min-h-[calc(100dvh-440px)] md:min-h-dvh bg-card flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-foreground overflow-y-auto">
         <div className="w-full max-w-sm">
           <AnimatePresence mode="wait">
             {!isSubmitted ? (
               <div className="space-y-7">
                 {/* Minimal Step Indicator */}
-                <div className="flex items-center justify-between text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground r">
                   <span>Profile Setup • Step 0{currentStep} / 0{totalSteps}</span>
-                  <div className="w-16 h-1 bg-neutral-100 rounded-full overflow-hidden">
+                  <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-neutral-900 transition-all duration-300 rounded-full"
+                      className="h-full bg-primary transition-all duration-300 rounded-full"
                       style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                     />
                   </div>
@@ -385,10 +385,10 @@ function OnboardingContent() {
                     {currentStep === 1 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             Profile Details & Headline
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             Confirm your name and introduce your professional background.
                           </p>
                         </div>
@@ -397,15 +397,15 @@ function OnboardingContent() {
                           {/* Full Name from Sign Up */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Full Name
                               </label>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
                                 Required
                               </span>
                             </div>
                             <div className="relative flex items-center">
-                              <User className="absolute left-3.5 w-4 h-4 text-neutral-400" />
+                              <User className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
                               <input
                                 type="text"
                                 autoFocus
@@ -421,13 +421,13 @@ function OnboardingContent() {
                                   setFullName(e.target.value);
                                   clearError("fullName");
                                 }}
-                                className={`w-full h-12 pl-10 pr-4 rounded-xl bg-neutral-50 border ${
-                                  fieldErrors.fullName ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
-                                } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                                className={`w-full h-12 pl-10 pr-4 rounded-xl bg-background border ${
+                                  fieldErrors.fullName ? "border-destructive bg-destructive/5" : "border-border"
+                                } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
                               />
                             </div>
                             {fieldErrors.fullName && (
-                              <p className="text-xs font-semibold text-rose-500 pl-1">
+                              <p className="text-xs font-semibold text-destructive pl-1">
                                 {fieldErrors.fullName}
                               </p>
                             )}
@@ -437,15 +437,15 @@ function OnboardingContent() {
                           {/*
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Username Handle
                               </label>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
                                 Required
                               </span>
                             </div>
                             <div className="relative flex items-center">
-                              <span className="absolute left-4 text-neutral-400 font-bold text-base select-none">
+                              <span className="absolute left-4 text-muted-foreground font-medium text-base select-none">
                                 @
                               </span>
                               <input
@@ -453,7 +453,7 @@ function OnboardingContent() {
                                 placeholder="username"
                                 value={username}
                                 onChange={(e) => handleUsernameChange(e.target.value)}
-                                className="w-full h-12 pl-9 pr-4 rounded-xl bg-neutral-50 border border-neutral-200"
+                                className="w-full h-12 pl-9 pr-4 rounded-xl bg-background border border-border"
                               />
                             </div>
                           </div>
@@ -462,10 +462,10 @@ function OnboardingContent() {
                           {/* Professional Title */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Professional Title
                               </label>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
                                 Required
                               </span>
                             </div>
@@ -482,12 +482,12 @@ function OnboardingContent() {
                                 setTitle(e.target.value);
                                 clearError("title");
                               }}
-                              className={`w-full h-12 px-4 rounded-xl bg-neutral-50 border ${
-                                fieldErrors.title ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
-                              } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                              className={`w-full h-12 px-4 rounded-xl bg-background border ${
+                                fieldErrors.title ? "border-destructive bg-destructive/5" : "border-border"
+                              } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
                             />
                             {fieldErrors.title && (
-                              <p className="text-xs font-semibold text-rose-500 pl-1">
+                              <p className="text-xs font-semibold text-destructive pl-1">
                                 {fieldErrors.title}
                               </p>
                             )}
@@ -496,10 +496,10 @@ function OnboardingContent() {
                           {/* Bio / About Me */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Bio / About Me
                               </label>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
                                 Required
                               </span>
                             </div>
@@ -516,21 +516,21 @@ function OnboardingContent() {
                                 setBio(e.target.value);
                                 clearError("bio");
                               }}
-                              className={`w-full p-3 rounded-xl bg-neutral-50 border ${
-                                fieldErrors.bio ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
-                              } text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all resize-none`}
+                              className={`w-full p-3 rounded-xl bg-background border ${
+                                fieldErrors.bio ? "border-destructive bg-destructive/5" : "border-border"
+                              } text-foreground text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all resize-none`}
                             />
                             <div className="flex items-center justify-between pl-1">
                               {fieldErrors.bio ? (
-                                <p className="text-xs font-semibold text-rose-500">
+                                <p className="text-xs font-semibold text-destructive">
                                   {fieldErrors.bio}
                                 </p>
                               ) : (
-                                <p className="text-[11px] text-neutral-400">
+                                <p className="text-[11px] text-muted-foreground">
                                   Short summary shown on your public profile
                                 </p>
                               )}
-                              <span className="text-[11px] text-neutral-400 font-medium">
+                              <span className="text-[11px] text-muted-foreground font-medium">
                                 {bio.length}/300
                               </span>
                             </div>
@@ -543,10 +543,10 @@ function OnboardingContent() {
                     {currentStep === 2 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             Your job preferences
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             We match you with opportunities based on these.
                           </p>
                         </div>
@@ -555,10 +555,10 @@ function OnboardingContent() {
                           {/* Preferred Role Name */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Preferred Role
                               </label>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
                                 Required
                               </span>
                             </div>
@@ -576,12 +576,12 @@ function OnboardingContent() {
                                 setPreferredRole(e.target.value);
                                 clearError("preferredRole");
                               }}
-                              className={`w-full h-12 px-4 rounded-xl bg-neutral-50 border ${
-                                fieldErrors.preferredRole ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
-                              } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                              className={`w-full h-12 px-4 rounded-xl bg-background border ${
+                                fieldErrors.preferredRole ? "border-destructive bg-destructive/5" : "border-border"
+                              } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
                             />
                             {fieldErrors.preferredRole && (
-                              <p className="text-xs font-semibold text-rose-500 pl-1">
+                              <p className="text-xs font-semibold text-destructive pl-1">
                                 {fieldErrors.preferredRole}
                               </p>
                             )}
@@ -590,10 +590,10 @@ function OnboardingContent() {
                           {/* Experience Level */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Seniority Level
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
@@ -606,10 +606,10 @@ function OnboardingContent() {
                                     setRoleLevel(lvl);
                                     clearError();
                                   }}
-                                  className={`h-10 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                                  className={`h-10 px-2.5 rounded-xl text-xs font-medium border transition-all cursor-pointer text-center ${
                                     roleLevel === lvl
-                                      ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                                      : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-300"
+                                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                                      : "bg-background text-foreground border-border hover:border-foreground/25"
                                   }`}
                                 >
                                   {lvl}
@@ -621,10 +621,10 @@ function OnboardingContent() {
                           {/* Work Type */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Work Style
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
@@ -637,10 +637,10 @@ function OnboardingContent() {
                                     setWorkType(type);
                                     clearError();
                                   }}
-                                  className={`h-10 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                                  className={`h-10 px-2 rounded-xl text-xs font-medium border transition-all cursor-pointer text-center ${
                                     workType === type
-                                      ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                                      : "bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-300"
+                                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                                      : "bg-background text-foreground border-border hover:border-foreground/25"
                                   }`}
                                 >
                                   {type}
@@ -656,10 +656,10 @@ function OnboardingContent() {
                     {currentStep === 3 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             Key skills & location
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             Highlight your strengths and location for recruiters.
                           </p>
                         </div>
@@ -668,41 +668,41 @@ function OnboardingContent() {
                           {/* Active Selected Skills */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Selected Skills ({skills.length}/8)
                               </label>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
                                 Min 1 Required
                               </span>
                             </div>
                             <div
-                              className={`flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-xl bg-neutral-50 border ${
-                                fieldErrors.skills ? "border-rose-400 bg-rose-50/20" : "border-neutral-200"
+                              className={`flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-xl bg-background border ${
+                                fieldErrors.skills ? "border-destructive bg-destructive/5" : "border-border"
                               }`}
                             >
                               {skills.map((skill) => (
                                 <span
                                   key={skill}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 text-white text-xs font-bold"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium"
                                 >
                                   {skill}
                                   <button
                                     type="button"
                                     onClick={() => removeSkill(skill)}
-                                    className="hover:text-rose-300 cursor-pointer"
+                                    className="hover:text-destructive/80 cursor-pointer"
                                   >
                                     <X className="w-3 h-3" />
                                   </button>
                                 </span>
                               ))}
                               {skills.length === 0 && (
-                                <span className="text-xs text-neutral-400 py-1">
+                                <span className="text-xs text-muted-foreground py-1">
                                   Click tags below or type to add skills
                                 </span>
                               )}
                             </div>
                             {fieldErrors.skills && (
-                              <p className="text-xs font-semibold text-rose-500 pl-1">
+                              <p className="text-xs font-semibold text-destructive pl-1">
                                 {fieldErrors.skills}
                               </p>
                             )}
@@ -719,7 +719,7 @@ function OnboardingContent() {
                                     key={s}
                                     type="button"
                                     onClick={() => addSkill(s)}
-                                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 text-xs font-semibold transition-colors cursor-pointer"
+                                    className="px-2.5 py-1 rounded-lg bg-card hover:bg-muted text-foreground border border-border text-xs font-semibold transition-colors cursor-pointer"
                                   >
                                     + {s}
                                   </button>
@@ -730,14 +730,14 @@ function OnboardingContent() {
                           {/* Location Picker (Reused from candidate profile page) */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Location
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
-                            <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                            <div className="p-3 rounded-xl bg-background border border-border flex items-center justify-between">
                               <LocationPopover
                                 profileLocation={profileLocation}
                                 setProfileLocation={(loc) => {
@@ -755,10 +755,10 @@ function OnboardingContent() {
                     {currentStep === 4 && (
                       <div className="space-y-4">
                         <div>
-                          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mb-1.5">
+                          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-1.5">
                             Links & Resume
                           </h1>
-                          <p className="text-sm text-neutral-500 font-medium">
+                          <p className="text-sm text-muted-foreground font-medium">
                             Add your portfolio, GitHub, or resume (optional).
                           </p>
                         </div>
@@ -767,15 +767,15 @@ function OnboardingContent() {
                           {/* Phone / Contact Number */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Contact Phone Number
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
                             <div className="relative flex items-center">
-                              <Phone className="absolute left-3.5 w-4 h-4 text-neutral-400" />
+                              <Phone className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
                               <input
                                 type="tel"
                                 placeholder="+977 98XXXXXXXX"
@@ -784,7 +784,7 @@ function OnboardingContent() {
                                   setContactNumber(e.target.value);
                                   clearError();
                                 }}
-                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-background border border-border text-foreground text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                               />
                             </div>
                           </div>
@@ -792,10 +792,10 @@ function OnboardingContent() {
                           {/* LinkedIn URL */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 LinkedIn Profile
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
@@ -811,7 +811,7 @@ function OnboardingContent() {
                                   setLinkedinUrl(e.target.value);
                                   clearError();
                                 }}
-                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-background border border-border text-foreground text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                               />
                             </div>
                           </div>
@@ -819,10 +819,10 @@ function OnboardingContent() {
                           {/* GitHub URL */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 GitHub Profile
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
@@ -838,7 +838,7 @@ function OnboardingContent() {
                                   setGithubUrl(e.target.value);
                                   clearError();
                                 }}
-                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-background border border-border text-foreground text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                               />
                             </div>
                           </div>
@@ -846,15 +846,15 @@ function OnboardingContent() {
                           {/* Portfolio / Website URL */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Portfolio / Website
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
                             <div className="relative flex items-center">
-                              <Globe className="absolute left-3.5 w-4 h-4 text-neutral-400" />
+                              <Globe className="absolute left-3.5 w-4 h-4 text-muted-foreground" />
                               <input
                                 type="url"
                                 placeholder="https://yourportfolio.com"
@@ -863,7 +863,7 @@ function OnboardingContent() {
                                   setPortfolioUrl(e.target.value);
                                   clearError();
                                 }}
-                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-900 text-sm font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all"
+                                className="w-full h-11 pl-10 pr-4 rounded-xl bg-background border border-border text-foreground text-sm font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all"
                               />
                             </div>
                           </div>
@@ -871,10 +871,10 @@ function OnboardingContent() {
                           {/* Resume Upload */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide">
+                              <label className="block text-xs font-medium text-foreground ">
                                 Upload Resume / CV
                               </label>
-                              <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                 Optional
                               </span>
                             </div>
@@ -890,27 +890,27 @@ function OnboardingContent() {
                               <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-full h-20 rounded-xl border-2 border-dashed border-neutral-200 hover:border-neutral-400 bg-neutral-50 hover:bg-neutral-100/70 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer group"
+                                className="w-full h-20 rounded-xl border border-dashed border-border hover:border-foreground/40 bg-background hover:bg-muted/70 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer group"
                               >
-                                <UploadCloud className="w-5 h-5 text-neutral-400 group-hover:text-neutral-700 transition-colors" />
-                                <span className="text-xs font-bold text-neutral-700">
+                                <UploadCloud className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                <span className="text-xs font-medium text-foreground">
                                   Click to upload PDF or DOCX
                                 </span>
-                                <span className="text-[10px] text-neutral-400">
+                                <span className="text-[10px] text-muted-foreground">
                                   Max 5MB file size
                                 </span>
                               </button>
                             ) : (
-                              <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                              <div className="p-3 rounded-xl bg-background border border-border flex items-center justify-between">
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                                  <div className="w-8 h-8 rounded-lg bg-primary/15 text-foreground flex items-center justify-center shrink-0">
                                     <FileText className="w-4 h-4" />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-xs font-bold text-neutral-900 truncate">
+                                    <p className="text-xs font-medium text-foreground truncate">
                                       {resumeFile.name}
                                     </p>
-                                    <p className="text-[10px] text-neutral-400">
+                                    <p className="text-[10px] text-muted-foreground">
                                       {resumeFile.size} • Ready
                                     </p>
                                   </div>
@@ -918,7 +918,7 @@ function OnboardingContent() {
                                 <button
                                   type="button"
                                   onClick={() => setResumeFile(null)}
-                                  className="text-neutral-400 hover:text-rose-500 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                  className="text-muted-foreground hover:text-destructive p-1.5 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -937,7 +937,7 @@ function OnboardingContent() {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
                       <span>Back</span>
@@ -952,7 +952,7 @@ function OnboardingContent() {
                     disabled={isSubmitting}
                     onMouseEnter={() => setIsHoveringSubmit(true)}
                     onMouseLeave={() => setIsHoveringSubmit(false)}
-                    className="inline-flex items-center gap-2 px-6 h-11 rounded-full text-xs sm:text-sm font-bold text-white bg-neutral-900 hover:bg-neutral-800 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 h-11 rounded-xl text-xs sm:text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/85 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <>
@@ -983,16 +983,16 @@ function OnboardingContent() {
                 transition={{ duration: 0.2 }}
                 className="text-center py-6 space-y-4"
               >
-                <div className="w-14 h-14 bg-neutral-100 text-neutral-900 rounded-full flex items-center justify-center mx-auto border border-neutral-200">
+                <div className="w-14 h-14 bg-muted text-foreground rounded-full flex items-center justify-center mx-auto border border-border">
                   <Check className="w-6 h-6 stroke-[2.5]" />
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-extrabold text-neutral-900 tracking-tight mb-1">
+                  <h2 className="text-2xl font-semibold text-foreground tracking-tight mb-1">
                     Profile Ready!
                   </h2>
-                  <p className="text-sm text-neutral-500 font-medium leading-relaxed">
-                    Welcome to JobHub, <span className="font-bold text-neutral-900">{fullName || initialName || "Candidate"}</span>. Your candidate profile is set up to receive matched opportunities.
+                  <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                    Welcome to JobHub, <span className="font-medium text-foreground">{fullName || initialName || "Candidate"}</span>. Your candidate profile is set up to receive matched opportunities.
                   </p>
                 </div>
 
@@ -1003,7 +1003,7 @@ function OnboardingContent() {
                   >
                     <button
                       type="button"
-                      className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full font-bold text-xs sm:text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      className="w-full h-11 bg-primary hover:bg-primary/85 text-primary-foreground rounded-xl font-medium text-xs sm:text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                     >
                       <User className="w-4 h-4" />
                       <span>View Full Profile</span>
@@ -1016,7 +1016,7 @@ function OnboardingContent() {
                   >
                     <button
                       type="button"
-                      className="w-full h-11 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-full font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+                      className="w-full h-11 bg-muted hover:bg-accent text-foreground rounded-xl font-medium text-xs sm:text-sm transition-colors cursor-pointer"
                     >
                       Go to Dashboard
                     </button>
@@ -1035,8 +1035,8 @@ export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full bg-white flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-neutral-800" />
+        <div className="min-h-dvh w-full bg-card flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
         </div>
       }
     >

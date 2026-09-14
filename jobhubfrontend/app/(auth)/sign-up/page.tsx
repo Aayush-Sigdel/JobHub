@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import JobHubLogo from "@/components/brand/JobHubLogo";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,15 +39,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const BrandMark = () => (
-  <svg
-    className="w-8 h-8 text-neutral-900"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
-    <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
-  </svg>
-);
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -154,9 +146,9 @@ export default function SignUpPage() {
   const passwordReg = register("password");
 
   return (
-    <main className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-neutral-900 selection:text-white">
+    <main className="min-h-dvh w-full flex flex-col md:flex-row bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Left Column: Character Stage with Comic Bubble */}
-      <div className="w-full md:w-[52%] lg:w-[55%] xl:w-[58%] bg-[#ECECEE] min-h-[480px] md:min-h-screen flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
+      <div className="w-full md:w-[52%] lg:w-[55%] xl:w-[58%] bg-muted border-b border-border md:border-b-0 md:border-r min-h-[480px] md:min-h-dvh flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
         {/* Grounded Interactive Characters + Speech Bubble */}
         <div className="relative w-full flex-1 flex flex-col justify-end items-center pb-0">
           <AuthCharacters
@@ -176,7 +168,7 @@ export default function SignUpPage() {
       </div>
 
       {/* Right Column: Full-height clean form page */}
-      <div className="w-full md:w-[48%] lg:w-[45%] xl:w-[42%] min-h-[calc(100vh-480px)] md:min-h-screen bg-white flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-neutral-900 overflow-y-auto">
+      <div className="w-full md:w-[48%] lg:w-[45%] xl:w-[42%] min-h-[calc(100dvh-480px)] md:min-h-dvh bg-card flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-foreground overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -185,32 +177,32 @@ export default function SignUpPage() {
         >
           {/* Brand Sparkle Logo */}
           <div className="flex justify-center mb-5">
-            <BrandMark />
+            <JobHubLogo markOnly markClassName="size-11" />
           </div>
 
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight text-neutral-900 mb-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-4xl font-semibold tracking-tight text-foreground mb-2">
               Create an account
             </h1>
-            <p className="text-base text-neutral-500 font-medium">
+            <p className="text-base text-muted-foreground font-medium">
               Join JobHub to {watch("employer") ? "hire top talent" : "find your dream job"}
             </p>
           </div>
           
           {/* Account Type Toggle */}
-          <div className="flex bg-neutral-100 p-1 rounded-xl mb-6 font-semibold text-sm">
+          <div className="flex bg-muted p-1 rounded-xl mb-6 font-semibold text-sm">
             <button
               type="button"
               onClick={() => setValue("employer", false)}
-              className={`flex-1 py-2.5 rounded-lg transition-all ${!watch("employer") ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${!watch("employer") ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Candidate
             </button>
             <button
               type="button"
               onClick={() => setValue("employer", true)}
-              className={`flex-1 py-2.5 rounded-lg transition-all ${watch("employer") ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${watch("employer") ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Employer
             </button>
@@ -222,7 +214,7 @@ export default function SignUpPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="name"
-                className="block text-sm font-bold text-neutral-800 uppercase tracking-wide"
+                className="block text-sm font-medium text-foreground "
               >
                 Full Name
               </label>
@@ -245,14 +237,14 @@ export default function SignUpPage() {
                   clearAuthError();
                 }}
                 placeholder="Jane Doe"
-                className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
+                className={`w-full h-12 px-4 rounded-xl bg-background border ${
                   errors.name && (touchedFields.name || isSubmitted)
-                    ? "border-rose-400 bg-rose-50/20"
-                    : "border-neutral-200"
-                } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border"
+                } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
               />
               {errors.name && (touchedFields.name || isSubmitted) && (
-                <p className="text-xs font-semibold text-rose-500 mt-1 pl-1">
+                <p className="text-xs font-semibold text-destructive mt-1 pl-1">
                   {errors.name.message}
                 </p>
               )}
@@ -262,7 +254,7 @@ export default function SignUpPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="email"
-                className="block text-sm font-bold text-neutral-800 uppercase tracking-wide"
+                className="block text-sm font-medium text-foreground "
               >
                 Email
               </label>
@@ -285,14 +277,14 @@ export default function SignUpPage() {
                   clearAuthError();
                 }}
                 placeholder="name@company.com"
-                className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
+                className={`w-full h-12 px-4 rounded-xl bg-background border ${
                   errors.email && (touchedFields.email || isSubmitted)
-                    ? "border-rose-400 bg-rose-50/20"
-                    : "border-neutral-200"
-                } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border"
+                } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
               />
               {errors.email && (touchedFields.email || isSubmitted) && (
-                <p className="text-xs font-semibold text-rose-500 mt-1 pl-1">
+                <p className="text-xs font-semibold text-destructive mt-1 pl-1">
                   {errors.email.message}
                 </p>
               )}
@@ -302,7 +294,7 @@ export default function SignUpPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="password"
-                className="block text-sm font-bold text-neutral-800 uppercase tracking-wide"
+                className="block text-sm font-medium text-foreground "
               >
                 Password
               </label>
@@ -326,16 +318,16 @@ export default function SignUpPage() {
                     clearAuthError();
                   }}
                   placeholder="••••••••"
-                  className={`w-full h-13 px-4 pr-12 rounded-2xl bg-neutral-50 border-2 ${
+                  className={`w-full h-12 px-4 pr-12 rounded-xl bg-background border ${
                     errors.password && (touchedFields.password || isSubmitted)
-                      ? "border-rose-400 bg-rose-50/20"
-                      : "border-neutral-200"
-                  } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                      ? "border-destructive bg-destructive/5"
+                      : "border-border"
+                  } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-800 transition-colors p-1.5 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1.5 cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -351,8 +343,8 @@ export default function SignUpPage() {
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
                     hasLength
-                      ? "text-emerald-600 font-bold"
-                      : "text-neutral-400"
+                      ? "text-success font-medium"
+                      : "text-muted-foreground"
                   }`}
                 >
                   <span>{hasLength ? "✓" : "•"}</span>
@@ -362,8 +354,8 @@ export default function SignUpPage() {
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
                     hasUpperLower
-                      ? "text-emerald-600 font-bold"
-                      : "text-neutral-400"
+                      ? "text-success font-medium"
+                      : "text-muted-foreground"
                   }`}
                 >
                   <span>{hasUpperLower ? "✓" : "•"}</span>
@@ -373,8 +365,8 @@ export default function SignUpPage() {
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
                     hasNumber
-                      ? "text-emerald-600 font-bold"
-                      : "text-neutral-400"
+                      ? "text-success font-medium"
+                      : "text-muted-foreground"
                   }`}
                 >
                   <span>{hasNumber ? "✓" : "•"}</span>
@@ -384,8 +376,8 @@ export default function SignUpPage() {
                 <span
                   className={`flex items-center gap-1 transition-colors duration-150 ${
                     hasSpecial
-                      ? "text-emerald-600 font-bold"
-                      : "text-neutral-400"
+                      ? "text-success font-medium"
+                      : "text-muted-foreground"
                   }`}
                 >
                   <span>{hasSpecial ? "✓" : "•"}</span>
@@ -394,7 +386,7 @@ export default function SignUpPage() {
               </div>
 
               {errors.password && (touchedFields.password || isSubmitted) && (
-                <p className="text-xs font-semibold text-rose-500 mt-1 pl-1">
+                <p className="text-xs font-semibold text-destructive mt-1 pl-1">
                   {errors.password.message}
                 </p>
               )}
@@ -402,7 +394,7 @@ export default function SignUpPage() {
 
             {/* Form-level Auth error message */}
             {authError && (
-              <p className="text-xs font-semibold text-rose-500 mt-1.5 pl-1">
+              <p className="text-xs font-semibold text-destructive mt-1.5 pl-1">
                 {authError}
               </p>
             )}
@@ -413,7 +405,7 @@ export default function SignUpPage() {
               disabled={isSubmitting}
               onMouseEnter={() => setIsHoveringSubmit(true)}
               onMouseLeave={() => setIsHoveringSubmit(false)}
-              className="w-full h-13 sm:h-14 mt-3 bg-[#18181B] hover:bg-neutral-800 active:scale-[0.99] text-white rounded-full font-bold text-base sm:text-lg transition-all duration-150 flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full h-12 sm:h-12 mt-3 bg-primary hover:bg-primary/85 active:scale-[0.99] text-primary-foreground rounded-xl font-medium text-base sm:text-base transition-all duration-150 flex items-center justify-center gap-2.5 shadow-none hover:shadow-none disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -431,7 +423,7 @@ export default function SignUpPage() {
               onClick={handleGoogleSignUp}
               onMouseEnter={() => setIsHoveringGoogle(true)}
               onMouseLeave={() => setIsHoveringGoogle(false)}
-              className="w-full h-13 sm:h-14 bg-[#F4F4F6] hover:bg-[#EAEAEF] active:scale-[0.99] text-neutral-800 rounded-full font-bold text-base border-2 border-neutral-200/80 transition-all duration-150 flex items-center justify-center gap-3 cursor-pointer shadow-sm"
+              className="w-full h-12 sm:h-12 bg-card hover:bg-muted active:scale-[0.99] text-foreground rounded-xl font-medium text-base border border-border transition-all duration-150 flex items-center justify-center gap-3 cursor-pointer shadow-sm"
             >
               <GoogleIcon />
               <span>Sign up with Google</span>
@@ -439,11 +431,11 @@ export default function SignUpPage() {
           </form>
 
           {/* Footer Link */}
-          <div className="text-center mt-7 text-sm text-neutral-500 font-medium">
+          <div className="text-center mt-7 text-sm text-muted-foreground font-medium">
             Already have an account?{" "}
             <Link
               href="/sign-in"
-              className="font-bold text-neutral-900 hover:underline transition-colors ml-1"
+              className="font-medium text-foreground hover:underline transition-colors ml-1"
             >
               Log In
             </Link>

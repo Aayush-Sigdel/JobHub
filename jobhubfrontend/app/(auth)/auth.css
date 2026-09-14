@@ -1,0 +1,8 @@
+.auth-shell :is(a, button):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 4px;
+}
+
+.auth-shell input[type="checkbox"] {
+  accent-color: var(--primary);
+}

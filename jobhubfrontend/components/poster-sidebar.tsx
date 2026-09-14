@@ -10,6 +10,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import JobHubLogo from "@/components/brand/JobHubLogo";
 
 const navItems = [
   {
@@ -46,10 +47,8 @@ export function PosterSidebar() {
     <aside className="hidden w-64 flex-col border-r bg-card/50 backdrop-blur-xl md:flex">
       <div className="flex h-16 shrink-0 items-center px-6 border-b">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
-          <div className="size-8 rounded-full bg-brand flex items-center justify-center text-brand-foreground">
-            J
-          </div>
-          JobHub <span className="text-brand text-sm ml-1 font-medium px-2 py-0.5 rounded-full bg-brand/10">Employer</span>
+          <JobHubLogo />
+          <span className="text-muted-foreground text-xs font-medium px-1.5 py-0.5 rounded-md bg-muted">Employer</span>
         </Link>
       </div>
       <nav className="flex-1 overflow-auto py-4">
