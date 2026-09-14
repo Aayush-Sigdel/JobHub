@@ -64,7 +64,6 @@ class CollabMatchingService(
                 HttpStatus.CONFLICT
             )
 
-        val lambda = TeamMatchService.DEFAULT_LAMBDA
         val effectivePool = (poolSize ?: DEFAULT_POOL).coerceIn(MIN_POOL, MAX_POOL)
         val effectiveShortlist = (shortlistSize ?: 10).coerceIn(MIN_SHORTLIST, MAX_SHORTLIST)
 
@@ -82,7 +81,6 @@ class CollabMatchingService(
                 projectId = projectId,
                 projectTitle = project.title,
                 openSeats = openSeats,
-                lambda = lambda,
                 poolSize = 0,
                 suggestions = emptyList(),
                 note = "Every role on this project is filled."
@@ -110,7 +108,6 @@ class CollabMatchingService(
                 projectId = projectId,
                 projectTitle = project.title,
                 openSeats = openSeats,
-                lambda = lambda,
                 poolSize = 0,
                 suggestions = openRoles.map { emptyShortlist(it) },
                 note = "No discoverable candidates with a synced embedding matched this project yet."
@@ -125,7 +122,6 @@ class CollabMatchingService(
             openRoles = openRoles.map { toRoleSpec(it) },
             pool = pool,
             teamVectors = teamVectors,
-            lambda = lambda,
             shortlistSize = effectiveShortlist
         )
 
@@ -133,7 +129,6 @@ class CollabMatchingService(
             projectId = projectId,
             projectTitle = project.title,
             openSeats = openSeats,
-            lambda = lambda,
             poolSize = pool.size,
             suggestions = shortlists.map { shortlist ->
                 RoleSuggestionResponse(
@@ -160,8 +155,6 @@ class CollabMatchingService(
                 HttpStatus.CONFLICT
             )
         }
-
-        val lambda = TeamMatchService.DEFAULT_LAMBDA
 
         val alreadyEngaged = collabMembershipRepository
             .findProjectIdsByMemberIdAndStatusIn(userId, ENGAGED_STATUSES)
@@ -204,7 +197,6 @@ class CollabMatchingService(
                         residual = residual,
                         role = toRoleSpec(role),
                         teamVectors = teamVectors,
-                        lambda = lambda
                     )
                 }
                 .maxByOrNull { it.second.score }

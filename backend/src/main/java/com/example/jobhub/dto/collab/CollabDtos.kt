@@ -196,8 +196,6 @@ data class SquadSuggestionResponse(
     val projectId: UUID,
     val projectTitle: String,
     val openSeats: Int,
-    /** The tuning knob used for this run, echoed back so the UI can expose and explain it. */
-    val lambda: Double,
     val poolSize: Int,
     val suggestions: List<RoleSuggestionResponse>,
     val note: String?

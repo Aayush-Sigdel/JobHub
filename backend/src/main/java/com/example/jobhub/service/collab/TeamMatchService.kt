@@ -42,11 +42,10 @@ data class RoleShortlist(
 class TeamMatchService {
 
     companion object {
-        const val DEFAULT_LAMBDA = 0.75
-
         private const val GAP_WEIGHT = 0.6
         private const val SKILL_WEIGHT = 1.0 - GAP_WEIGHT
 
+        // Partial credit for having a required skill, but below the level the role asks for
         private const val UNDER_LEVEL_CREDIT = 0.5
 
         private val SKILL_NOISE = Regex("[^a-z0-9+#]")
@@ -78,10 +77,9 @@ class TeamMatchService {
         role: RoleSpec,
         pool: List<CandidateProfile>,
         teamVectors: List<FloatArray>,
-        lambda: Double = DEFAULT_LAMBDA,
         limit: Int = 10
     ): List<ScoredCandidate> =
-        pool.map { score(it, residual, role, teamVectors, lambda) }
+        pool.map { score(it, residual, role, teamVectors) }
             .sortedByDescending { it.score }
             .take(limit)
 
@@ -90,7 +88,6 @@ class TeamMatchService {
         openRoles: List<RoleSpec>,
         pool: List<CandidateProfile>,
         teamVectors: List<FloatArray>,
-        lambda: Double = DEFAULT_LAMBDA,
         shortlistSize: Int = 10
     ): List<RoleShortlist> {
         if (openRoles.isEmpty() || pool.isEmpty()) return emptyList()
@@ -102,7 +99,7 @@ class TeamMatchService {
 
         return openRoles.map { role ->
             val available = pool.filter { it.userId !in taken }
-            val ranked = rankForRole(currentResidual, role, available, selectedVectors, lambda, shortlistSize)
+            val ranked = rankForRole(currentResidual, role, available, selectedVectors, shortlistSize)
 
             ranked.firstOrNull()?.let { top ->
                 byId[top.userId]?.let { picked ->
@@ -121,7 +118,6 @@ class TeamMatchService {
         residual: FloatArray,
         role: RoleSpec,
         teamVectors: List<FloatArray>,
-        lambda: Double = DEFAULT_LAMBDA
     ): ScoredCandidate {
         val gapFit = similarity(candidate.vector, residual)
         val coverage = skillCoverage(candidate.skills, role.requiredSkills)
@@ -130,12 +126,9 @@ class TeamMatchService {
             .maxOfOrNull { similarity(candidate.vector, it) }
             ?: 0.0
 
-        val relevance = GAP_WEIGHT * gapFit + SKILL_WEIGHT * coverage.fraction
-        val mmr = lambda * relevance - (1.0 - lambda) * overlap
-
         return ScoredCandidate(
             userId = candidate.userId,
-            score = mmr,
+            score = GAP_WEIGHT * gapFit + SKILL_WEIGHT * coverage.fraction,
             gapFit = gapFit,
             skillCoverage = coverage.fraction,
             teamOverlap = overlap,
