@@ -77,10 +77,9 @@ class CollabProjectController(
     @GetMapping("/for-me")
     fun getProjectsForMe(
         @AuthenticationPrincipal userDetails: UserPrincipal,
-        @RequestParam(defaultValue = "20") limit: Int,
-        @RequestParam(required = false) lambda: Double?
+        @RequestParam(defaultValue = "20") limit: Int
     ): ResponseEntity<List<ProjectSuggestionResponse>> =
-        ResponseEntity.ok(collabMatchingService.suggestProjectsForUser(userDetails.id, limit, lambda))
+        ResponseEntity.ok(collabMatchingService.suggestProjectsForUser(userDetails.id, limit))
 
     @GetMapping("/{projectId}")
     fun getProjectDetail(
@@ -93,7 +92,6 @@ class CollabProjectController(
     fun getSquadSuggestions(
         @AuthenticationPrincipal userDetails: UserPrincipal,
         @PathVariable projectId: UUID,
-        @RequestParam(required = false) lambda: Double?,
         @RequestParam(required = false) poolSize: Int?,
         @RequestParam(required = false) shortlistSize: Int?,
         @RequestParam(required = false) location: String?
@@ -102,7 +100,6 @@ class CollabProjectController(
             collabMatchingService.suggestSquad(
                 projectId = projectId,
                 requesterId = userDetails.id,
-                lambda = lambda,
                 poolSize = poolSize,
                 shortlistSize = shortlistSize,
                 location = location

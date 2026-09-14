@@ -46,7 +46,6 @@ class CollabMatchingService(
     fun suggestSquad(
         projectId: UUID,
         requesterId: UUID,
-        lambda: Double?,
         poolSize: Int?,
         shortlistSize: Int?,
         location: String?
@@ -65,7 +64,7 @@ class CollabMatchingService(
                 HttpStatus.CONFLICT
             )
 
-        val effectiveLambda = (lambda ?: TeamMatchService.DEFAULT_LAMBDA).coerceIn(0.0, 1.0)
+        val lambda = TeamMatchService.DEFAULT_LAMBDA
         val effectivePool = (poolSize ?: DEFAULT_POOL).coerceIn(MIN_POOL, MAX_POOL)
         val effectiveShortlist = (shortlistSize ?: 10).coerceIn(MIN_SHORTLIST, MAX_SHORTLIST)
 
@@ -83,7 +82,7 @@ class CollabMatchingService(
                 projectId = projectId,
                 projectTitle = project.title,
                 openSeats = openSeats,
-                lambda = effectiveLambda,
+                lambda = lambda,
                 poolSize = 0,
                 suggestions = emptyList(),
                 note = "Every role on this project is filled."
@@ -111,7 +110,7 @@ class CollabMatchingService(
                 projectId = projectId,
                 projectTitle = project.title,
                 openSeats = openSeats,
-                lambda = effectiveLambda,
+                lambda = lambda,
                 poolSize = 0,
                 suggestions = openRoles.map { emptyShortlist(it) },
                 note = "No discoverable candidates with a synced embedding matched this project yet."
@@ -126,7 +125,7 @@ class CollabMatchingService(
             openRoles = openRoles.map { toRoleSpec(it) },
             pool = pool,
             teamVectors = teamVectors,
-            lambda = effectiveLambda,
+            lambda = lambda,
             shortlistSize = effectiveShortlist
         )
 
@@ -134,7 +133,7 @@ class CollabMatchingService(
             projectId = projectId,
             projectTitle = project.title,
             openSeats = openSeats,
-            lambda = effectiveLambda,
+            lambda = lambda,
             poolSize = pool.size,
             suggestions = shortlists.map { shortlist ->
                 RoleSuggestionResponse(
@@ -151,7 +150,7 @@ class CollabMatchingService(
     }
 
     @Transactional(readOnly = true)
-    fun suggestProjectsForUser(userId: UUID, limit: Int, lambda: Double?): List<ProjectSuggestionResponse> {
+    fun suggestProjectsForUser(userId: UUID, limit: Int): List<ProjectSuggestionResponse> {
         val user = userRepository.findAllWithSkillsByIdIn(listOf(userId)).firstOrNull()
             ?: throw ApiException("User not found", HttpStatus.NOT_FOUND)
 
@@ -162,7 +161,7 @@ class CollabMatchingService(
             )
         }
 
-        val effectiveLambda = (lambda ?: TeamMatchService.DEFAULT_LAMBDA).coerceIn(0.0, 1.0)
+        val lambda = TeamMatchService.DEFAULT_LAMBDA
 
         val alreadyEngaged = collabMembershipRepository
             .findProjectIdsByMemberIdAndStatusIn(userId, ENGAGED_STATUSES)
@@ -205,7 +204,7 @@ class CollabMatchingService(
                         residual = residual,
                         role = toRoleSpec(role),
                         teamVectors = teamVectors,
-                        lambda = effectiveLambda
+                        lambda = lambda
                     )
                 }
                 .maxByOrNull { it.second.score }
