@@ -4,12 +4,16 @@ import NavigationBar from "../(applier)/_components/navigation/navigation-bar";
 import CandidateMobileNav from "../(applier)/_components/navigation/candidate-mobile-nav";
 import { PosterHeader } from "@/components/poster-header";
 import type { UserProfileResponse } from "@/types/api/user";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-option";
+import { resolveEmployerRole } from "@/lib/user-role";
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
   let profile: UserProfileResponse | null = null;
   try {
     profile = await fetchWithAuth<UserProfileResponse>("/user/profile");
@@ -17,7 +21,7 @@ export default async function PublicLayout({
     // Unauthenticated or network error
   }
 
-  const isEmployer = Boolean(profile?.employer);
+  const isEmployer = resolveEmployerRole(profile, session?.user);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">

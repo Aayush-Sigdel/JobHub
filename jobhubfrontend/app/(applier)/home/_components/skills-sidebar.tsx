@@ -2,15 +2,19 @@
 
 import React from "react";
 import Link from "next/link";
-import { Zap, Plus, Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, TrendingUp, Users } from "lucide-react";
+import {
+  Plus,
+  CheckCircle2,
+  ArrowUpRight,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatSkillName } from "@/lib/utils";
 import type { UserProfileResponse } from "@/types/api/user";
 
 interface SkillsSidebarProps {
   profile: UserProfileResponse | null;
-  onTabChange?: (tab: string) => void;
 }
 
 const TRENDING_IN_DEMAND_SKILLS = [
@@ -28,7 +32,7 @@ const TRENDING_IN_DEMAND_SKILLS = [
   "Redis",
 ];
 
-export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
+export function SkillsSidebar({ profile }: SkillsSidebarProps) {
   const userSkills = profile?.skills || [];
 
   // Identify missing professional evidence without inventing a percentage score.
@@ -77,15 +81,13 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
   };
 
   return (
-    <aside className="w-full lg:w-[300px] xl:w-[320px] shrink-0 flex flex-col gap-5">
+    <aside className="order-3 lg:col-start-1 2xl:col-start-3 min-w-0 w-full flex flex-col gap-5">
       {/* Sticky container */}
       <div className="sticky top-20 flex flex-col gap-5">
         {/* Your Skills Card */}
         <div className="border border-border bg-card rounded-2xl shadow-xs p-5 hover:border-primary/30 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-base text-foreground">
-              Your Skills
-            </h3>
+            <h3 className="font-bold text-base text-foreground">Your Skills</h3>
             <Button
               asChild
               variant="ghost"
@@ -118,7 +120,8 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
           ) : (
             <div className="rounded-xl border border-dashed border-border/80 p-4 text-center">
               <p className="text-sm text-muted-foreground font-normal">
-                No skills added yet. Add your skills to receive tailored recommendations.
+                No skills added yet. Add your skills to receive tailored
+                recommendations.
               </p>
               <Button
                 asChild
@@ -138,7 +141,10 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
             </div>
             <div className="flex flex-wrap gap-1.5">
               {TRENDING_IN_DEMAND_SKILLS.filter(
-                (ts) => !userSkills.some((us) => us.name.toLowerCase() === ts.toLowerCase())
+                (ts) =>
+                  !userSkills.some(
+                    (us) => us.name.toLowerCase() === ts.toLowerCase(),
+                  ),
               )
                 .slice(0, 8)
                 .map((trendingSkill) => (
@@ -166,29 +172,23 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
           </div>
 
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Practice mock interviews, pair-code challenges, or build open projects with other candidates.
+            Practice mock interviews, pair-code challenges, or build open
+            projects with other candidates.
           </p>
 
           <div className="mt-4">
-            {onTabChange ? (
-              <Button
-                onClick={() => onTabChange("collaboration")}
-                className="w-full h-9 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2"
+            <Button
+              asChild
+              className="w-full h-9 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs cursor-pointer"
+            >
+              <Link
+                href="/collaborators"
+                className="flex items-center justify-center gap-2"
               >
                 <Users className="h-4 w-4" />
-                Open Collaboration Hub
-              </Button>
-            ) : (
-              <Button
-                asChild
-                className="w-full h-9 text-sm font-bold bg-primary text-black hover:bg-primary/90 rounded-xl transition-all shadow-xs cursor-pointer"
-              >
-                <Link href="/home?tab=collaboration" className="flex items-center justify-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Open Collaboration Hub
-                </Link>
-              </Button>
-            )}
+                Find collaborators
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -207,7 +207,9 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
           <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-3">
             <div
               className="bg-primary h-full rounded-full transition-all duration-500 shadow-xs"
-              style={{ width: `${Math.round((completedEvidenceItems / evidenceItemCount) * 100)}%` }}
+              style={{
+                width: `${Math.round((completedEvidenceItems / evidenceItemCount) * 100)}%`,
+              }}
             />
           </div>
 
@@ -215,7 +217,9 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
             <div className="bg-muted/40 rounded-xl p-3 border border-border/60">
               <div className="flex items-start gap-2 text-sm">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground">Next recommended step:</p>
+                  <p className="font-semibold text-foreground">
+                    Next recommended step:
+                  </p>
                   <p className="text-muted-foreground text-xs mt-0.5">
                     {missingItems[0]} to improve recommendations.
                   </p>
@@ -228,7 +232,8 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
                 className="p-0 h-auto text-xs font-bold text-foreground hover:underline mt-2 flex items-center gap-1"
               >
                 <Link href="/candidate-profile">
-                  Complete Profile <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
+                  Complete Profile{" "}
+                  <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
                 </Link>
               </Button>
             </div>
@@ -243,16 +248,28 @@ export function SkillsSidebar({ profile, onTabChange }: SkillsSidebarProps) {
         {/* Career Tips & Footer Navigation */}
         <div className="px-2 text-center text-xs text-muted-foreground space-y-2">
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 font-medium">
-            <Link href="/about" className="hover:text-foreground hover:underline transition-colors">
+            <Link
+              href="/about"
+              className="hover:text-foreground hover:underline transition-colors"
+            >
               About
             </Link>
-            <Link href="/help" className="hover:text-foreground hover:underline transition-colors">
+            <Link
+              href="/help"
+              className="hover:text-foreground hover:underline transition-colors"
+            >
               Help Center
             </Link>
-            <Link href="/privacy-policy" className="hover:text-foreground hover:underline transition-colors">
+            <Link
+              href="/privacy-policy"
+              className="hover:text-foreground hover:underline transition-colors"
+            >
               Privacy
             </Link>
-            <Link href="/terms-of-service" className="hover:text-foreground hover:underline transition-colors">
+            <Link
+              href="/terms-of-service"
+              className="hover:text-foreground hover:underline transition-colors"
+            >
               Terms
             </Link>
           </div>

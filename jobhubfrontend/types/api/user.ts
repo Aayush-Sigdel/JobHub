@@ -42,6 +42,7 @@ export interface UserProfileResponse {
   employer: boolean;
   isVerified: boolean;
   onboardingCompleted: boolean;
+  discoverable: boolean;
   contactNumbers: string[];
   skills: SkillDto[];
   experiences: ExperienceDto[];
@@ -49,6 +50,28 @@ export interface UserProfileResponse {
   socialLinks: SocialLinkDto[];
   createdAt: string;
   updatedAt: string;
+}
+
+export type CollaboratorSource =
+  | "PLATFORM"
+  | "GITHUB"
+  | "DEVTO"
+  | "STACKOVERFLOW"
+  | "ORCID"
+  | "OVERALL";
+
+export interface CollaboratorMatchResponse {
+  userId: string;
+  name: string;
+  email: string;
+  title?: string;
+  bio?: string;
+  location?: string;
+  imageUrl?: string;
+  skills: SkillDto[];
+  similarity: number;
+  matchPercentage: number;
+  source: CollaboratorSource;
 }
 
 export interface UserBasicInfoResponse {

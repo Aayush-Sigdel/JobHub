@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, Suspense } from "react";
 import Link from "next/link";
+import JobHubLogo from "@/components/brand/JobHubLogo";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
@@ -10,15 +11,6 @@ import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const BrandMark = () => (
-  <svg
-    className="w-8 h-8 text-neutral-900"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
-    <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
-  </svg>
-);
 
 function VerificationForm() {
   const router = useRouter();
@@ -99,9 +91,9 @@ function VerificationForm() {
     }
   };
   return (
-    <main className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-neutral-900 selection:text-white">
+    <main className="min-h-dvh w-full flex flex-col md:flex-row bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Left Column: Generous character stage */}
-      <div className="w-full md:w-[52%] lg:w-[55%] xl:w-[58%] bg-[#ECECEE] min-h-[480px] md:min-h-screen flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
+      <div className="w-full md:w-[52%] lg:w-[55%] xl:w-[58%] bg-muted border-b border-border md:border-b-0 md:border-r min-h-[480px] md:min-h-dvh flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
         <div className="relative w-full flex-1 flex flex-col justify-end items-center pb-0">
           <AuthCharacters
             focusedField="none"
@@ -114,7 +106,7 @@ function VerificationForm() {
       </div>
 
       {/* Right Column: Full-height form */}
-      <div className="w-full md:w-[48%] lg:w-[45%] xl:w-[42%] min-h-[calc(100vh-480px)] md:min-h-screen bg-white flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-neutral-900">
+      <div className="w-full md:w-[48%] lg:w-[45%] xl:w-[42%] min-h-[calc(100dvh-480px)] md:min-h-dvh bg-card flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-foreground">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -132,22 +124,22 @@ function VerificationForm() {
                 className="flex flex-col"
               >
                 <div className="flex justify-center mb-6">
-                  <BrandMark />
+                  <JobHubLogo markOnly markClassName="size-11" />
                 </div>
 
                 <div className="text-center mb-8">
-                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight text-neutral-900 mb-2">
+                  <h1 className="text-3xl sm:text-4xl lg:text-4xl font-semibold tracking-tight text-foreground mb-2">
                     Verify Email
                   </h1>
-                  <p className="text-base text-neutral-500 font-medium leading-relaxed">
+                  <p className="text-base text-muted-foreground font-medium leading-relaxed">
                     We sent a 6-digit verification code to{" "}
-                    <span className="font-bold text-neutral-900">
+                    <span className="font-medium text-foreground">
                       {email || "your email"}
                     </span>
                   </p>
                 </div>
 
-                <div className="flex justify-center gap-2.5 mb-9">
+                <div className="flex justify-center gap-1.5 sm:gap-2.5 mb-9">
                   {code.map((digit, idx) => (
                     <input
                       key={idx}
@@ -160,13 +152,13 @@ function VerificationForm() {
                       value={digit}
                       onChange={(e) => handleChange(idx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(idx, e)}
-                      className="w-12 h-14 sm:w-13 sm:h-16 text-center text-2xl font-black text-neutral-900 bg-neutral-50 border-2 border-neutral-200 rounded-2xl focus:border-neutral-900 focus:ring-4 focus:ring-neutral-900/10 outline-none transition-all"
+                      className="min-w-0 w-full max-w-12 flex-1 h-12 sm:max-w-13 sm:h-14 text-center text-2xl font-semibold text-foreground bg-background border border-border rounded-xl focus:border-foreground/40 focus:ring-3 focus:ring-ring/30 outline-none transition-all"
                     />
                   ))}
                 </div>
 
                 {authError && (
-                  <p className="text-xs font-semibold text-rose-500 text-center mb-4">
+                  <p className="text-xs font-semibold text-destructive text-center mb-4">
                     {authError}
                   </p>
                 )}
@@ -175,7 +167,7 @@ function VerificationForm() {
                   type="button"
                   disabled={!isComplete || isSubmitting}
                   onClick={handleVerify}
-                  className="w-full h-13 sm:h-14 bg-[#18181B] hover:bg-neutral-800 active:scale-[0.99] text-white rounded-full font-bold text-base sm:text-lg transition-all duration-150 flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full h-12 sm:h-12 bg-primary hover:bg-primary/85 active:scale-[0.99] text-primary-foreground rounded-xl font-medium text-base sm:text-base transition-all duration-150 flex items-center justify-center gap-2.5 shadow-none hover:shadow-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
@@ -187,8 +179,8 @@ function VerificationForm() {
                   )}
                 </button>
 
-                <div className="mt-7 text-center text-sm font-medium text-neutral-500">
-                  Didn't receive the code?{" "}
+                <div className="mt-7 text-center text-sm font-medium text-muted-foreground">
+                  Didn&apos;t receive the code?{" "}
                   <button
                     type="button"
                     onClick={() =>
@@ -196,7 +188,7 @@ function VerificationForm() {
                         "Code resent! Please check your spam folder too.",
                       )
                     }
-                    className="text-neutral-900 font-bold hover:underline transition-colors ml-1 cursor-pointer"
+                    className="text-foreground font-medium hover:underline transition-colors ml-1 cursor-pointer"
                   >
                     Resend Code
                   </button>
@@ -211,13 +203,13 @@ function VerificationForm() {
                 transition={{ duration: 0.25 }}
                 className="flex flex-col items-center text-center py-2"
               >
-                <div className="w-18 h-18 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-5 border-2 border-emerald-100 shadow-sm">
+                <div className="w-18 h-18 bg-success/10 text-success rounded-full flex items-center justify-center mb-5 border border-success/20 shadow-sm">
                   <CheckCircle2 className="w-9 h-9" />
                 </div>
-                <h2 className="text-3xl font-black text-neutral-900 mb-2 tracking-tight">
+                <h2 className="text-3xl font-semibold text-foreground mb-2 tracking-tight">
                   Email Verified!
                 </h2>
-                <p className="text-neutral-500 text-base font-medium leading-relaxed mb-7">
+                <p className="text-muted-foreground text-base font-medium leading-relaxed mb-7">
                   Your email has been verified! Sign in to complete your profile setup.
                 </p>
                 <Link
@@ -226,7 +218,7 @@ function VerificationForm() {
                 >
                   <button
                     type="button"
-                    className="w-full h-13 sm:h-14 bg-[#18181B] hover:bg-neutral-800 text-white rounded-full font-bold text-base transition-colors flex items-center justify-center gap-2.5 cursor-pointer shadow-md"
+                    className="w-full h-12 sm:h-12 bg-primary hover:bg-primary/85 text-primary-foreground rounded-xl font-medium text-base transition-colors flex items-center justify-center gap-2.5 cursor-pointer shadow-none"
                   >
                     <span>Sign In to Continue</span>
                     <ArrowRight className="w-5 h-5" />
@@ -245,8 +237,8 @@ export default function VerificationPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full bg-white flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-neutral-800" />
+        <div className="min-h-dvh w-full bg-card flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
         </div>
       }
     >

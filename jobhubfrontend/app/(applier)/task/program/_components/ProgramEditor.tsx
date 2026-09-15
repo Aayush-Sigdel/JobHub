@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { CodeEditor } from "@/components/task/CodeEditor";
 import type { DataType, ProgrammingTaskDto } from "../page";
 
@@ -22,7 +21,7 @@ const PYTHON_TYPES: Record<DataType, string> = {
   BOOLEAN: "bool",
 };
 
-function createStarterCode(
+export function createStarterCode(
   task: ProgrammingTaskDto,
   language: "JAVA" | "PYTHON",
 ) {
@@ -44,26 +43,23 @@ export default function ProgramEditor({
   task,
   language,
   setCode,
+  code,
+  readOnly,
 }: {
   task: ProgrammingTaskDto;
   language: "JAVA" | "PYTHON";
   setCode: (code: string) => void;
+  code: string;
+  readOnly: boolean;
 }) {
-  const starterCode = createStarterCode(task, language);
-
-  useEffect(() => {
-    setCode(starterCode);
-  }, [starterCode, setCode]);
-
   return (
     <CodeEditor
       key={`${task.id}-${language}`}
-      initialCode={starterCode}
+      value={code}
       onChange={setCode}
       fileName={language === "JAVA" ? "Solution.java" : "Solution.py"}
-      editorLabel={`Code Editor (${language === "JAVA" ? "Java 17" : "Python 3"})`}
       language={language}
-      showActionBar={false}
+      readOnly={readOnly}
     />
   );
 }

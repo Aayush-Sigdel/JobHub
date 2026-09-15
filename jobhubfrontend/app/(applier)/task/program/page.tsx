@@ -6,7 +6,13 @@ import ProgramArenaClient from "./_components/ProgramArenaClient";
 import type { JobPostDetailResponse } from "@/types/api/jobs";
 import type { TaskType } from "@/types/api/tasks";
 
-export type DataType = "INT" | "INT_ARRAY" | "STRING" | "STRING_ARRAY" | "DOUBLE" | "BOOLEAN";
+export type DataType =
+  | "INT"
+  | "INT_ARRAY"
+  | "STRING"
+  | "STRING_ARRAY"
+  | "DOUBLE"
+  | "BOOLEAN";
 
 export interface Parameter {
   name: string;
@@ -46,9 +52,12 @@ export default async function ProgramArenaPage({
   // 1. Fetch exact job attached task if jobId is provided
   if (jobId) {
     try {
-      const detail = await fetchWithAuth<JobPostDetailResponse>(`/jobs/${jobId}`, {
-        cache: "no-store",
-      });
+      const detail = await fetchWithAuth<JobPostDetailResponse>(
+        `/jobs/${jobId}`,
+        {
+          cache: "no-store",
+        },
+      );
       const availability = getJobApplicationAvailability(detail.job);
       applicationClosedReason = availability.reason;
       if (detail?.programmingTask) {
@@ -69,7 +78,9 @@ export default async function ProgramArenaPage({
   // 2. Fetch all public/user tasks
   let tasks: ProgrammingTaskDto[] = [];
   try {
-    tasks = await fetchWithAuth<ProgrammingTaskDto[]>("/task/programming/getAll");
+    tasks = await fetchWithAuth<ProgrammingTaskDto[]>(
+      "/task/programming/getAll",
+    );
   } catch (e) {
     console.error("Failed to load programming tasks list:", e);
   }
@@ -81,12 +92,21 @@ export default async function ProgramArenaPage({
 
   const selectedTaskId = jobTask?.id || taskId;
 
-  if (jobId && applicationClosedReason) {
+  if (
+    jobId &&
+    (applicationClosedReason || !jobTask || (taskId && taskId !== jobTask.id))
+  ) {
     return (
       <div className="mx-auto mt-16 max-w-md rounded-lg border bg-card p-6 text-center">
         <h1 className="text-lg font-semibold">Assessment unavailable</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{applicationClosedReason}</p>
-        <Link href={`/find-job/${jobId}`} className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+        <p className="mt-2 text-sm text-muted-foreground">
+          {applicationClosedReason ||
+            "The programming assessment assigned to this job could not be loaded. Return to the job and try again."}
+        </p>
+        <Link
+          href={`/find-job/${jobId}`}
+          className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
           Return to job
         </Link>
       </div>

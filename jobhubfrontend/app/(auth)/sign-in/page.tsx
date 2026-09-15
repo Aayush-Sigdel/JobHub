@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import JobHubLogo from "@/components/brand/JobHubLogo";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,15 +38,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const BrandMark = () => (
-  <svg
-    className="w-8 h-8 text-neutral-900"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
-    <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
-  </svg>
-);
 
 function SignInContent() {
   const router = useRouter();
@@ -97,12 +89,37 @@ function SignInContent() {
     }
 
     const session = await getSession();
-    if (session?.user?.employer) {
-      router.push("/dashboard");
+    const callbackUrl = searchParams.get("callbackUrl");
+    const isEmployer = Boolean(session?.user?.employer);
+
+    if (isEmployer) {
+      const isCandidateUrl =
+        callbackUrl &&
+        ["/home", "/job-tracker", "/find-job", "/task"].some((route) =>
+          callbackUrl.startsWith(route),
+        );
+      const target =
+        callbackUrl && !isCandidateUrl && callbackUrl !== "/"
+          ? callbackUrl
+          : "/dashboard";
+      window.location.href = target;
     } else {
-      router.push("/home");
+      const isEmployerUrl =
+        callbackUrl &&
+        [
+          "/dashboard",
+          "/candidates",
+          "/manage-jobs",
+          "/manage-job",
+          "/post-job",
+          "/post-task",
+        ].some((route) => callbackUrl.startsWith(route));
+      const target =
+        callbackUrl && !isEmployerUrl && callbackUrl !== "/"
+          ? callbackUrl
+          : "/home";
+      window.location.href = target;
     }
-    router.refresh();
   };
 
   const handleGoogleSignIn = () => {
@@ -135,9 +152,9 @@ function SignInContent() {
   const passwordReg = register("password");
 
   return (
-    <main className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-neutral-900 selection:text-white">
+    <main className="min-h-dvh w-full flex flex-col md:flex-row bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Left Column: Character Stage with Floating Cloud */}
-      <div className="w-full md:w-[52%] lg:w-[55%] xl:w-[58%] bg-[#ECECEE] min-h-[480px] md:min-h-screen flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
+      <div className="w-full md:w-[52%] lg:w-[55%] xl:w-[58%] bg-muted border-b border-border md:border-b-0 md:border-r min-h-[480px] md:min-h-dvh flex flex-col justify-between pt-20 sm:pt-24 px-6 sm:px-10 lg:px-12 pb-0 relative overflow-hidden">
         {/* Grounded Interactive Characters + Cloud Bubble */}
         <div className="relative w-full flex-1 flex flex-col justify-end items-center pb-0">
           <AuthCharacters
@@ -156,7 +173,7 @@ function SignInContent() {
       </div>
 
       {/* Right Column: Full-height clean form page */}
-      <div className="w-full md:w-[48%] lg:w-[45%] xl:w-[42%] min-h-[calc(100vh-480px)] md:min-h-screen bg-white flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-neutral-900">
+      <div className="w-full md:w-[48%] lg:w-[45%] xl:w-[42%] min-h-[calc(100dvh-480px)] md:min-h-dvh bg-card flex flex-col justify-center items-center pt-24 pb-12 px-6 sm:px-12 lg:px-16 xl:px-20 text-foreground">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -165,15 +182,15 @@ function SignInContent() {
         >
           {/* Brand Sparkle Logo */}
           <div className="flex justify-center mb-6">
-            <BrandMark />
+            <JobHubLogo markOnly markClassName="size-11" />
           </div>
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black tracking-tight text-neutral-900 mb-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-4xl font-semibold tracking-tight text-foreground mb-2">
               Welcome back!
             </h1>
-            <p className="text-base text-neutral-500 font-medium">
+            <p className="text-base text-muted-foreground font-medium">
               Please enter your details to sign in
             </p>
           </div>
@@ -184,7 +201,7 @@ function SignInContent() {
             <div className="space-y-1.5">
               <label
                 htmlFor="email"
-                className="block text-sm font-bold text-neutral-800 uppercase tracking-wide"
+                className="block text-sm font-medium text-foreground "
               >
                 Email
               </label>
@@ -207,14 +224,14 @@ function SignInContent() {
                   clearAuthError();
                 }}
                 placeholder="name@company.com"
-                className={`w-full h-13 px-4 rounded-2xl bg-neutral-50 border-2 ${
+                className={`w-full h-12 px-4 rounded-xl bg-background border ${
                   errors.email && (touchedFields.email || isSubmitted)
-                    ? "border-rose-400 bg-rose-50/20"
-                    : "border-neutral-200"
-                } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border"
+                } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
               />
               {errors.email && (touchedFields.email || isSubmitted) && (
-                <p className="text-xs font-semibold text-rose-500 mt-1 pl-1">
+                <p className="text-xs font-semibold text-destructive mt-1 pl-1">
                   {errors.email.message}
                 </p>
               )}
@@ -224,7 +241,7 @@ function SignInContent() {
             <div className="space-y-1.5">
               <label
                 htmlFor="password"
-                className="block text-sm font-bold text-neutral-800 uppercase tracking-wide"
+                className="block text-sm font-medium text-foreground "
               >
                 Password
               </label>
@@ -248,16 +265,16 @@ function SignInContent() {
                     clearAuthError();
                   }}
                   placeholder="••••••••"
-                  className={`w-full h-13 px-4 pr-12 rounded-2xl bg-neutral-50 border-2 ${
+                  className={`w-full h-12 px-4 pr-12 rounded-xl bg-background border ${
                     errors.password && (touchedFields.password || isSubmitted)
-                      ? "border-rose-400 bg-rose-50/20"
-                      : "border-neutral-200"
-                  } text-neutral-900 text-base font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-neutral-900/10 focus:border-neutral-900 focus:bg-white transition-all`}
+                      ? "border-destructive bg-destructive/5"
+                      : "border-border"
+                  } text-foreground text-base font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-3 focus:ring-ring/30 focus:border-foreground/40 focus:bg-card transition-all`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-800 transition-colors p-1.5 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1.5 cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -268,7 +285,7 @@ function SignInContent() {
                 </button>
               </div>
               {errors.password && (touchedFields.password || isSubmitted) && (
-                <p className="text-xs font-semibold text-rose-500 mt-1 pl-1">
+                <p className="text-xs font-semibold text-destructive mt-1 pl-1">
                   {errors.password.message}
                 </p>
               )}
@@ -276,26 +293,26 @@ function SignInContent() {
 
             {/* Form-level Auth error message */}
             {authError && (
-              <p className="text-xs font-semibold text-rose-500 mt-1.5 pl-1">
+              <p className="text-xs font-semibold text-destructive mt-1.5 pl-1">
                 {authError}
               </p>
             )}
 
             {/* Remember me & Forgot password */}
             <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded-md border-neutral-300 text-neutral-900 focus:ring-neutral-900 cursor-pointer"
+                  className="w-4 h-4 rounded-md border-input text-foreground focus:ring-ring/30 cursor-pointer"
                 />
                 <span>Remember for 30 days</span>
               </label>
 
               <Link
                 href="/forget-password"
-                className="text-sm font-bold text-neutral-900 hover:underline transition-colors"
+                className="text-sm font-medium text-foreground hover:underline transition-colors"
               >
                 Forgot password?
               </Link>
@@ -307,7 +324,7 @@ function SignInContent() {
               disabled={isSubmitting}
               onMouseEnter={() => setIsHoveringSubmit(true)}
               onMouseLeave={() => setIsHoveringSubmit(false)}
-              className="w-full h-13 sm:h-14 mt-2 bg-[#18181B] hover:bg-neutral-800 active:scale-[0.99] text-white rounded-full font-bold text-base sm:text-lg transition-all duration-150 flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full h-12 sm:h-12 mt-2 bg-primary hover:bg-primary/85 active:scale-[0.99] text-primary-foreground rounded-xl font-medium text-base sm:text-base transition-all duration-150 flex items-center justify-center gap-2.5 shadow-none hover:shadow-none disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -325,7 +342,7 @@ function SignInContent() {
               onClick={handleGoogleSignIn}
               onMouseEnter={() => setIsHoveringGoogle(true)}
               onMouseLeave={() => setIsHoveringGoogle(false)}
-              className="w-full h-13 sm:h-14 bg-[#F4F4F6] hover:bg-[#EAEAEF] active:scale-[0.99] text-neutral-800 rounded-full font-bold text-base border-2 border-neutral-200/80 transition-all duration-150 flex items-center justify-center gap-3 cursor-pointer shadow-sm"
+              className="w-full h-12 sm:h-12 bg-card hover:bg-muted active:scale-[0.99] text-foreground rounded-xl font-medium text-base border border-border transition-all duration-150 flex items-center justify-center gap-3 cursor-pointer shadow-sm"
             >
               <GoogleIcon />
               <span>Log in with Google</span>
@@ -333,11 +350,11 @@ function SignInContent() {
           </form>
 
           {/* Footer Link */}
-          <div className="text-center mt-8 text-sm text-neutral-500 font-medium">
-            Don't have an account?{" "}
+          <div className="text-center mt-8 text-sm text-muted-foreground font-medium">
+            Don&apos;t have an account?{" "}
             <Link
               href="/sign-up"
-              className="font-bold text-neutral-900 hover:underline transition-colors ml-1"
+              className="font-medium text-foreground hover:underline transition-colors ml-1"
             >
               Sign up
             </Link>
@@ -352,8 +369,8 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full bg-white flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-neutral-800" />
+        <div className="min-h-dvh w-full bg-card flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
         </div>
       }
     >

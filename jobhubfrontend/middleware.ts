@@ -15,8 +15,20 @@ export default withAuth(
         }
       | undefined;
     const isOnboarding = path.startsWith("/onboarding");
-    const isEmployerRoute = ["/candidates", "/dashboard", "/manage-job", "/manage-jobs", "/post-job", "/post-task"].some((route) => path.startsWith(route));
-    const isCandidateRoute = ["/find-job", "/home", "/job-tracker", "/task"].some((route) => path.startsWith(route));
+    const isEmployerRoute = [
+      "/candidates",
+      "/dashboard",
+      "/manage-job",
+      "/manage-jobs",
+      "/post-job",
+      "/post-task",
+    ].some((route) => path.startsWith(route));
+    const isCandidateRoute = [
+      "/find-job",
+      "/home",
+      "/job-tracker",
+      "/task",
+    ].some((route) => path.startsWith(route));
 
     // 1. If logged in but hasn't completed onboarding, redirect to /onboarding
     if (user && !user.onboardingCompleted && !isOnboarding) {
@@ -53,17 +65,28 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/home",
     "/home/:path*",
+    "/onboarding",
     "/onboarding/:path*",
+    "/candidate-profile",
     "/candidate-profile/:path*",
+    "/job-tracker",
     "/job-tracker/:path*",
     "/task/:path*",
+    "/candidates",
     "/candidates/:path*",
+    "/dashboard",
     "/dashboard/:path*",
+    "/find-job",
     "/find-job/:path*",
+    "/manage-jobs",
     "/manage-jobs/:path*",
+    "/manage-job",
     "/manage-job/:path*",
+    "/post-job",
     "/post-job/:path*",
+    "/post-task",
     "/post-task/:path*",
   ],
 };

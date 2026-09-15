@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { UserProfileSidebar } from "./user-profile-sidebar";
 import { PersonalizedFeed } from "./personalized-feed";
-import { SkillsSidebar } from "./skills-sidebar";
+import { HomeOverview, type HomeApplicationError } from "./home-overview";
 import type { JobPostResponse, JobApplicationResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
 
@@ -13,7 +13,12 @@ interface HomeContainerProps {
   recentJobs: JobPostResponse[];
   applications: JobApplicationResponse[];
   initialTab?: string;
+  applicationError?: HomeApplicationError;
 }
+
+const feedTabs = ["recommended", "saved", "tasks", "recent", "remote"];
+const resolveTab = (tab: string) =>
+  feedTabs.includes(tab) ? tab : "recommended";
 
 export function HomeContainer({
   profile,
@@ -21,37 +26,41 @@ export function HomeContainer({
   recentJobs,
   applications,
   initialTab = "recommended",
+  applicationError,
 }: HomeContainerProps) {
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [activeTab, setActiveTab] = useState<string>(resolveTab(initialTab));
+  const [previousInitialTab, setPreviousInitialTab] = useState(initialTab);
 
-  React.useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
+  if (initialTab !== previousInitialTab) {
+    setPreviousInitialTab(initialTab);
+    setActiveTab(resolveTab(initialTab));
+  }
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-6 lg:gap-8 pb-16">
-      {/* LEFT COLUMN: Mini Profile & Discovery Navigation (Sticky on Desktop) */}
-      <UserProfileSidebar
+    <div className="w-full max-w-6xl mx-auto pb-8">
+      <HomeOverview
         profile={profile}
-        applications={applications}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        applicationCount={applications.length}
+        applicationError={applicationError}
       />
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] items-start gap-10 lg:gap-10">
+        {/* CENTER COLUMN: Personalized Feed, Match Filters & Spotlight */}
+        <PersonalizedFeed
+          recommendedJobs={recommendedJobs}
+          recentJobs={recentJobs}
+          applications={applications}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
 
-      {/* CENTER COLUMN: Personalized Feed, Match Filters & Spotlight */}
-      <PersonalizedFeed
-        profile={profile}
-        recommendedJobs={recommendedJobs}
-        recentJobs={recentJobs}
-        applications={applications}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      {/* RIGHT COLUMN: Skills & Profile Strength & Career Insights (Sticky on Desktop) */}
-      <SkillsSidebar profile={profile} onTabChange={setActiveTab} />
+        <div className="min-w-0 border-t border-border pt-6 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-1">
+          <UserProfileSidebar
+            profile={profile}
+            applications={applications}
+            activityUnavailable={Boolean(applicationError)}
+          />
+        </div>
+      </div>
     </div>
   );
 }
