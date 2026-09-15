@@ -75,6 +75,11 @@ export interface TaskSubmissionResponse {
   message?: string;
 }
 
+export interface TaskSubmissionCodeResponse extends TaskSubmissionResponse {
+  code: string;
+  submittedById: string;
+}
+
 export interface CreateDesignTask {
   title: string;
   instructions: string;

@@ -18,8 +18,10 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { formatSkillName, stripHtml } from "@/lib/utils";
+import { formatSkillName } from "@/lib/utils";
+import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { useLocalSavedJobs } from "@/lib/hooks/use-local-jobs";
+import { useJobProfileMatch } from "@/lib/hooks/use-job-profile-match";
 import type { JobPostResponse } from "@/types/api/jobs";
 
 interface RecommendedJobCardProps {
@@ -40,6 +42,7 @@ export function RecommendedJobCard({
   const { isSaved, toggleSaveJob } = useLocalSavedJobs();
   const bookmarked =
     externalBookmarked !== undefined ? externalBookmarked : isSaved(job.id);
+  const { elementRef, match } = useJobProfileMatch(job.id);
 
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -113,7 +116,7 @@ export function RecommendedJobCard({
     .slice(0, 3);
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-200 hover:border-foreground/20 hover:shadow-md flex flex-col justify-between">
+    <div ref={elementRef} className="group relative rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-200 hover:border-foreground/20 hover:shadow-md flex flex-col justify-between">
       <div>
         {/* Header: Title, Company Name, Location & Bookmark */}
         <div className="flex items-start justify-between gap-3">
@@ -164,10 +167,10 @@ export function RecommendedJobCard({
 
         {/* Clean Attributes Row: Match Score, Salary & Essential Badges */}
         <div className="flex flex-wrap items-center gap-2 mt-4">
-          {job.matchPercentage && job.matchPercentage >= 40 && (
+          {match !== null && match >= 40 && (
             <span className="inline-flex items-center gap-1.5 bg-primary text-black font-bold px-2.5 py-1 rounded-lg text-xs shadow-xs">
               <Sparkles className="h-3.5 w-3.5 text-black" />
-              <span>{Math.round(job.matchPercentage)}% Match</span>
+              <span>{match}% Match</span>
             </span>
           )}
 
@@ -197,9 +200,9 @@ export function RecommendedJobCard({
         </div>
 
         {/* Description Snippet: Readable text-sm with comfortable line-height */}
-        <p className="text-sm text-muted-foreground mt-3.5 line-clamp-2 leading-relaxed font-normal">
-          {stripHtml(job.description)}
-        </p>
+        <div className="mt-3.5 max-h-14 overflow-hidden" aria-label="Job description preview">
+          <JobMarkdown compact>{job.description || ""}</JobMarkdown>
+        </div>
 
         {/* Matched Skills - Clean Neutral Badges without clutter */}
         {matchedSkills.length > 0 && (

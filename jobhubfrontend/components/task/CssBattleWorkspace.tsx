@@ -1,38 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronsLeftRight, CircleHelp } from "lucide-react";
 import CodeEditor from "@/components/task/CodeEditor";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { TaskResult } from "@/components/task/TaskResult";
 import { useAssessmentSession } from "@/components/task/AssessmentSession";
 import type { DesignTaskDto, TaskSubmissionResponse } from "@/types/api/tasks";
-
-// Keep rendering at the evaluator's 400 × 300 viewport; only scale the display.
-function CanvasFrame({ children }: { children: ReactNode }) {
-  const frame = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const element = frame.current;
-    const content = canvas.current;
-    if (!element || !content) return;
-    const resize = () => {
-      content.style.transform = `scale(${element.clientWidth / 400})`;
-    };
-    resize();
-    const observer = new ResizeObserver(resize);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={frame} className="relative mx-auto aspect-[4/3] w-full max-w-[400px] overflow-hidden bg-white ring-1 ring-border">
-      <div ref={canvas} className="absolute left-0 top-0 h-[300px] w-[400px] origin-top-left">
-        {children}
-      </div>
-    </div>
-  );
-}
+import { DesignCanvasFrame } from "@/components/task/DesignCanvasFrame";
 
 function TargetImage({ src }: { src: string }) {
   // The task API returns the uploaded reference image as base64.
@@ -77,7 +52,7 @@ export function CssBattleWorkspace({
           </div>
           <div className="space-y-4 p-4">
             <div className="relative focus-within:rounded-sm focus-within:ring-2 focus-within:ring-ring">
-              <CanvasFrame>
+              <DesignCanvasFrame>
                 {(slideCompare || difference) && <TargetImage src={targetSrc} />}
                 <div className="absolute inset-0" style={{
                   clipPath: slideCompare ? `inset(0 ${100 - position}% 0 0)` : undefined,
@@ -93,7 +68,7 @@ export function CssBattleWorkspace({
                     </span>
                   </div>
                 )}
-              </CanvasFrame>
+              </DesignCanvasFrame>
               {slideCompare && <input type="range" min={0} max={100} value={position} onChange={(event) => setPosition(Number(event.target.value))} aria-label="Slide to compare your output with the target" aria-valuetext={`${position}% output, ${100 - position}% target`} className="absolute inset-0 m-0 h-full w-full cursor-ew-resize opacity-0" />}
             </div>
 
@@ -134,7 +109,7 @@ export function CssBattleWorkspace({
             <span className="text-xs tabular-nums text-muted-foreground">400 × 300</span>
           </div>
           <div className="space-y-5 p-4">
-            <CanvasFrame><TargetImage src={targetSrc} /></CanvasFrame>
+            <DesignCanvasFrame><TargetImage src={targetSrc} /></DesignCanvasFrame>
             <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2.5 text-xs">
               <span className="text-muted-foreground">Required match</span>
               <span className="font-semibold">{task.minimumMatchingScore}%</span>

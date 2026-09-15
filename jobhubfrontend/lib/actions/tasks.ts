@@ -10,6 +10,7 @@ import type {
   SQLTaskDto,
   SubmitTaskRequest,
   TaskSubmissionResponse,
+  TaskSubmissionCodeResponse,
 } from "@/types/api/tasks";
 
 export async function submitTaskAction(
@@ -20,6 +21,15 @@ export async function submitTaskAction(
     body: JSON.stringify(payload),
   });
   return result;
+}
+
+export async function getTaskSubmissionCodeAction(
+  submissionId: string,
+): Promise<TaskSubmissionCodeResponse> {
+  return fetchWithAuth<TaskSubmissionCodeResponse>(
+    `/task/submission/${encodeURIComponent(submissionId)}`,
+    { cache: "no-store" },
+  );
 }
 
 export async function getDesignTasksAction(): Promise<DesignTaskDto[]> {

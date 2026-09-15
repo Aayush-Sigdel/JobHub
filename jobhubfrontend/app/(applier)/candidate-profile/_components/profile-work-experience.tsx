@@ -16,6 +16,7 @@ import {
   Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -286,13 +287,13 @@ export function ProfileWorkExperience({
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Start Date <span className="text-destructive">*</span>
             </label>
-            <Input
-              type="date"
+            <DatePicker
+              label="Start date"
               value={formData.startDate}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, startDate: e.target.value }))
+              error={errors.startDate}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, startDate: value }))
               }
-              className="h-10 rounded-xl border-border bg-background focus-visible:ring-primary/40 text-sm font-medium"
             />
             {errors.startDate && (
               <p className="text-xs text-destructive font-medium">
@@ -305,14 +306,14 @@ export function ProfileWorkExperience({
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               End Date {!formData.isCurrentRole && <span className="text-destructive">*</span>}
             </label>
-            <Input
-              type="date"
+            <DatePicker
+              label="End date"
               value={formData.isCurrentRole ? "" : formData.endDate}
               disabled={formData.isCurrentRole}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+              error={errors.endDate}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, endDate: value }))
               }
-              className="h-10 rounded-xl border-border bg-background focus-visible:ring-primary/40 text-sm font-medium disabled:opacity-50 disabled:bg-muted/40"
             />
             {errors.endDate && (
               <p className="text-xs text-destructive font-medium">{errors.endDate}</p>

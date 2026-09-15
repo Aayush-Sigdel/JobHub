@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createBackendTokenRefresher } from "../lib/backend-token-refresh.ts";
 import { applicationLoadError } from "../lib/application-load-error.ts";
+import { accessTokenExpiry } from "../lib/access-token-expiry.ts";
 
 const token = {
   accessToken: "expired-access",
@@ -10,6 +11,13 @@ const token = {
 };
 const success = () =>
   Response.json({ accessToken: "fresh-access", refreshToken: "refresh-two" });
+
+test("backend JWT expiry controls refresh timing", () => {
+  const expiresAt = 2_000_000_000;
+  const jwt = `header.${Buffer.from(JSON.stringify({ exp: expiresAt })).toString("base64url")}.signature`;
+  assert.equal(accessTokenExpiry(jwt, 1000), expiresAt * 1000 - 60_000);
+  assert.equal(accessTokenExpiry("not-a-jwt", 1000), 1000);
+});
 
 test("concurrent refreshes share one rotation and preserve each caller's metadata", async () => {
   let requests = 0;

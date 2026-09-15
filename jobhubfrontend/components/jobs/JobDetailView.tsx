@@ -39,7 +39,10 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
   const availability = getJobApplicationAvailability(job);
   const sources = getSimilaritySources(detail);
   const contributions = getSimilarityContributions(detail);
-  const overall = calculateSupportedOverallSimilarity(detail);
+  const overall =
+    typeof detail.matchPercentage === "number" && Number.isFinite(detail.matchPercentage)
+      ? detail.matchPercentage / 100
+      : calculateSupportedOverallSimilarity(detail);
   const posted = formatJobDate(job.createdAt);
   const deadline = formatJobDate(job.deadline);
   const assessments = [
@@ -400,11 +403,11 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
                   />
                 </div>
                 <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                  Based on {sources.length} available profile{" "}
-                  {sources.length === 1 ? "source" : "sources"} compared with
-                  this role.
+                  {sources.length > 0
+                    ? `Based on ${sources.length} available profile ${sources.length === 1 ? "source" : "sources"} compared with this role.`
+                    : "Based on your JobHub profile compared with this role."}
                 </p>
-                <details className="group mt-4 border-t border-border pt-4">
+                {sources.length > 0 && <details className="group mt-4 border-t border-border pt-4">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-medium [&::-webkit-details-marker]:hidden">
                     How your match is calculated{" "}
                     <IconChevronDown className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
@@ -436,7 +439,7 @@ export function JobDetailView({ detail, profile }: JobDetailViewProps) {
                     The score is a weighted average of these sources. Weights
                     adjust to the sources available.
                   </p>
-                </details>
+                </details>}
               </>
             ) : (
               <div className="mt-4 space-y-3">

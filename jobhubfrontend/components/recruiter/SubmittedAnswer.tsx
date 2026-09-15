@@ -1,76 +1,107 @@
 "use client";
 
-import { IconCode, IconCopy } from "@tabler/icons-react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { IconCode } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import type { TaskSubmissionResponse } from "@/types/api/tasks";
-
-// Accept answer fields if supplied, while the existing API remains compatible.
-type AnswerPayload = TaskSubmissionResponse & {
-  code?: unknown;
-  codes?: unknown;
-};
+import { getTaskSubmissionCodeAction } from "@/lib/actions/tasks";
+import { CodeEditor } from "@/components/task/CodeEditor";
+import { submittedCodePresentation } from "@/lib/submitted-code";
+import { DesignCanvasFrame } from "@/components/task/DesignCanvasFrame";
 
 export default function SubmittedAnswer({
   submission,
 }: {
   submission: TaskSubmissionResponse;
 }) {
-  const answer = submission as AnswerPayload;
-  const files =
-    typeof answer.code === "string"
-      ? [answer.code]
-      : Array.isArray(answer.codes)
-        ? answer.codes.filter(
-            (code): code is string => typeof code === "string",
-          )
-        : [];
+  const { data: session } = useSession();
+  const [languageOverride, setLanguageOverride] = useState<"JAVA" | "PYTHON" | null>(null);
+  const query = useQuery({
+    queryKey: ["task-submission-code", session?.user?.id, submission.id],
+    queryFn: () => getTaskSubmissionCodeAction(submission.id),
+    enabled: Boolean(session?.user?.id),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const presentation = query.data?.code
+    ? submittedCodePresentation(submission.taskType, query.data.code)
+    : null;
+  const language = submission.taskType === "PROGRAMMING"
+    ? languageOverride ?? presentation?.language
+    : presentation?.language;
+  const fileName = language === "JAVA" ? "Solution.java"
+    : language === "PYTHON" ? "Solution.py"
+    : presentation?.fileName;
   return (
     <div>
-      <h5 className="flex items-center gap-2 text-sm font-medium">
-        <IconCode className="size-4" />
-        Submitted answer
-      </h5>
-      {files.length === 0 ? (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h5 className="flex items-center gap-2 text-sm font-medium">
+          <IconCode className="size-4" />
+          Submitted answer
+        </h5>
+        {presentation && submission.taskType === "PROGRAMMING" && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            Highlight as
+            <select
+              aria-label="Programming language highlighting"
+              value={language}
+              onChange={(event) => setLanguageOverride(event.target.value as "JAVA" | "PYTHON")}
+              className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+            >
+              <option value="JAVA">Java</option>
+              <option value="PYTHON">Python</option>
+            </select>
+          </label>
+        )}
+      </div>
+      {query.isPending ? (
+        <p role="status" className="mt-3 rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground">
+          Loading submitted code…
+        </p>
+      ) : query.isError ? (
+        <div role="alert" className="mt-3 rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground">
+          <p>Submitted code could not be loaded.</p>
+          <button type="button" className="mt-2 font-medium text-foreground underline" onClick={() => query.refetch()}>
+            Try again
+          </button>
+        </div>
+      ) : !presentation ? (
         <p className="mt-3 rounded-lg bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-          Only the result and feedback are available. This submission’s code has
-          not been included with the application.
+          No code was stored for this submission.
         </p>
       ) : (
-        files.map((code, index) => (
-          <div
-            key={index}
-            className="mt-3 overflow-hidden rounded-lg border border-border"
-          >
-            <div className="flex items-center justify-between bg-muted/50 px-4 py-2">
-              <span className="text-xs font-medium">
-                {files.length > 1 ? `Answer ${index + 1}` : "Source code"}
-              </span>
-              <button
-                type="button"
-                className="inline-flex min-h-8 items-center gap-1.5 rounded px-2 text-xs hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(code);
-                    toast.success("Answer copied.");
-                  } catch {
-                    toast.error(
-                      "Unable to copy. You can select the code below.",
-                    );
-                  }
-                }}
-              >
-                <IconCopy className="size-3.5" />
-                Copy
-              </button>
-            </div>
-            <pre
-              tabIndex={0}
-              className="max-h-[32rem] overflow-auto p-4 text-xs leading-6 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-foreground"
-            >
-              <code>{code}</code>
-            </pre>
+        <div className={submission.taskType === "DESIGN"
+          ? "mt-3 grid min-w-0 gap-4 @3xl/review:grid-cols-[minmax(0,1fr)_minmax(0,400px)]"
+          : "mt-3 min-w-0"}>
+          <div className="h-[min(32rem,60dvh)] min-h-64 min-w-0 overflow-hidden rounded-lg border border-border">
+            <CodeEditor
+              value={presentation.code}
+              fileName={fileName}
+              language={language}
+              readOnly
+            />
           </div>
-        ))
+          {submission.taskType === "DESIGN" && (
+            <section aria-label="Submitted design preview" className="min-w-0 rounded-lg border border-border bg-card">
+              <h6 className="border-b border-border bg-muted/20 px-4 py-3 text-xs font-medium">
+                Visual preview · 400 × 300
+              </h6>
+              <div className="p-4">
+                <DesignCanvasFrame>
+                  <iframe
+                    title="Submitted HTML and CSS output"
+                    sandbox=""
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                    srcDoc={presentation.code}
+                    className="pointer-events-none h-[300px] w-[400px] border-0 bg-white"
+                  />
+                </DesignCanvasFrame>
+              </div>
+            </section>
+          )}
+        </div>
       )}
     </div>
   );

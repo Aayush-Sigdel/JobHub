@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowUpRight, Bookmark, BookmarkCheck } from "lucide-react";
-import { stripHtml } from "@/lib/utils";
+import JobMarkdown from "./JobMarkdown";
 import { formatJobSalary, jobLabel } from "@/lib/job-display";
 import { useLocalSavedJobs } from "@/lib/hooks/use-local-jobs";
+import { useJobProfileMatch } from "@/lib/hooks/use-job-profile-match";
 import type { JobPostResponse } from "@/types/api/jobs";
 
 export function JobCard({
@@ -23,11 +24,7 @@ export function JobCard({
       : null;
   const hasAssessment =
     job.hasProgrammingTask || job.hasDesignTask || job.hasSqlTask;
-  const match =
-    typeof job.matchPercentage === "number" &&
-    Number.isFinite(job.matchPercentage)
-      ? Math.round(job.matchPercentage)
-      : null;
+  const { elementRef, match } = useJobProfileMatch(job.id);
   const metadata = [
     job.location,
     job.workplaceType && jobLabel(job.workplaceType),
@@ -35,7 +32,7 @@ export function JobCard({
   ].filter(Boolean);
 
   return (
-    <article className="group border-b border-border/70 py-6 last:border-b-0">
+    <article ref={elementRef} className="group border-b border-border/70 py-6 last:border-b-0">
       <div className="flex items-start gap-3 sm:gap-4">
         <div
           aria-hidden="true"
@@ -97,9 +94,9 @@ export function JobCard({
               )}
             </p>
           )}
-          <p className="mt-2 line-clamp-1 text-sm leading-relaxed text-muted-foreground">
-            {stripHtml(job.description)}
-          </p>
+          <div className="mt-2 max-h-7 overflow-hidden" aria-label="Job description preview">
+            <JobMarkdown compact>{job.description || ""}</JobMarkdown>
+          </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               {isApplied ? (

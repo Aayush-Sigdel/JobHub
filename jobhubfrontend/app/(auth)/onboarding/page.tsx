@@ -66,7 +66,6 @@ function OnboardingContent() {
   const router = useRouter();
   const { data: session, update } = useSession();
   const searchParams = useSearchParams();
-  const initialEmail = searchParams.get("email") || "";
   const initialName = searchParams.get("name") || "";
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -86,7 +85,7 @@ function OnboardingContent() {
   const [workType, setWorkType] = useState("Remote");
 
   // Step 3: Skills & Location
-  const [skills, setSkills] = useState<string[]>(["React", "TypeScript"]);
+  const [skills, setSkills] = useState<string[]>([]);
   const [customSkillInput, setCustomSkillInput] = useState("");
   const [profileLocation, setProfileLocation] = useState<Location | null>({
     city: "Kathmandu",
@@ -104,13 +103,15 @@ function OnboardingContent() {
   // UI & Error state
   const [focusedField, setFocusedField] = useState<AuthFieldType>("none");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted] = useState(false);
   const [isHoveringSubmit, setIsHoveringSubmit] = useState(false);
   const [authError, setAuthError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (initialName) {
+      // Session and URL state arrive after the form first renders.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFullName(initialName);
     } else if (session?.user?.name) {
       setFullName(session.user.name);
@@ -139,12 +140,12 @@ function OnboardingContent() {
   const addSkill = (skill: string) => {
     clearError("skills");
     const trimmed = skill.trim();
-    if (trimmed && !skills.includes(trimmed)) {
+    if (trimmed && !skills.some((item) => item.toLowerCase() === trimmed.toLowerCase())) {
       if (skills.length >= 8) {
         setAuthError("You can select up to 8 key skills.");
         return;
       }
-      setSkills([...skills, trimmed]);
+      setSkills((previous) => [...previous, trimmed]);
     }
     setCustomSkillInput("");
   };
@@ -292,15 +293,13 @@ function OnboardingContent() {
       } else {
         window.location.href = "/home";
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to complete onboarding:", error);
-      const errorMessage = error?.message || "";
+      const errorMessage = error instanceof Error ? error.message : "";
       const isAuthError =
         errorMessage.includes("401") ||
         errorMessage.includes("403") ||
-        errorMessage.includes("Unauthorized") ||
-        error?.response?.status === 401 ||
-        error?.response?.status === 403;
+        errorMessage.includes("Unauthorized");
 
       if (isAuthError) {
         setAuthError(
@@ -668,7 +667,7 @@ function OnboardingContent() {
                           {/* Active Selected Skills */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="block text-xs font-medium text-foreground ">
+                              <label htmlFor="onboarding-skill" className="block text-xs font-medium text-foreground ">
                                 Selected Skills ({skills.length}/8)
                               </label>
                               <span className="text-[10px] font-medium text-destructive bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/25">
@@ -689,6 +688,7 @@ function OnboardingContent() {
                                   <button
                                     type="button"
                                     onClick={() => removeSkill(skill)}
+                                    aria-label={`Remove ${skill}`}
                                     className="hover:text-destructive/80 cursor-pointer"
                                   >
                                     <X className="w-3 h-3" />
@@ -700,6 +700,36 @@ function OnboardingContent() {
                                   Click tags below or type to add skills
                                 </span>
                               )}
+                            </div>
+                            <div className="flex min-w-0 gap-2">
+                              <input
+                                id="onboarding-skill"
+                                type="text"
+                                value={customSkillInput}
+                                maxLength={60}
+                                autoComplete="off"
+                                placeholder="Type a skill, such as Kubernetes"
+                                onChange={(event) => {
+                                  setCustomSkillInput(event.target.value);
+                                  clearError("skills");
+                                }}
+                                onKeyDown={(event) => {
+                                  event.stopPropagation();
+                                  if (event.key === "Enter") {
+                                    event.preventDefault();
+                                    addSkill(customSkillInput);
+                                  }
+                                }}
+                                className="h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+                              />
+                              <button
+                                type="button"
+                                disabled={!customSkillInput.trim() || skills.length >= 8}
+                                onClick={() => addSkill(customSkillInput)}
+                                className="h-10 shrink-0 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                              >
+                                Add skill
+                              </button>
                             </div>
                             {fieldErrors.skills && (
                               <p className="text-xs font-semibold text-destructive pl-1">
