@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { JWT } from "next-auth/jwt";
+import { accessTokenExpiry } from "./access-token-expiry.ts";
 
 type RefreshResult = Pick<
   JWT,
@@ -53,7 +54,10 @@ export function createBackendTokenRefresher(
           data.refreshToken
             ? data.refreshToken
             : refreshToken,
-        accessTokenExpires: now() + 15 * 60 * 1000,
+        accessTokenExpires: accessTokenExpiry(
+          data.accessToken,
+          now() + 15 * 60 * 1000,
+        ),
         error: undefined,
       };
     } catch {

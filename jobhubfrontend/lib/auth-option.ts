@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { createBackendTokenRefresher } from "./backend-token-refresh";
+import { accessTokenExpiry } from "./access-token-expiry";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -97,7 +98,10 @@ export const authOptions: NextAuthOptions = {
             provider: "credentials",
             accessToken: user.accessToken,
             refreshToken: user.refreshToken,
-            accessTokenExpires: Date.now() + 15 * 60 * 1000,
+            accessTokenExpires: accessTokenExpiry(
+              user.accessToken,
+              Date.now() + 15 * 60 * 1000,
+            ),
             roleChecked: true,
             user: {
               id: user.id,

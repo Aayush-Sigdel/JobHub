@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   IconCheck,
   IconAlertCircle,
@@ -32,13 +33,14 @@ export default function CandidateAssessments({
   const submissions = candidateSubmissions(candidate);
   const passed = submissions.filter(({ data }) => data.passed).length;
   const events = candidate.tabSwitchEvents ?? [];
+  const [openAnswers, setOpenAnswers] = useState<Record<string, boolean>>({});
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h3 className="text-base font-semibold">Assessment results</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Scores, evaluator feedback, and the submitted work.
+            Scores and the submitted work.
           </p>
         </div>
         {submissions.length > 0 && (
@@ -85,8 +87,8 @@ export default function CandidateAssessments({
                   {data.passed ? "Passed" : "Not passed"}
                 </span>
               </header>
-              <div className="grid gap-5 p-5 @2xl/review:grid-cols-[180px_minmax(0,1fr)]">
-                <dl className="flex flex-wrap gap-x-8 gap-y-4 @2xl/review:block @2xl/review:space-y-5 @2xl/review:border-r @2xl/review:border-border @2xl/review:pr-5">
+              <div className="p-5">
+                <dl className="flex flex-wrap gap-x-8 gap-y-4">
                   <div>
                     <dt className="text-xs text-muted-foreground">
                       Achieved score
@@ -104,23 +106,23 @@ export default function CandidateAssessments({
                     </dd>
                   </div>
                 </dl>
-                <div className="min-w-0">
-                  <h5 className="text-xs font-medium text-muted-foreground">
-                    Evaluator feedback
-                  </h5>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7">
-                    {data.message?.trim() ||
-                      "No evaluator feedback was included with this result."}
-                  </p>
-                </div>
               </div>
-              <details className="group border-t border-border/60">
+              <details
+                className="group border-t border-border/60"
+                onToggle={(event) => {
+                  const isOpen = event.currentTarget.open;
+                  setOpenAnswers((previous) => ({
+                    ...previous,
+                    [data.id]: isOpen,
+                  }));
+                }}
+              >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-3.5 text-xs font-medium outline-none hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                   Submitted answer
                   <IconChevronDown className="size-4 transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="px-5 pb-5">
-                  <SubmittedAnswer submission={data} />
+                  {openAnswers[data.id] && <SubmittedAnswer submission={data} />}
                 </div>
               </details>
             </article>

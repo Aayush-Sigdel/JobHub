@@ -192,7 +192,7 @@ export default function AssessmentPicker({
       >
         <DialogContent
           className={cn(
-            "flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0",
+            "flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0",
             creating ? "sm:max-w-6xl" : "sm:max-w-xl",
           )}
           showCloseButton={!creatingPending}
@@ -247,7 +247,7 @@ export default function AssessmentPicker({
             </div>
           ) : (
             <>
-              <div className="space-y-4 p-5 pb-4">
+              <div className="min-w-0 space-y-4 p-4 pb-4 sm:p-5">
                 <div
                   role="group"
                   aria-label="Assessment type"
@@ -316,7 +316,7 @@ export default function AssessmentPicker({
                   </Button>
                 </div>
               </div>
-              <div className="min-h-40 overflow-y-auto px-5 pb-5">
+              <div className="min-h-40 min-w-0 overflow-y-auto px-4 pb-5 sm:px-5">
                 {query.isPending ? (
                   <p
                     role="status"
@@ -366,10 +366,10 @@ export default function AssessmentPicker({
                           }
                         />
                         <div className="min-w-0 flex-1">
-                          <span className="block text-sm font-medium">
+                          <span className="block break-words text-sm font-medium [overflow-wrap:anywhere]">
                             {task.title}
                           </span>
-                          <span className="mt-1.5 flex gap-2 text-xs text-muted-foreground">
+                          <span className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
                             <span>
                               {task.scope === "PUBLIC" ? "Public" : "Private"}
                             </span>
@@ -381,7 +381,7 @@ export default function AssessmentPicker({
                             )}
                           </span>
                           {task.instructions && (
-                            <div className="mt-2 max-h-24 overflow-auto text-xs">
+                            <div className="mt-2 max-h-24 max-w-full overflow-auto rounded-md text-xs [overflow-wrap:anywhere]">
                               <JobMarkdown>{task.instructions}</JobMarkdown>
                             </div>
                           )}

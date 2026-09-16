@@ -40,7 +40,7 @@ export function CodeEditor({
       ],
       EditorView.lineWrapping,
       EditorView.contentAttributes.of({
-        "aria-label": `${fileName} code editor`,
+        "aria-label": `${fileName} ${readOnly ? "read-only code viewer" : "code editor"}`,
       }),
       EditorView.theme(
         {
@@ -77,7 +77,7 @@ export function CodeEditor({
         { dark: resolvedTheme === "dark" },
       ),
     ],
-    [language, fileName, fontSize, resolvedTheme],
+    [language, fileName, fontSize, resolvedTheme, readOnly],
   );
 
   return (
@@ -135,7 +135,8 @@ export function CodeEditor({
           theme={resolvedTheme === "dark" ? "dark" : "light"}
           extensions={extensions}
           readOnly={readOnly}
-          onChange={(next) => {
+          editable={!readOnly}
+          onChange={readOnly ? undefined : (next) => {
             setLocalCode(next);
             onChange?.(next);
           }}
@@ -143,7 +144,7 @@ export function CodeEditor({
             lineNumbers: true,
             foldGutter: true,
             highlightActiveLine: true,
-            autocompletion: true,
+            autocompletion: !readOnly,
           }}
         />
       </div>
