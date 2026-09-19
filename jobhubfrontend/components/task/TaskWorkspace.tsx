@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,13 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAssessmentSession } from "@/components/task/AssessmentSession";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 export function TaskWorkspace({
   header,
@@ -30,9 +23,13 @@ export function TaskWorkspace({
 }) {
   const { expanded } = useAssessmentSession();
   return (
-    <div className={expanded
-      ? "flex min-h-0 w-full flex-1 flex-col bg-background text-foreground lg:overflow-hidden"
-      : "mx-auto flex min-h-[720px] max-w-[1600px] flex-col overflow-hidden rounded-xl border bg-background text-foreground lg:h-[calc(100dvh-112px)] lg:min-h-[600px]"}>
+    <div
+      className={
+        expanded
+          ? "flex min-h-0 w-full flex-1 flex-col bg-background text-foreground lg:overflow-hidden"
+          : "mx-auto flex min-h-[720px] max-w-[1600px] flex-col overflow-hidden rounded-xl border bg-background text-foreground lg:h-[calc(100dvh-112px)] lg:min-h-[600px]"
+      }
+    >
       {header}
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(320px,38%)_minmax(0,1fr)]">
         <aside className="min-w-0 overflow-y-auto border-b lg:border-r lg:border-b-0">
@@ -54,6 +51,8 @@ export function TaskHeader({
   isSubmitting,
   isSubmitted,
   disabled,
+  actionLabel = "Test code",
+  pendingLabel = "Testing...",
   children,
 }: {
   title: string;
@@ -63,9 +62,10 @@ export function TaskHeader({
   isSubmitting: boolean;
   isSubmitted: boolean;
   disabled?: boolean;
+  actionLabel?: string;
+  pendingLabel?: string;
   children?: ReactNode;
 }) {
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const { monitoring, tabSwitchCount, warningLimit } = useAssessmentSession();
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-5">
@@ -104,12 +104,14 @@ export function TaskHeader({
           >
             <ShieldCheck className="size-3.5 shrink-0" />
             <span>Tab/app switches</span>
-            <span className="tabular-nums">· {tabSwitchCount}/{warningLimit}</span>
+            <span className="tabular-nums">
+              · {tabSwitchCount}/{warningLimit}
+            </span>
           </span>
         )}
         {children}
         <Button
-          onClick={() => setConfirmOpen(true)}
+          onClick={onSubmit}
           disabled={disabled || isSubmitting || isSubmitted}
           className="h-9 rounded-lg text-xs"
         >
@@ -121,38 +123,12 @@ export function TaskHeader({
             <ArrowRight className="size-3.5" />
           )}
           {isSubmitting
-            ? "Evaluating…"
+            ? pendingLabel
             : isSubmitted
               ? "Submitted"
-              : "Submit solution"}
+              : actionLabel}
         </Button>
       </div>
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="rounded-xl">
-          <DialogHeader>
-            <DialogTitle>Submit this solution?</DialogTitle>
-            <DialogDescription>
-              Your current code will be evaluated and the result recorded.
-              {jobId
-                ? " It will be attached to your application, even if it doesn't pass."
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-              Keep editing
-            </Button>
-            <Button
-              onClick={() => {
-                setConfirmOpen(false);
-                onSubmit();
-              }}
-            >
-              Submit solution <ArrowRight className="size-4" />
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </header>
   );
 }

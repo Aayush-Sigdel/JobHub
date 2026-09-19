@@ -381,8 +381,13 @@ export default function AssessmentPicker({
                             )}
                           </span>
                           {task.instructions && (
-                            <div className="mt-2 max-h-24 max-w-full overflow-auto rounded-md text-xs [overflow-wrap:anywhere]">
-                              <JobMarkdown>{task.instructions}</JobMarkdown>
+                            <div className="mt-2 max-h-10 max-w-full overflow-hidden [overflow-wrap:anywhere]">
+                              <JobMarkdown
+                                compact
+                                className="line-clamp-2 text-xs leading-5"
+                              >
+                                {task.instructions}
+                              </JobMarkdown>
                             </div>
                           )}
                         </div>

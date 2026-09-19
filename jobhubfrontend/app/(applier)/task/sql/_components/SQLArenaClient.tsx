@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import CodeEditor from "@/components/task/CodeEditor";
 import { TaskWorkspace } from "@/components/task/TaskWorkspace";
-import { TaskResult } from "@/components/task/TaskResult";
-import { submitTaskAction } from "@/lib/actions/tasks";
-import { applyJobAction } from "@/lib/actions/jobs";
+import { AssessmentSubmissionPanel } from "@/components/task/AssessmentSubmissionPanel";
+import { evaluateTaskAction, submitTaskAction } from "@/lib/actions/tasks";
 import {
-  buildVerifiedApplicationRequest,
-  clearJobApplicationDraft,
+  hasCompletedRequiredAssessments,
   loadJobAssessmentSubmission,
   saveJobAssessmentSubmission,
 } from "@/lib/job-assessment-submissions";
-import { sqlLinesForSubmission } from "@/lib/task/sql-lines";
+import { sqlStatementsFromPaste } from "@/lib/task/sql-statements";
 import { AssessmentSession } from "@/components/task/AssessmentSession";
 import type { SQLTaskDto } from "../page";
 import type { TaskSubmissionResponse, TaskType } from "@/types/api/tasks";
@@ -39,6 +38,7 @@ export default function SQLArenaClient({
   tabLockWarningLimit,
   requiredTaskTypes,
 }: Props) {
+  const router = useRouter();
   const [selectedTaskId, setSelectedTaskId] = useState(
     initialTaskId || tasks[0]?.id,
   );
@@ -50,12 +50,14 @@ export default function SQLArenaClient({
     Record<string, TaskSubmissionResponse>
   >({});
   const [error, setError] = useState<string | null>(null);
+  const [operation, setOperation] = useState<"testing" | "submitting" | null>(
+    null,
+  );
+  const editorContainer = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
   const inFlight = useRef(false);
   const result = task ? results[task.id] : undefined;
-  const code = task
-    ? (drafts[task.id] ?? "")
-    : "";
+  const code = task ? (drafts[task.id] ?? "") : "";
 
   useEffect(() => {
     if (!jobId || !task?.id) return;
@@ -67,15 +69,47 @@ export default function SQLArenaClient({
     return () => window.clearTimeout(timer);
   }, [jobId, task?.id]);
 
-  function submit() {
+  function testSolution() {
     if (!task || result?.id || inFlight.current) return;
-    const queries = sqlLinesForSubmission(code);
+    const queries = sqlStatementsFromPaste(code);
     if (!queries.length) {
-      setError("Write at least one SQL statement before submitting.");
+      setError("Write at least one SQL statement before testing.");
       return;
     }
     inFlight.current = true;
     setError(null);
+    setOperation("testing");
+    setResults((previous) => {
+      const next = { ...previous };
+      delete next[task.id];
+      return next;
+    });
+    startTransition(async () => {
+      try {
+        const response = await evaluateTaskAction({
+          taskId: task.id,
+          taskType: "SQL",
+          codes: queries,
+        });
+        setResults((previous) => ({ ...previous, [task.id]: response }));
+      } catch {
+        const message =
+          "The evaluation service couldn't test your SQL. Nothing has been recorded.";
+        setError(message);
+      } finally {
+        inFlight.current = false;
+        setOperation(null);
+      }
+    });
+  }
+
+  function submitSolution() {
+    if (!task || !result || result.id || inFlight.current) return;
+    const queries = sqlStatementsFromPaste(code);
+    if (!queries.length) return;
+    inFlight.current = true;
+    setError(null);
+    setOperation("submitting");
     startTransition(async () => {
       try {
         const response = await submitTaskAction({
@@ -83,30 +117,23 @@ export default function SQLArenaClient({
           taskType: "SQL",
           codes: queries,
         });
-        setResults((previous) => ({ ...previous, [task.id]: response }));
         if (!response.id) {
           setError("No submission was recorded. Please try again.");
           return;
         }
+        setResults((previous) => ({ ...previous, [task.id]: response }));
         if (jobId) {
           try {
             saveJobAssessmentSubmission(jobId, response, {
               taskId: task.id,
               taskType: "SQL",
             });
-            const request = buildVerifiedApplicationRequest(
-              jobId,
-              requiredTaskTypes,
-            );
-            if (request) {
-              const application = await applyJobAction(jobId, request);
-              if (application.success) {
-                clearJobApplicationDraft(jobId);
-                toast.success("Your application has been submitted.");
-              } else
-                toast.error(
-                  "Assessment saved. Return to the job to finish your application.",
-                );
+            if (hasCompletedRequiredAssessments(jobId, requiredTaskTypes)) {
+              toast.success(
+                "All assessments are complete. Review and submit your application.",
+              );
+              router.replace(`/find-job/${jobId}`);
+              return;
             }
           } catch {
             toast.error(
@@ -116,10 +143,11 @@ export default function SQLArenaClient({
         }
       } catch {
         setError(
-          "The evaluation service couldn't complete your submission. Your SQL is still here; please try again.",
+          "The submission could not be recorded. Your SQL is still here; please try again.",
         );
       } finally {
         inFlight.current = false;
+        setOperation(null);
       }
     });
   }
@@ -139,9 +167,13 @@ export default function SQLArenaClient({
         header={
           <SQLArenaHeader
             task={task ?? undefined}
-            onSubmit={submit}
+            onSubmit={testSolution}
             isSubmitting={isPending}
             isSubmitted={Boolean(result?.id)}
+            pendingLabel={
+              operation === "submitting" ? "Submitting..." : "Testing..."
+            }
+            actionLabel={result ? "Test again" : "Test code"}
             jobId={jobId}
           />
         }
@@ -182,12 +214,12 @@ export default function SQLArenaClient({
                 <section className="space-y-3 border-t pt-5">
                   <h3 className="text-sm font-medium">Writing your solution</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    Write one complete query per line using the tables described
-                    above. Each non-empty line is sent and executed separately.
+                    Use the tables described above. Queries can span multiple
+                    lines; separate complete queries with semicolons.
                   </p>
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Submit your solution to run it against the assessment
-                    database. The result appears below your editor.
+                    Test your solution against the assessment database before
+                    deciding whether to submit it.
                   </p>
                 </section>
               </>
@@ -200,19 +232,43 @@ export default function SQLArenaClient({
         }
       >
         {task && (
-          <div className="min-h-[400px] flex-1 overflow-hidden lg:min-h-0">
+          <div
+            ref={editorContainer}
+            className="min-h-[400px] flex-1 overflow-hidden lg:min-h-0"
+          >
             <CodeEditor
               value={code}
-              onChange={(next) =>
-                setDrafts((previous) => ({ ...previous, [task.id]: next }))
-              }
+              onChange={(next) => {
+                setDrafts((previous) => ({ ...previous, [task.id]: next }));
+                if (!result?.id) {
+                  setResults((previous) => {
+                    const nextResults = { ...previous };
+                    delete nextResults[task.id];
+                    return nextResults;
+                  });
+                  setError(null);
+                }
+              }}
               fileName="solution.sql"
               language="SQL"
-              readOnly={isPending}
+              readOnly={isPending || Boolean(result?.id)}
             />
           </div>
         )}
-        <TaskResult result={result} error={error} jobId={jobId} />
+        <AssessmentSubmissionPanel
+          result={result}
+          error={error}
+          jobId={jobId}
+          busy={operation}
+          disabled={isPending || !task}
+          onEdit={() =>
+            editorContainer.current
+              ?.querySelector<HTMLElement>('[contenteditable="true"]')
+              ?.focus()
+          }
+          onRetry={testSolution}
+          onSubmit={submitSolution}
+        />
       </TaskWorkspace>
     </AssessmentSession>
   );

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useState, useEffect, useMemo, useTransition } from "react";
+import React, {
+  useCallback,
+  useState,
+  useEffect,
+  useMemo,
+  useTransition,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow, format } from "date-fns";
@@ -27,9 +33,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import KanbanView from "@/components/recruiter/KanbanView";
 import CandidateDetailDrawer from "@/components/recruiter/CandidateDetailDrawer";
+import CandidatePagination from "@/components/recruiter/CandidatePagination";
 import {
   IconSearch,
   IconFilter,
@@ -50,15 +56,12 @@ import {
   IconSparkles,
   IconPower,
   IconTrash,
-  IconClock,
-  IconMapPin,
   IconCode,
   IconDatabase,
   IconPaint,
-  IconLayersIntersect,
-  IconCheck,
 } from "@tabler/icons-react";
 import { calculateSupportedOverallSimilarity } from "@/lib/semantic-match";
+import { paginateCandidates } from "@/lib/candidate-pagination";
 
 interface CandidatesPipelineProps {
   jobs: RecruiterJobSummaryResponse[];
@@ -80,19 +83,26 @@ export default function CandidatesPipeline({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [jobsState, setJobsState] = useState(jobs);
-  const [isActionPending, startActionTransition] = useTransition();
-
-  useEffect(() => {
+  const [previousJobs, setPreviousJobs] = useState(jobs);
+  if (previousJobs !== jobs) {
+    setPreviousJobs(jobs);
     setJobsState(jobs);
-  }, [jobs]);
+  }
+  const [isActionPending, startActionTransition] = useTransition();
 
   const [jobSearch, setJobSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "similarity");
-  const [selectedCandidate, setSelectedCandidate] = useState<CandidateDashboardResponse | null>(null);
+  const [sortBy, setSortBy] = useState(
+    searchParams.get("sortBy") || "similarity",
+  );
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<CandidateDashboardResponse | null>(null);
+  const [candidatePage, setCandidatePage] = useState(1);
+  const [candidatePageSize, setCandidatePageSize] = useState(10);
 
-  const activeTab = (searchParams.get("tab") as "candidates" | "details") || defaultTab;
+  const activeTab =
+    (searchParams.get("tab") as "candidates" | "details") || defaultTab;
   const status = searchParams.get("status") || "ALL";
   const minSimilarity = searchParams.get("minSimilarity") || "ALL";
   const fromDateTime = searchParams.get("fromDateTime") || "";
@@ -102,12 +112,12 @@ export default function CandidatesPipeline({
 
   const selectedJob = useMemo(
     () => (isAllJobs ? null : jobsState.find((j) => j.id === selectedJobId)),
-    [isAllJobs, jobsState, selectedJobId]
+    [isAllJobs, jobsState, selectedJobId],
   );
 
   const totalApplicantsAcrossAllJobs = useMemo(
     () => jobsState.reduce((sum, j) => sum + (j.totalApplicants || 0), 0),
-    [jobsState]
+    [jobsState],
   );
 
   // Jobs sorted by latest created (newest first, Gemini-style)
@@ -128,7 +138,7 @@ export default function CandidatesPipeline({
         job.title.toLowerCase().includes(q) ||
         job.location?.toLowerCase().includes(q) ||
         job.workplaceType.toLowerCase().includes(q) ||
-        job.jobType.toLowerCase().includes(q)
+        job.jobType.toLowerCase().includes(q),
     );
   }, [sortedJobs, jobSearch]);
 
@@ -142,7 +152,7 @@ export default function CandidatesPipeline({
       }
       router.push(`?${params.toString()}`);
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   const toggleListing = (job: RecruiterJobSummaryResponse) => {
@@ -153,24 +163,32 @@ export default function CandidatesPipeline({
           isActive: !currentlyActive,
           active: !currentlyActive,
         });
-        const nextActive = updated.isActive ?? updated.active ?? !currentlyActive;
+        const nextActive =
+          updated.isActive ?? updated.active ?? !currentlyActive;
         setJobsState((current) =>
           current.map((item) =>
             item.id === job.id
               ? { ...item, isActive: nextActive, active: nextActive }
-              : item
-          )
+              : item,
+          ),
         );
-        toast.success(nextActive ? "Job listing activated." : "Job listing deactivated.");
+        toast.success(
+          nextActive ? "Job listing activated." : "Job listing deactivated.",
+        );
         router.refresh();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Unable to update job status.");
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Unable to update job status.",
+        );
       }
     });
   };
 
   const removeListing = (job: RecruiterJobSummaryResponse) => {
-    if (!window.confirm(`Delete "${job.title}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete "${job.title}"? This cannot be undone.`))
+      return;
     startActionTransition(async () => {
       try {
         await deleteJobAction(job.id);
@@ -181,12 +199,17 @@ export default function CandidatesPipeline({
         }
         router.refresh();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Unable to delete job listing.");
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Unable to delete job listing.",
+        );
       }
     });
   };
 
-  const dateTimeInputValue = (value: string) => (value ? value.slice(0, 16) : "");
+  const dateTimeInputValue = (value: string) =>
+    value ? value.slice(0, 16) : "";
   const updateDateFilter = (key: string, value: string) => {
     updateFilters(key, value ? new Date(value).toISOString() : "");
   };
@@ -203,9 +226,13 @@ export default function CandidatesPipeline({
   // Aggregate stats across candidates for the pipeline stage tabs
   const stats = useMemo(() => {
     const total = candidates.length;
-    const applied = candidates.filter((c) => (c.status || "APPLIED") === "APPLIED").length;
+    const applied = candidates.filter(
+      (c) => (c.status || "APPLIED") === "APPLIED",
+    ).length;
     const inReview = candidates.filter((c) => c.status === "IN_REVIEW").length;
-    const shortlisted = candidates.filter((c) => c.status === "SHORTLISTED").length;
+    const shortlisted = candidates.filter(
+      (c) => c.status === "SHORTLISTED",
+    ).length;
     const accepted = candidates.filter((c) => c.status === "ACCEPTED").length;
     const rejected = candidates.filter((c) => c.status === "REJECTED").length;
     return { total, applied, inReview, shortlisted, accepted, rejected };
@@ -214,14 +241,14 @@ export default function CandidatesPipeline({
   const strongMatchesCount = useMemo(
     () =>
       candidates.filter(
-        (c) => (calculateSupportedOverallSimilarity(c) ?? 0) >= 0.75
+        (c) => (calculateSupportedOverallSimilarity(c) ?? 0) >= 0.75,
       ).length,
-    [candidates]
+    [candidates],
   );
 
   const passedAllTasksCount = useMemo(
     () => candidates.filter((c) => c.allTasksPassed).length,
-    [candidates]
+    [candidates],
   );
 
   // Real-time client-side sorting across candidates
@@ -232,21 +259,25 @@ export default function CandidatesPipeline({
         return list.sort(
           (a, b) =>
             (calculateSupportedOverallSimilarity(b) ?? -1) -
-            (calculateSupportedOverallSimilarity(a) ?? -1)
+            (calculateSupportedOverallSimilarity(a) ?? -1),
         );
       case "similarity_asc":
         return list.sort(
           (a, b) =>
             (calculateSupportedOverallSimilarity(a) ?? 999) -
-            (calculateSupportedOverallSimilarity(b) ?? 999)
+            (calculateSupportedOverallSimilarity(b) ?? 999),
         );
       case "date":
         return list.sort(
-          (a, b) => new Date(b.appliedAt || 0).getTime() - new Date(a.appliedAt || 0).getTime()
+          (a, b) =>
+            new Date(b.appliedAt || 0).getTime() -
+            new Date(a.appliedAt || 0).getTime(),
         );
       case "date_asc":
         return list.sort(
-          (a, b) => new Date(a.appliedAt || 0).getTime() - new Date(b.appliedAt || 0).getTime()
+          (a, b) =>
+            new Date(a.appliedAt || 0).getTime() -
+            new Date(b.appliedAt || 0).getTime(),
         );
       case "score":
         return list.sort((a, b) => {
@@ -265,13 +296,23 @@ export default function CandidatesPipeline({
       case "name_desc":
         return list.sort((a, b) => b.name.localeCompare(a.name));
       case "flags":
-        return list.sort((a, b) => (a.tabSwitchCount || 0) - (b.tabSwitchCount || 0));
+        return list.sort(
+          (a, b) => (a.tabSwitchCount || 0) - (b.tabSwitchCount || 0),
+        );
       case "status":
-        return list.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
+        return list.sort((a, b) =>
+          (a.status || "").localeCompare(b.status || ""),
+        );
       default:
         return list;
     }
   }, [candidates, sortBy]);
+
+  const candidatePagination = useMemo(
+    () =>
+      paginateCandidates(sortedCandidates, candidatePage, candidatePageSize),
+    [candidatePage, candidatePageSize, sortedCandidates],
+  );
 
   const activeAdvancedFilterCount = [
     minSimilarity !== "ALL",
@@ -292,7 +333,10 @@ export default function CandidatesPipeline({
                 Job Postings
               </span>
             </div>
-            <Badge variant="secondary" className="font-mono text-xs font-semibold px-2.5 py-0.5">
+            <Badge
+              variant="secondary"
+              className="font-mono text-xs font-semibold px-2.5 py-0.5"
+            >
               {jobsState.length}
             </Badge>
           </div>
@@ -341,7 +385,9 @@ export default function CandidatesPipeline({
             <div className="flex items-center gap-2.5 min-w-0">
               <div
                 className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  isAllJobs ? "bg-primary text-black" : "bg-secondary text-foreground"
+                  isAllJobs
+                    ? "bg-primary text-black"
+                    : "bg-secondary text-foreground"
                 }`}
               >
                 <IconUsers className="size-4" />
@@ -373,7 +419,9 @@ export default function CandidatesPipeline({
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Recent Postings ({filteredJobs.length})
             </span>
-            <span className="text-xs text-muted-foreground font-mono">Latest first</span>
+            <span className="text-xs text-muted-foreground font-mono">
+              Latest first
+            </span>
           </div>
 
           {filteredJobs.length === 0 ? (
@@ -417,7 +465,9 @@ export default function CandidatesPipeline({
                         <>
                           <span>•</span>
                           <span className="font-mono">
-                            {formatDistanceToNow(new Date(job.createdAt), { addSuffix: false })}
+                            {formatDistanceToNow(new Date(job.createdAt), {
+                              addSuffix: false,
+                            })}
                           </span>
                         </>
                       )}
@@ -463,7 +513,8 @@ export default function CandidatesPipeline({
                   All Job Postings & Candidates
                 </h1>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Managing {jobsState.length} listings • {candidates.length} total applicant pool
+                  Managing {jobsState.length} listings • {candidates.length}{" "}
+                  total applicant pool
                 </p>
               </div>
             ) : selectedJob ? (
@@ -481,10 +532,16 @@ export default function CandidatesPipeline({
                   >
                     {isJobActive(selectedJob) ? "Active" : "Closed"}
                   </Badge>
-                  <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5 bg-secondary border-border">
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2 py-0.5 bg-secondary border-border"
+                  >
                     {selectedJob.workplaceType}
                   </Badge>
-                  <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5 bg-secondary border-border">
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold px-2 py-0.5 bg-secondary border-border"
+                  >
                     {selectedJob.jobType}
                   </Badge>
                   {selectedJob.tabLock && (
@@ -495,7 +552,11 @@ export default function CandidatesPipeline({
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {selectedJob.location || selectedJob.companyName || "Employer Listing"} • {candidates.length} applicant{candidates.length === 1 ? "" : "s"}
+                  {selectedJob.location ||
+                    selectedJob.companyName ||
+                    "Employer Listing"}{" "}
+                  • {candidates.length} applicant
+                  {candidates.length === 1 ? "" : "s"}
                 </p>
               </div>
             ) : null}
@@ -552,10 +613,16 @@ export default function CandidatesPipeline({
                     ? "text-muted-foreground hover:text-foreground border-border hover:bg-muted"
                     : "bg-primary text-black hover:bg-primary/90 font-bold"
                 }`}
-                title={isJobActive(selectedJob) ? "Deactivate job listing" : "Activate job listing"}
+                title={
+                  isJobActive(selectedJob)
+                    ? "Deactivate job listing"
+                    : "Activate job listing"
+                }
               >
                 <IconPower className="size-3.5" />
-                <span>{isJobActive(selectedJob) ? "Deactivate" : "Activate"}</span>
+                <span>
+                  {isJobActive(selectedJob) ? "Deactivate" : "Activate"}
+                </span>
               </Button>
 
               <Button
@@ -607,18 +674,30 @@ export default function CandidatesPipeline({
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`size-3 rounded-full shrink-0 ${
-                        isJobActive(selectedJob) ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground"
-                      }`} />
+                      <span
+                        className={`size-3 rounded-full shrink-0 ${
+                          isJobActive(selectedJob)
+                            ? "bg-emerald-600 dark:bg-emerald-400"
+                            : "bg-muted-foreground"
+                        }`}
+                      />
                       <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Listing Status: {isJobActive(selectedJob) ? "Live & Accepting Applicants" : "Deactivated"}
+                        Listing Status:{" "}
+                        {isJobActive(selectedJob)
+                          ? "Live & Accepting Applicants"
+                          : "Deactivated"}
                       </span>
                     </div>
                     <h2 className="text-2xl font-bold text-foreground truncate">
                       {selectedJob.title}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {selectedJob.companyName} • {selectedJob.location || "Location not specified"} • Created {selectedJob.createdAt ? format(new Date(selectedJob.createdAt), "PPP") : "recently"}
+                      {selectedJob.companyName} •{" "}
+                      {selectedJob.location || "Location not specified"} •
+                      Created{" "}
+                      {selectedJob.createdAt
+                        ? format(new Date(selectedJob.createdAt), "PPP")
+                        : "recently"}
                     </p>
                   </div>
 
@@ -635,30 +714,54 @@ export default function CandidatesPipeline({
                 {/* 4 Performance Metric Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
                   <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Applicants</p>
-                    <p className="text-3xl font-bold text-foreground mt-1 font-mono">{selectedJob.totalApplicants || 0}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Candidates submitted</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Total Applicants
+                    </p>
+                    <p className="text-3xl font-bold text-foreground mt-1 font-mono">
+                      {selectedJob.totalApplicants || 0}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Candidates submitted
+                    </p>
                   </div>
 
                   <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pending Review</p>
-                    <p className="text-3xl font-bold text-foreground mt-1 font-mono">{selectedJob.pendingReviewCount || 0}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Need screening</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Pending Review
+                    </p>
+                    <p className="text-3xl font-bold text-foreground mt-1 font-mono">
+                      {selectedJob.pendingReviewCount || 0}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Need screening
+                    </p>
                   </div>
 
                   <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Shortlisted</p>
-                    <p className="text-3xl font-bold text-foreground mt-1 font-mono">{selectedJob.shortlistedCount || 0}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">High fit candidates</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Shortlisted
+                    </p>
+                    <p className="text-3xl font-bold text-foreground mt-1 font-mono">
+                      {selectedJob.shortlistedCount || 0}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      High fit candidates
+                    </p>
                   </div>
 
                   <div className="bg-card border border-border rounded-2xl p-4 shadow-2xs">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Anti-Cheat</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Anti-Cheat
+                    </p>
                     <p className="text-base font-bold text-foreground mt-2 flex items-center gap-1.5">
                       <IconShieldCheck className="size-4.5 text-foreground" />
-                      <span>{selectedJob.tabLock ? "Enforced" : "Disabled"}</span>
+                      <span>
+                        {selectedJob.tabLock ? "Enforced" : "Disabled"}
+                      </span>
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Browser tab monitor</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Browser tab monitor
+                    </p>
                   </div>
                 </div>
 
@@ -668,37 +771,68 @@ export default function CandidatesPipeline({
                   <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-2xs">
                     <div className="flex items-center gap-2 border-b border-border pb-3">
                       <IconBriefcase className="size-4.5 text-foreground" />
-                      <h3 className="font-bold text-base text-foreground">Role Specifications</h3>
+                      <h3 className="font-bold text-base text-foreground">
+                        Role Specifications
+                      </h3>
                     </div>
 
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-medium">Workplace Model</span>
-                        <span className="font-semibold text-foreground">{selectedJob.workplaceType}</span>
+                        <span className="text-muted-foreground font-medium">
+                          Workplace Model
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {selectedJob.workplaceType}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-medium">Employment Type</span>
-                        <span className="font-semibold text-foreground">{selectedJob.jobType}</span>
+                        <span className="text-muted-foreground font-medium">
+                          Employment Type
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {selectedJob.jobType}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-medium">Location</span>
-                        <span className="font-semibold text-foreground">{selectedJob.location || "Remote / Unspecified"}</span>
+                        <span className="text-muted-foreground font-medium">
+                          Location
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {selectedJob.location || "Remote / Unspecified"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-medium">Company Name</span>
-                        <span className="font-semibold text-foreground">{selectedJob.companyName}</span>
+                        <span className="text-muted-foreground font-medium">
+                          Company Name
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {selectedJob.companyName}
+                        </span>
                       </div>
                     </div>
 
                     <div className="pt-2 border-t border-border flex gap-2">
-                      <Button asChild variant="outline" size="sm" className="h-9 rounded-xl text-xs font-semibold gap-1.5 flex-1">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-xl text-xs font-semibold gap-1.5 flex-1"
+                      >
                         <Link href={`/manage-jobs/${selectedJob.id}/edit`}>
                           <IconPencil className="size-3.5" />
                           <span>Edit Role Details</span>
                         </Link>
                       </Button>
-                      <Button asChild variant="outline" size="sm" className="h-9 rounded-xl text-xs font-semibold gap-1.5 flex-1">
-                        <Link href={`/find-job/${selectedJob.id}`} target="_blank">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-xl text-xs font-semibold gap-1.5 flex-1"
+                      >
+                        <Link
+                          href={`/find-job/${selectedJob.id}`}
+                          target="_blank"
+                        >
                           <IconExternalLink className="size-3.5" />
                           <span>Public Preview</span>
                         </Link>
@@ -710,20 +844,26 @@ export default function CandidatesPipeline({
                   <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-2xs">
                     <div className="flex items-center gap-2 border-b border-border pb-3">
                       <IconCode className="size-4.5 text-foreground" />
-                      <h3 className="font-bold text-base text-foreground">Technical Assessments</h3>
+                      <h3 className="font-bold text-base text-foreground">
+                        Technical Assessments
+                      </h3>
                     </div>
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-2.5 rounded-xl bg-secondary/50 border border-border">
                         <div className="flex items-center gap-2">
                           <IconPaint className="size-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-foreground">UI/Design Challenge</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            UI/Design Challenge
+                          </span>
                         </div>
-                        <Badge className={`text-xs font-semibold px-2 py-0.5 ${
-                          selectedJob.hasDesignTask
-                            ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
-                            : "bg-secondary text-muted-foreground border-border"
-                        }`}>
+                        <Badge
+                          className={`text-xs font-semibold px-2 py-0.5 ${
+                            selectedJob.hasDesignTask
+                              ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
+                              : "bg-secondary text-muted-foreground border-border"
+                          }`}
+                        >
                           {selectedJob.hasDesignTask ? "Configured" : "None"}
                         </Badge>
                       </div>
@@ -731,34 +871,45 @@ export default function CandidatesPipeline({
                       <div className="flex items-center justify-between p-2.5 rounded-xl bg-secondary/50 border border-border">
                         <div className="flex items-center gap-2">
                           <IconCode className="size-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-foreground">Programming Challenge</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            Programming Challenge
+                          </span>
                         </div>
-                        <Badge className={`text-xs font-semibold px-2 py-0.5 ${
-                          selectedJob.hasProgrammingTask
-                            ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
-                            : "bg-secondary text-muted-foreground border-border"
-                        }`}>
-                          {selectedJob.hasProgrammingTask ? "Configured" : "None"}
+                        <Badge
+                          className={`text-xs font-semibold px-2 py-0.5 ${
+                            selectedJob.hasProgrammingTask
+                              ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
+                              : "bg-secondary text-muted-foreground border-border"
+                          }`}
+                        >
+                          {selectedJob.hasProgrammingTask
+                            ? "Configured"
+                            : "None"}
                         </Badge>
                       </div>
 
                       <div className="flex items-center justify-between p-2.5 rounded-xl bg-secondary/50 border border-border">
                         <div className="flex items-center gap-2">
                           <IconDatabase className="size-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-foreground">SQL Database Challenge</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            SQL Database Challenge
+                          </span>
                         </div>
-                        <Badge className={`text-xs font-semibold px-2 py-0.5 ${
-                          selectedJob.hasSqlTask
-                            ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
-                            : "bg-secondary text-muted-foreground border-border"
-                        }`}>
+                        <Badge
+                          className={`text-xs font-semibold px-2 py-0.5 ${
+                            selectedJob.hasSqlTask
+                              ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
+                              : "bg-secondary text-muted-foreground border-border"
+                          }`}
+                        >
                           {selectedJob.hasSqlTask ? "Configured" : "None"}
                         </Badge>
                       </div>
                     </div>
 
                     <p className="text-xs text-muted-foreground pt-1">
-                      Candidates must pass attached challenges to receive the verified badge on their application.
+                      Candidates must pass attached challenges to receive the
+                      verified badge on their application.
                     </p>
                   </div>
                 </div>
@@ -768,10 +919,18 @@ export default function CandidatesPipeline({
               <div className="space-y-4 max-w-5xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">All Job Listings</h2>
-                    <p className="text-sm text-muted-foreground">Manage active postings, toggle statuses, and jump into candidate pipelines.</p>
+                    <h2 className="text-xl font-bold text-foreground">
+                      All Job Listings
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Manage active postings, toggle statuses, and jump into
+                      candidate pipelines.
+                    </p>
                   </div>
-                  <Button asChild className="h-10 rounded-xl bg-primary text-black hover:bg-primary/90 font-bold text-sm px-4 gap-2 shrink-0">
+                  <Button
+                    asChild
+                    className="h-10 rounded-xl bg-primary text-black hover:bg-primary/90 font-bold text-sm px-4 gap-2 shrink-0"
+                  >
                     <Link href="/post-job">
                       <IconPlus className="size-4 text-black stroke-[3]" />
                       <span>Post a New Job</span>
@@ -782,7 +941,9 @@ export default function CandidatesPipeline({
                 <div className="space-y-3">
                   {filteredJobs.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-border p-12 text-center bg-card">
-                      <p className="font-bold text-foreground">No listings found matching your search.</p>
+                      <p className="font-bold text-foreground">
+                        No listings found matching your search.
+                      </p>
                     </div>
                   ) : (
                     filteredJobs.map((job) => {
@@ -794,20 +955,29 @@ export default function CandidatesPipeline({
                         >
                           <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`size-2.5 rounded-full shrink-0 ${
-                                active ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground"
-                              }`} />
-                              <h3 className="font-bold text-base text-foreground truncate">{job.title}</h3>
-                              <Badge className={`text-xs font-semibold px-2 py-0.5 ${
-                                active
-                                  ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
-                                  : "bg-secondary text-muted-foreground border-border"
-                              }`}>
+                              <span
+                                className={`size-2.5 rounded-full shrink-0 ${
+                                  active
+                                    ? "bg-emerald-600 dark:bg-emerald-400"
+                                    : "bg-muted-foreground"
+                                }`}
+                              />
+                              <h3 className="font-bold text-base text-foreground truncate">
+                                {job.title}
+                              </h3>
+                              <Badge
+                                className={`text-xs font-semibold px-2 py-0.5 ${
+                                  active
+                                    ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
+                                    : "bg-secondary text-muted-foreground border-border"
+                                }`}
+                              >
                                 {active ? "Active" : "Closed"}
                               </Badge>
                             </div>
                             <p className="text-xs sm:text-sm text-muted-foreground">
-                              {job.companyName} • {job.location || "Remote"} • {job.workplaceType} • {job.jobType}
+                              {job.companyName} • {job.location || "Remote"} •{" "}
+                              {job.workplaceType} • {job.jobType}
                             </p>
                           </div>
 
@@ -835,15 +1005,28 @@ export default function CandidatesPipeline({
                               <span>{active ? "Deactivate" : "Activate"}</span>
                             </Button>
 
-                            <Button asChild variant="outline" size="sm" className="h-9 px-3 rounded-xl text-xs font-semibold gap-1">
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="h-9 px-3 rounded-xl text-xs font-semibold gap-1"
+                            >
                               <Link href={`/manage-jobs/${job.id}/edit`}>
                                 <IconPencil className="size-3.5" />
                                 <span>Edit</span>
                               </Link>
                             </Button>
 
-                            <Button asChild variant="outline" size="sm" className="h-9 px-3 rounded-xl text-xs font-semibold gap-1">
-                              <Link href={`/find-job/${job.id}`} target="_blank">
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="h-9 px-3 rounded-xl text-xs font-semibold gap-1"
+                            >
+                              <Link
+                                href={`/find-job/${job.id}`}
+                                target="_blank"
+                              >
                                 <IconExternalLink className="size-3.5" />
                               </Link>
                             </Button>
@@ -872,8 +1055,12 @@ export default function CandidatesPipeline({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-2xs">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Pool</p>
-                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">{candidates.length}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Total Pool
+                    </p>
+                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">
+                      {candidates.length}
+                    </p>
                   </div>
                   <div className="size-9 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground">
                     <IconUsers className="size-4.5 text-foreground" />
@@ -881,8 +1068,12 @@ export default function CandidatesPipeline({
                 </div>
                 <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-2xs">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Strong Matches</p>
-                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">{strongMatchesCount}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Strong Matches
+                    </p>
+                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">
+                      {strongMatchesCount}
+                    </p>
                   </div>
                   <div className="size-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-800 dark:text-emerald-200">
                     <IconSparkles className="size-4.5 text-emerald-700 dark:text-emerald-400" />
@@ -890,8 +1081,12 @@ export default function CandidatesPipeline({
                 </div>
                 <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-2xs">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Passed Tasks</p>
-                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">{passedAllTasksCount}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Passed Tasks
+                    </p>
+                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">
+                      {passedAllTasksCount}
+                    </p>
                   </div>
                   <div className="size-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-800 dark:text-emerald-200">
                     <IconCircleCheck className="size-4.5 text-emerald-700 dark:text-emerald-400" />
@@ -899,8 +1094,12 @@ export default function CandidatesPipeline({
                 </div>
                 <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between shadow-2xs">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Shortlisted</p>
-                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">{stats.shortlisted}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Shortlisted
+                    </p>
+                    <p className="text-2xl font-bold text-foreground mt-0.5 font-mono">
+                      {stats.shortlisted}
+                    </p>
                   </div>
                   <div className="size-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-800 dark:text-indigo-200">
                     <IconBriefcase className="size-4.5 text-indigo-700 dark:text-indigo-400" />
@@ -913,17 +1112,32 @@ export default function CandidatesPipeline({
                 {[
                   { id: "ALL", label: "All Candidates", count: stats.total },
                   { id: "APPLIED", label: "Applied", count: stats.applied },
-                  { id: "IN_REVIEW", label: "In Screening", count: stats.inReview },
-                  { id: "SHORTLISTED", label: "Shortlisted", count: stats.shortlisted },
+                  {
+                    id: "IN_REVIEW",
+                    label: "In Screening",
+                    count: stats.inReview,
+                  },
+                  {
+                    id: "SHORTLISTED",
+                    label: "Shortlisted",
+                    count: stats.shortlisted,
+                  },
                   { id: "ACCEPTED", label: "Accepted", count: stats.accepted },
                   { id: "REJECTED", label: "Archived", count: stats.rejected },
                 ].map((stage) => {
-                  const isActive = (status === "ALL" && stage.id === "ALL") || status === stage.id;
+                  const isActive =
+                    (status === "ALL" && stage.id === "ALL") ||
+                    status === stage.id;
                   return (
                     <button
                       key={stage.id}
                       type="button"
-                      onClick={() => updateFilters("status", stage.id === "ALL" ? "" : stage.id)}
+                      onClick={() =>
+                        updateFilters(
+                          "status",
+                          stage.id === "ALL" ? "" : stage.id,
+                        )
+                      }
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 cursor-pointer ${
                         isActive
                           ? "bg-primary text-black font-bold shadow-xs"
@@ -972,7 +1186,9 @@ export default function CandidatesPipeline({
                   {/* Stage Filter */}
                   <Select
                     value={status}
-                    onValueChange={(value) => updateFilters("status", value === "ALL" ? "" : value)}
+                    onValueChange={(value) =>
+                      updateFilters("status", value === "ALL" ? "" : value)
+                    }
                   >
                     <SelectTrigger className="h-10 w-[145px] rounded-xl text-sm font-medium bg-secondary/50 border-border">
                       <SelectValue placeholder="All Stages" />
@@ -999,8 +1215,12 @@ export default function CandidatesPipeline({
                       <SelectValue placeholder="Sort" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="similarity">Match (High-Low)</SelectItem>
-                      <SelectItem value="similarity_asc">Match (Low-High)</SelectItem>
+                      <SelectItem value="similarity">
+                        Match (High-Low)
+                      </SelectItem>
+                      <SelectItem value="similarity_asc">
+                        Match (Low-High)
+                      </SelectItem>
                       <SelectItem value="date">Newest Applied</SelectItem>
                       <SelectItem value="date_asc">Oldest Applied</SelectItem>
                       <SelectItem value="score">Assessment Score</SelectItem>
@@ -1013,7 +1233,9 @@ export default function CandidatesPipeline({
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={activeAdvancedFilterCount > 0 ? "default" : "outline"}
+                        variant={
+                          activeAdvancedFilterCount > 0 ? "default" : "outline"
+                        }
                         size="sm"
                         className={`h-10 px-3.5 rounded-xl text-sm font-semibold gap-1.5 cursor-pointer ${
                           activeAdvancedFilterCount > 0
@@ -1030,7 +1252,10 @@ export default function CandidatesPipeline({
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80 p-4 space-y-3.5 rounded-2xl" align="start">
+                    <PopoverContent
+                      className="w-80 p-4 space-y-3.5 rounded-2xl"
+                      align="start"
+                    >
                       <div className="flex items-center justify-between border-b border-border pb-2.5">
                         <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
                           Advanced Filters
@@ -1039,7 +1264,9 @@ export default function CandidatesPipeline({
                           <button
                             type="button"
                             onClick={() => {
-                              const params = new URLSearchParams(searchParams.toString());
+                              const params = new URLSearchParams(
+                                searchParams.toString(),
+                              );
                               params.delete("minSimilarity");
                               params.delete("fromDateTime");
                               params.delete("toDateTime");
@@ -1053,10 +1280,17 @@ export default function CandidatesPipeline({
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-foreground">Min Similarity</Label>
+                        <Label className="text-xs font-semibold text-foreground">
+                          Min Similarity
+                        </Label>
                         <Select
                           value={minSimilarity}
-                          onValueChange={(val) => updateFilters("minSimilarity", val === "ALL" ? "" : val)}
+                          onValueChange={(val) =>
+                            updateFilters(
+                              "minSimilarity",
+                              val === "ALL" ? "" : val,
+                            )
+                          }
                         >
                           <SelectTrigger className="w-full h-10 rounded-xl text-sm">
                             <SelectValue />
@@ -1071,27 +1305,37 @@ export default function CandidatesPipeline({
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="pop-from" className="text-xs font-semibold text-foreground">
+                        <Label
+                          htmlFor="pop-from"
+                          className="text-xs font-semibold text-foreground"
+                        >
                           Applied From
                         </Label>
                         <Input
                           id="pop-from"
                           type="datetime-local"
                           value={dateTimeInputValue(fromDateTime)}
-                          onChange={(e) => updateDateFilter("fromDateTime", e.target.value)}
+                          onChange={(e) =>
+                            updateDateFilter("fromDateTime", e.target.value)
+                          }
                           className="h-10 rounded-xl text-sm"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="pop-to" className="text-xs font-semibold text-foreground">
+                        <Label
+                          htmlFor="pop-to"
+                          className="text-xs font-semibold text-foreground"
+                        >
                           Applied To
                         </Label>
                         <Input
                           id="pop-to"
                           type="datetime-local"
                           value={dateTimeInputValue(toDateTime)}
-                          onChange={(e) => updateDateFilter("toDateTime", e.target.value)}
+                          onChange={(e) =>
+                            updateDateFilter("toDateTime", e.target.value)
+                          }
                           className="h-10 rounded-xl text-sm"
                         />
                       </div>
@@ -1140,7 +1384,11 @@ export default function CandidatesPipeline({
                       size="sm"
                       onClick={() => {
                         setSearch("");
-                        router.push(selectedJobId !== "all" ? `?jobId=${selectedJobId}` : "?");
+                        router.push(
+                          selectedJobId !== "all"
+                            ? `?jobId=${selectedJobId}`
+                            : "?",
+                        );
                       }}
                       className="h-10 px-3 text-sm text-foreground font-semibold hover:underline"
                     >
@@ -1157,19 +1405,27 @@ export default function CandidatesPipeline({
                     <div className="size-11 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground">
                       <IconUsers className="size-5" />
                     </div>
-                    <h3 className="text-sm font-bold text-foreground">No candidates match your criteria</h3>
+                    <h3 className="text-sm font-bold text-foreground">
+                      No candidates match your criteria
+                    </h3>
                     <p className="text-xs text-muted-foreground max-w-sm">
                       {search || status !== "ALL" || minSimilarity !== "ALL"
                         ? "Try clearing filters or adjusting your search query."
                         : "No applications have been received for this selection yet."}
                     </p>
-                    {(search || status !== "ALL" || minSimilarity !== "ALL") && (
+                    {(search ||
+                      status !== "ALL" ||
+                      minSimilarity !== "ALL") && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
                           setSearch("");
-                          router.push(selectedJobId !== "all" ? `?jobId=${selectedJobId}` : "?");
+                          router.push(
+                            selectedJobId !== "all"
+                              ? `?jobId=${selectedJobId}`
+                              : "?",
+                          );
                         }}
                         className="mt-1 rounded-xl text-xs font-semibold"
                       >
@@ -1190,7 +1446,9 @@ export default function CandidatesPipeline({
                         <thead>
                           <tr className="border-b border-border bg-secondary/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             <th className="py-3.5 px-5">Candidate</th>
-                            {isAllJobs && <th className="py-3.5 px-4">Role Applied</th>}
+                            {isAllJobs && (
+                              <th className="py-3.5 px-4">Role Applied</th>
+                            )}
                             <th className="py-3.5 px-4">Applied</th>
                             <th className="py-3.5 px-4">Match Evidence</th>
                             <th className="py-3.5 px-4">Evaluations</th>
@@ -1199,31 +1457,44 @@ export default function CandidatesPipeline({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
-                          {sortedCandidates.map((candidate) => {
-                            const similarity = calculateSupportedOverallSimilarity(candidate);
+                          {candidatePagination.items.map((candidate) => {
+                            const similarity =
+                              calculateSupportedOverallSimilarity(candidate);
                             const matchTier =
                               similarity === null
                                 ? null
                                 : similarity >= 0.75
-                                ? { label: "Strong Match", bg: "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800" }
-                                : similarity >= 0.45
-                                ? { label: "Good Match", bg: "bg-blue-100 text-blue-950 border-blue-300 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800" }
-                                : { label: "Base Fit", bg: "bg-secondary text-foreground border-border" };
+                                  ? {
+                                      label: "Strong Match",
+                                      bg: "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800",
+                                    }
+                                  : similarity >= 0.45
+                                    ? {
+                                        label: "Good Match",
+                                        bg: "bg-blue-100 text-blue-950 border-blue-300 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800",
+                                      }
+                                    : {
+                                        label: "Base Fit",
+                                        bg: "bg-secondary text-foreground border-border",
+                                      };
 
                             const stageStyle =
                               candidate.status === "SHORTLISTED"
                                 ? "bg-indigo-100 text-indigo-950 border-indigo-300 dark:bg-indigo-950 dark:text-indigo-100 dark:border-indigo-800"
                                 : candidate.status === "ACCEPTED"
-                                ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
-                                : candidate.status === "IN_REVIEW"
-                                ? "bg-amber-100 text-amber-950 border-amber-300 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800"
-                                : candidate.status === "REJECTED"
-                                ? "bg-zinc-200 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700"
-                                : "bg-blue-100 text-blue-950 border-blue-300 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800";
+                                  ? "bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
+                                  : candidate.status === "IN_REVIEW"
+                                    ? "bg-amber-100 text-amber-950 border-amber-300 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800"
+                                    : candidate.status === "REJECTED"
+                                      ? "bg-zinc-200 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700"
+                                      : "bg-blue-100 text-blue-950 border-blue-300 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800";
 
                             return (
                               <tr
-                                key={candidate.candidateId || candidate.applicationId}
+                                key={
+                                  candidate.candidateId ||
+                                  candidate.applicationId
+                                }
                                 onClick={() => setSelectedCandidate(candidate)}
                                 className="hover:bg-muted/40 transition-colors cursor-pointer group"
                               >
@@ -1231,9 +1502,14 @@ export default function CandidatesPipeline({
                                 <td className="py-4.5 px-5">
                                   <div className="flex items-start gap-3.5 min-w-0">
                                     <Avatar className="size-12 rounded-xl border border-border shrink-0">
-                                      <AvatarImage src={candidate.imageUrl} className="object-cover" />
+                                      <AvatarImage
+                                        src={candidate.imageUrl}
+                                        className="object-cover"
+                                      />
                                       <AvatarFallback className="bg-foreground text-background font-bold text-sm">
-                                        {candidate.name.substring(0, 2).toUpperCase()}
+                                        {candidate.name
+                                          .substring(0, 2)
+                                          .toUpperCase()}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
@@ -1242,27 +1518,32 @@ export default function CandidatesPipeline({
                                       </span>
                                       <span className="text-sm text-foreground/80 font-medium block truncate">
                                         {candidate.title || "Applicant"}
-                                        {candidate.location ? ` • ${candidate.location}` : ""}
+                                        {candidate.location
+                                          ? ` • ${candidate.location}`
+                                          : ""}
                                       </span>
 
                                       {/* Top Skills Preview */}
-                                      {candidate.skills && candidate.skills.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                          {candidate.skills.slice(0, 3).map((skill) => (
-                                            <span
-                                              key={skill.id}
-                                              className="text-xs px-2 py-0.5 rounded-md bg-secondary text-foreground font-medium border border-border"
-                                            >
-                                              {skill.name}
-                                            </span>
-                                          ))}
-                                          {candidate.skills.length > 3 && (
-                                            <span className="text-xs text-muted-foreground font-mono">
-                                              +{candidate.skills.length - 3}
-                                            </span>
-                                          )}
-                                        </div>
-                                      )}
+                                      {candidate.skills &&
+                                        candidate.skills.length > 0 && (
+                                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {candidate.skills
+                                              .slice(0, 3)
+                                              .map((skill) => (
+                                                <span
+                                                  key={skill.id}
+                                                  className="text-xs px-2 py-0.5 rounded-md bg-secondary text-foreground font-medium border border-border"
+                                                >
+                                                  {skill.name}
+                                                </span>
+                                              ))}
+                                            {candidate.skills.length > 3 && (
+                                              <span className="text-xs text-muted-foreground font-mono">
+                                                +{candidate.skills.length - 3}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
                                     </div>
                                   </div>
                                 </td>
@@ -1275,16 +1556,24 @@ export default function CandidatesPipeline({
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          if (candidate.jobId) updateFilters("jobId", candidate.jobId);
+                                          if (candidate.jobId)
+                                            updateFilters(
+                                              "jobId",
+                                              candidate.jobId,
+                                            );
                                         }}
                                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary hover:bg-muted border border-border text-xs font-semibold text-foreground transition-colors truncate max-w-full text-left cursor-pointer"
                                         title="Filter to this job in sidebar"
                                       >
                                         <IconBriefcase className="size-3.5 text-muted-foreground shrink-0" />
-                                        <span className="truncate">{candidate.jobTitle}</span>
+                                        <span className="truncate">
+                                          {candidate.jobTitle}
+                                        </span>
                                       </button>
                                     ) : (
-                                      <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                                      <span className="text-xs text-muted-foreground italic">
+                                        Unassigned
+                                      </span>
                                     )}
                                   </td>
                                 )}
@@ -1292,7 +1581,10 @@ export default function CandidatesPipeline({
                                 {/* Applied Date */}
                                 <td className="py-4.5 px-4 whitespace-nowrap text-sm text-muted-foreground font-mono">
                                   {candidate.appliedAt
-                                    ? formatDistanceToNow(new Date(candidate.appliedAt), { addSuffix: true })
+                                    ? formatDistanceToNow(
+                                        new Date(candidate.appliedAt),
+                                        { addSuffix: true },
+                                      )
                                     : "Recently"}
                                 </td>
 
@@ -1300,10 +1592,14 @@ export default function CandidatesPipeline({
                                 <td className="py-4.5 px-4 whitespace-nowrap">
                                   <div className="flex flex-col gap-1">
                                     <span className="font-mono text-sm sm:text-base font-bold text-foreground tabular-nums">
-                                      {similarity !== null ? similarity.toFixed(3) : "N/A"}
+                                      {similarity !== null
+                                        ? similarity.toFixed(3)
+                                        : "N/A"}
                                     </span>
                                     {matchTier && (
-                                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border w-fit ${matchTier.bg}`}>
+                                      <span
+                                        className={`text-xs font-semibold px-2 py-0.5 rounded-md border w-fit ${matchTier.bg}`}
+                                      >
                                         {matchTier.label}
                                       </span>
                                     )}
@@ -1326,7 +1622,9 @@ export default function CandidatesPipeline({
                                         <span>In Review</span>
                                       </Badge>
                                     ) : (
-                                      <span className="text-xs text-muted-foreground">None</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        None
+                                      </span>
                                     )}
 
                                     {candidate.tabSwitchLimitExceeded && (
@@ -1340,7 +1638,9 @@ export default function CandidatesPipeline({
 
                                 {/* Stage */}
                                 <td className="py-4.5 px-4 whitespace-nowrap">
-                                  <Badge className={`text-xs font-semibold px-2.5 py-1 border ${stageStyle}`}>
+                                  <Badge
+                                    className={`text-xs font-semibold px-2.5 py-1 border ${stageStyle}`}
+                                  >
                                     {candidate.status || "APPLIED"}
                                   </Badge>
                                 </td>
@@ -1371,7 +1671,9 @@ export default function CandidatesPipeline({
 
                                     <Button
                                       size="sm"
-                                      onClick={() => setSelectedCandidate(candidate)}
+                                      onClick={() =>
+                                        setSelectedCandidate(candidate)
+                                      }
                                       className="h-9.5 px-4 rounded-xl text-sm font-bold bg-primary text-black hover:bg-primary/90 shadow-xs gap-1.5 cursor-pointer"
                                     >
                                       <span>Review</span>
@@ -1385,6 +1687,19 @@ export default function CandidatesPipeline({
                         </tbody>
                       </table>
                     </div>
+                    <CandidatePagination
+                      page={candidatePagination.page}
+                      pageCount={candidatePagination.pageCount}
+                      pageSize={candidatePageSize}
+                      total={sortedCandidates.length}
+                      start={candidatePagination.start}
+                      end={candidatePagination.end}
+                      onPageChange={setCandidatePage}
+                      onPageSizeChange={(nextPageSize) => {
+                        setCandidatePageSize(nextPageSize);
+                        setCandidatePage(1);
+                      }}
+                    />
                   </div>
                 )}
               </div>

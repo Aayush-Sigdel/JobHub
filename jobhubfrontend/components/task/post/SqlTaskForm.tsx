@@ -3,16 +3,16 @@
 import { useEffect, useState, useTransition } from "react";
 import type { TaskBuilderProps } from "@/components/task/post/types";
 import { useRouter } from "next/navigation";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
 import PostTaskHeader from "@/components/task/post/PostTaskHeader";
 import ChallengeInfoForm from "@/components/task/post/ChallengeInfoForm";
+import { SqlStatementList, type SqlStatement } from "./SqlStatementList";
 import MarkdownEditor from "@/components/post-job/MarkdownEditor";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { createSQLTaskAction } from "@/lib/actions/tasks";
+import { sqlStatementsFromPaste } from "@/lib/task/sql-statements";
 import type { CreateSQLTask, SkillLevel, TaskScope } from "@/types/api/tasks";
 
 export default function SqlTaskForm({
@@ -26,31 +26,25 @@ export default function SqlTaskForm({
   const [instructions, setInstructions] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("INTERMEDIATE");
   const [scope, setScope] = useState<TaskScope>("PRIVATE");
-  const [setupQueries, setSetupQueries] = useState<string[]>([""]);
-  const [assertions, setAssertions] = useState<string[]>([""]);
+  const [setupQueries, setSetupQueries] = useState<SqlStatement[]>([
+    { id: "setup-initial", sql: "" },
+  ]);
+  const [assertions, setAssertions] = useState<SqlStatement[]>([
+    { id: "assertion-initial", sql: "" },
+  ]);
 
   useEffect(() => {
     onPendingChange?.(isPending);
     return () => onPendingChange?.(false);
   }, [isPending, onPendingChange]);
 
-  const updateQuery = (
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
-    queryIndex: number,
-    value: string,
-  ) => {
-    setter((current) =>
-      current.map((query, index) => (index === queryIndex ? value : query)),
-    );
-  };
-
   const publish = () => {
-    const validSetupQueries = setupQueries
-      .map((query) => query.trim())
-      .filter(Boolean);
-    const validAssertions = assertions
-      .map((assertion) => assertion.trim())
-      .filter(Boolean);
+    const validSetupQueries = setupQueries.flatMap(({ sql }) =>
+      sqlStatementsFromPaste(sql),
+    );
+    const validAssertions = assertions.flatMap(({ sql }) =>
+      sqlStatementsFromPaste(sql),
+    );
     if (!title.trim() || !instructions.trim()) {
       toast.error("Add a title and candidate instructions.");
       return;
@@ -146,57 +140,24 @@ export default function SqlTaskForm({
                   isolated H2 database.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setSetupQueries((current) => [...current, ""])}
-              >
-                <IconPlus />
-                Add statement
-              </Button>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {
+                  setupQueries.flatMap(({ sql }) => sqlStatementsFromPaste(sql))
+                    .length
+                }{" "}
+                statements
+              </span>
             </div>
-            <div className="space-y-4">
-              {setupQueries.length === 0 && (
-                <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  No setup statements. Add one if your query needs tables or
-                  sample data.
-                </p>
-              )}
-              {setupQueries.map((query, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor={`setup-${index}`}>
-                      Statement {index + 1}
-                    </Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove setup statement ${index + 1}`}
-                      onClick={() =>
-                        setSetupQueries((current) =>
-                          current.filter((_, i) => i !== index),
-                        )
-                      }
-                    >
-                      <IconTrash className="size-4" />
-                    </Button>
-                  </div>
-                  <Textarea
-                    id={`setup-${index}`}
-                    value={query}
-                    onChange={(event) =>
-                      updateQuery(setSetupQueries, index, event.target.value)
-                    }
-                    spellCheck={false}
-                    className="min-h-32 rounded-lg font-mono text-xs leading-6"
-                    placeholder="CREATE TABLE employees (id INT, name VARCHAR(100));"
-                  />
-                </div>
-              ))}
-            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              One query per block. A query can span multiple lines. Separate
+              queries with semicolons when pasting a script.
+            </p>
+            <SqlStatementList
+              value={setupQueries}
+              onChange={setSetupQueries}
+              kind="setup"
+              disabled={isPending}
+            />
           </section>
 
           <section className="space-y-5 rounded-xl border border-border bg-card p-5 sm:p-6">
@@ -209,16 +170,13 @@ export default function SqlTaskForm({
                   Add at least one boolean check for the result.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setAssertions((current) => [...current, ""])}
-              >
-                <IconPlus />
-                Add assertion
-              </Button>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {
+                  assertions.flatMap(({ sql }) => sqlStatementsFromPaste(sql))
+                    .length
+                }{" "}
+                assertions
+              </span>
             </div>
             <p className="rounded-lg bg-muted/40 p-3 text-xs leading-6 text-muted-foreground">
               Candidate SELECT output is available as{" "}
@@ -229,41 +187,16 @@ export default function SqlTaskForm({
               </code>
               .
             </p>
-            <div className="space-y-4">
-              {assertions.map((assertion, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor={`assertion-${index}`}>
-                      Assertion {index + 1}
-                    </Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove assertion ${index + 1}`}
-                      disabled={assertions.length <= 1}
-                      onClick={() =>
-                        setAssertions((current) =>
-                          current.filter((_, i) => i !== index),
-                        )
-                      }
-                    >
-                      <IconTrash className="size-4" />
-                    </Button>
-                  </div>
-                  <Textarea
-                    id={`assertion-${index}`}
-                    value={assertion}
-                    onChange={(event) =>
-                      updateQuery(setAssertions, index, event.target.value)
-                    }
-                    spellCheck={false}
-                    className="min-h-24 rounded-lg font-mono text-xs leading-6"
-                    placeholder="(SELECT COUNT(*) FROM candidate_result) = 3"
-                  />
-                </div>
-              ))}
-            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              One boolean expression per block. Use semicolons to separate
+              multiple assertions; line breaks stay inside the same assertion.
+            </p>
+            <SqlStatementList
+              value={assertions}
+              onChange={setAssertions}
+              kind="assertion"
+              disabled={isPending}
+            />
           </section>
           <div className="flex justify-end gap-3">
             <Button
@@ -310,13 +243,20 @@ export default function SqlTaskForm({
               <div className="flex justify-between gap-3">
                 <dt className="text-muted-foreground">Setup statements</dt>
                 <dd className="tabular-nums">
-                  {setupQueries.filter((query) => query.trim()).length}
+                  {
+                    setupQueries.flatMap(({ sql }) =>
+                      sqlStatementsFromPaste(sql),
+                    ).length
+                  }
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-muted-foreground">Assertions</dt>
                 <dd className="tabular-nums">
-                  {assertions.filter((assertion) => assertion.trim()).length}
+                  {
+                    assertions.flatMap(({ sql }) => sqlStatementsFromPaste(sql))
+                      .length
+                  }
                 </dd>
               </div>
             </dl>

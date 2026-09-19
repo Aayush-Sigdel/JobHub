@@ -22,26 +22,30 @@ export function TaskResult({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-2">
-          {result?.id && !error ? (
+          {result?.passed && !error ? (
             <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
           ) : (
             <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
           )}
           <div>
             <h3 className="text-sm font-medium">
-              {error || !result?.id
+              {error || !result
                 ? "Evaluation unavailable"
-                : result.passed
-                  ? "Assessment passed"
-                  : "Assessment submitted · Target not met"}
+                : result.id
+                  ? result.passed
+                    ? "Assessment passed"
+                    : "Assessment submitted · Target not met"
+                  : result.passed
+                    ? "Tests passed · Not submitted"
+                    : "Target not met · Not submitted"}
             </h3>
             {error ? (
               <p role="alert" className="mt-1 text-xs text-muted-foreground">
                 {error}
               </p>
-            ) : result?.id ? (
+            ) : result ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                Submitted solution ·{" "}
+                {result.id ? "Submitted solution" : "Test result"} ·{" "}
                 {result.taskType === "DESIGN" ? "Visual match" : "Score"}:{" "}
                 <span className="font-medium text-foreground">
                   {Number.isFinite(result.achievedScore)
@@ -55,11 +59,7 @@ export function TaskResult({
                   : "—"}
                 {result.taskType === "DESIGN" ? "%" : ""}
               </p>
-            ) : (
-              <p className="mt-1 text-xs text-muted-foreground">
-                No submission was recorded. Please try again.
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
         {jobId && result?.id && !error && (

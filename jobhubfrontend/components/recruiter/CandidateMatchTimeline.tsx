@@ -105,7 +105,11 @@ export default function CandidateMatchTimeline({
           </Button>
         </div>
       ) : query.data?.length ? (
-        <CandidateEvidenceReport snapshots={query.data} match={candidate} />
+        <CandidateEvidenceReport
+          snapshots={query.data}
+          match={candidate}
+          socialLinks={candidate.socialLinks}
+        />
       ) : (
         <p className="border-t border-border p-5 text-sm text-muted-foreground">
           No connected-profile snapshots are available for this candidate yet.
