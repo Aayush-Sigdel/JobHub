@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { TaskWorkspace } from "@/components/task/TaskWorkspace";
-import { TaskResult } from "@/components/task/TaskResult";
-import { submitTaskAction } from "@/lib/actions/tasks";
-import { applyJobAction } from "@/lib/actions/jobs";
+import { AssessmentSubmissionPanel } from "@/components/task/AssessmentSubmissionPanel";
+import { evaluateTaskAction, submitTaskAction } from "@/lib/actions/tasks";
 import {
-  buildVerifiedApplicationRequest,
-  clearJobApplicationDraft,
+  hasCompletedRequiredAssessments,
   loadJobAssessmentSubmission,
   saveJobAssessmentSubmission,
 } from "@/lib/job-assessment-submissions";
@@ -29,20 +28,6 @@ interface Props {
   requiredTaskTypes: TaskType[];
 }
 
-function runnerUnavailable(message?: string) {
-  return Boolean(
-    message &&
-    ([
-      "error: file not found: Solution.java",
-      "error: file not found: Driver.java",
-      "Cannot connect to the Docker daemon",
-      "Failed to relax sandbox work directory permissions",
-    ].some((text) => message.includes(text)) ||
-      (message.includes("Docker image '") &&
-        message.includes("' does not exist"))),
-  );
-}
-
 export default function ProgramArenaClient({
   tasks,
   initialTaskId,
@@ -52,6 +37,7 @@ export default function ProgramArenaClient({
   tabLockWarningLimit,
   requiredTaskTypes,
 }: Props) {
+  const router = useRouter();
   const [selectedTaskId, setSelectedTaskId] = useState(
     initialTaskId || tasks[0]?.id,
   );
@@ -64,10 +50,14 @@ export default function ProgramArenaClient({
     Record<string, TaskSubmissionResponse>
   >({});
   const [error, setError] = useState<string | null>(null);
+  const [operation, setOperation] = useState<"testing" | "submitting" | null>(
+    null,
+  );
+  const editorContainer = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
   const inFlight = useRef(false);
   const result = task ? results[task.id] : undefined;
-  const recorded = Boolean(result?.id && !runnerUnavailable(result.message));
+  const recorded = Boolean(result?.id);
   const draftKey = `${task?.id}-${language}`;
   const code =
     drafts[draftKey] ?? (task ? createStarterCode(task, language) : "");
@@ -82,14 +72,45 @@ export default function ProgramArenaClient({
     return () => window.clearTimeout(timer);
   }, [jobId, task?.id]);
 
-  function submit() {
+  function testSolution() {
     if (!task || recorded || inFlight.current) return;
     if (!code.trim()) {
-      setError("Write your solution before submitting.");
+      setError("Write your solution before testing.");
       return;
     }
     inFlight.current = true;
     setError(null);
+    setOperation("testing");
+    setResults((previous) => {
+      const next = { ...previous };
+      delete next[task.id];
+      return next;
+    });
+    startTransition(async () => {
+      try {
+        const response = await evaluateTaskAction({
+          taskId: task.id,
+          code,
+          taskType: "PROGRAMMING",
+          language,
+        });
+        setResults((previous) => ({ ...previous, [task.id]: response }));
+      } catch {
+        const message =
+          "The evaluation service couldn't test your code. Nothing has been recorded.";
+        setError(message);
+      } finally {
+        inFlight.current = false;
+        setOperation(null);
+      }
+    });
+  }
+
+  function submitSolution() {
+    if (!task || !result || recorded || inFlight.current) return;
+    inFlight.current = true;
+    setError(null);
+    setOperation("submitting");
     startTransition(async () => {
       try {
         const response = await submitTaskAction({
@@ -98,36 +119,23 @@ export default function ProgramArenaClient({
           taskType: "PROGRAMMING",
           language,
         });
-        setResults((previous) => ({ ...previous, [task.id]: response }));
-        if (runnerUnavailable(response.message)) {
-          setError(
-            "The code runner is unavailable. Your code is still here; try again when the service is restored.",
-          );
-          return;
-        }
         if (!response.id) {
           setError("No submission was recorded. Please try again.");
           return;
         }
+        setResults((previous) => ({ ...previous, [task.id]: response }));
         if (jobId) {
           try {
             saveJobAssessmentSubmission(jobId, response, {
               taskId: task.id,
               taskType: "PROGRAMMING",
             });
-            const request = buildVerifiedApplicationRequest(
-              jobId,
-              requiredTaskTypes,
-            );
-            if (request) {
-              const application = await applyJobAction(jobId, request);
-              if (application.success) {
-                clearJobApplicationDraft(jobId);
-                toast.success("Your application has been submitted.");
-              } else
-                toast.error(
-                  "Assessment saved. Return to the job to finish your application.",
-                );
+            if (hasCompletedRequiredAssessments(jobId, requiredTaskTypes)) {
+              toast.success(
+                "All assessments are complete. Review and submit your application.",
+              );
+              router.replace(`/find-job/${jobId}`);
+              return;
             }
           } catch {
             toast.error(
@@ -137,10 +145,11 @@ export default function ProgramArenaClient({
         }
       } catch {
         setError(
-          "The evaluation service couldn't complete your submission. Your code is still here; please try again.",
+          "The submission could not be recorded. Your code is still here; please try again.",
         );
       } finally {
         inFlight.current = false;
+        setOperation(null);
       }
     });
   }
@@ -161,10 +170,24 @@ export default function ProgramArenaClient({
           <ProgramArenaHeader
             task={task ?? undefined}
             language={language}
-            setLanguage={setLanguage}
-            onSubmit={submit}
+            setLanguage={(nextLanguage) => {
+              setLanguage(nextLanguage);
+              if (!recorded && task) {
+                setResults((previous) => {
+                  const next = { ...previous };
+                  delete next[task.id];
+                  return next;
+                });
+                setError(null);
+              }
+            }}
+            onSubmit={testSolution}
             isSubmitting={isPending}
             isSubmitted={recorded}
+            pendingLabel={
+              operation === "submitting" ? "Submitting..." : "Testing..."
+            }
+            actionLabel={result ? "Test again" : "Test code"}
             jobId={jobId}
           />
         }
@@ -183,6 +206,13 @@ export default function ProgramArenaClient({
                       aria-pressed={task?.id === item.id}
                       onClick={() => {
                         setSelectedTaskId(item.id);
+                        setResults((previous) =>
+                          Object.fromEntries(
+                            Object.entries(previous).filter(
+                              ([, saved]) => saved.id,
+                            ),
+                          ),
+                        );
                         setError(null);
                       }}
                       className={`block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted ${task?.id === item.id ? "bg-muted font-medium" : "text-muted-foreground"}`}
@@ -261,8 +291,8 @@ export default function ProgramArenaClient({
                     </p>
                   )}
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    These are reference examples. Submit your solution to evaluate
-                    it against the assessment tests.
+                    These are reference examples. Test your solution to evaluate
+                    it against the assessment cases before submitting.
                   </p>
                 </section>
               </>
@@ -275,19 +305,43 @@ export default function ProgramArenaClient({
         }
       >
         {task && (
-          <div className="min-h-[400px] flex-1 overflow-hidden lg:min-h-0">
+          <div
+            ref={editorContainer}
+            className="min-h-[400px] flex-1 overflow-hidden lg:min-h-0"
+          >
             <ProgramEditor
               task={task}
               language={language}
               code={code}
-              setCode={(next) =>
-                setDrafts((previous) => ({ ...previous, [draftKey]: next }))
-              }
-              readOnly={isPending}
+              setCode={(next) => {
+                setDrafts((previous) => ({ ...previous, [draftKey]: next }));
+                if (!recorded) {
+                  setResults((previous) => {
+                    const nextResults = { ...previous };
+                    delete nextResults[task.id];
+                    return nextResults;
+                  });
+                  setError(null);
+                }
+              }}
+              readOnly={isPending || recorded}
             />
           </div>
         )}
-        <TaskResult result={result} error={error} jobId={jobId} />
+        <AssessmentSubmissionPanel
+          result={result}
+          error={error}
+          jobId={jobId}
+          busy={operation}
+          disabled={isPending || !task}
+          onEdit={() =>
+            editorContainer.current
+              ?.querySelector<HTMLElement>('[contenteditable="true"]')
+              ?.focus()
+          }
+          onRetry={testSolution}
+          onSubmit={submitSolution}
+        />
       </TaskWorkspace>
     </AssessmentSession>
   );

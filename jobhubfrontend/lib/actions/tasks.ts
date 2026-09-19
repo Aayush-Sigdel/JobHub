@@ -23,6 +23,15 @@ export async function submitTaskAction(
   return result;
 }
 
+export async function evaluateTaskAction(
+  payload: SubmitTaskRequest,
+): Promise<TaskSubmissionResponse> {
+  return fetchWithAuth<TaskSubmissionResponse>("/task/evaluate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getTaskSubmissionCodeAction(
   submissionId: string,
 ): Promise<TaskSubmissionCodeResponse> {

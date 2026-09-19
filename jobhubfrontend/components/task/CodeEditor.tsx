@@ -19,6 +19,9 @@ export interface CodeEditorProps {
   fileName?: string;
   language?: "HTML_CSS" | "JAVA" | "PYTHON" | "SQL";
   readOnly?: boolean;
+  onPaste?: (text: string, valueAfterPaste: string) => boolean;
+  compact?: boolean;
+  placeholder?: string;
 }
 
 export function CodeEditor({
@@ -28,6 +31,9 @@ export function CodeEditor({
   fileName = "index.html",
   language = "HTML_CSS",
   readOnly = false,
+  onPaste,
+  compact = false,
+  placeholder,
 }: CodeEditorProps) {
   const { resolvedTheme } = useTheme();
   const [localCode, setLocalCode] = useState(initialCode);
@@ -42,13 +48,27 @@ export function CodeEditor({
       EditorView.contentAttributes.of({
         "aria-label": `${fileName} ${readOnly ? "read-only code viewer" : "code editor"}`,
       }),
+      EditorView.domEventHandlers({
+        paste(event, view) {
+          if (readOnly) return false;
+          const text = event.clipboardData?.getData("text/plain");
+          if (!text || !onPaste) return false;
+          const selection = view.state.selection.main;
+          const doc = view.state.doc.toString();
+          const nextValue =
+            doc.slice(0, selection.from) + text + doc.slice(selection.to);
+          if (!onPaste(text, nextValue)) return false;
+          event.preventDefault();
+          return true;
+        },
+      }),
       EditorView.theme(
         {
           "&": {
             height: "100%",
             backgroundColor: "var(--background)",
             color: "var(--foreground)",
-            fontSize: `${fontSize}px`,
+            fontSize: `${compact ? 13 : fontSize}px`,
           },
           ".cm-scroller": {
             overflow: "auto",
@@ -77,69 +97,79 @@ export function CodeEditor({
         { dark: resolvedTheme === "dark" },
       ),
     ],
-    [language, fileName, fontSize, resolvedTheme, readOnly],
+    [language, fileName, fontSize, resolvedTheme, readOnly, onPaste, compact],
   );
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-4 py-2">
-        <span className="font-mono text-xs text-muted-foreground">
-          {fileName}
-        </span>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Decrease editor font size"
-            disabled={fontSize <= 12}
-            onClick={() => setFontSize((size) => Math.max(12, size - 1))}
-          >
-            <Minus className="size-3.5" />
-          </Button>
-          <span className="w-8 text-center text-xs tabular-nums text-muted-foreground">
-            {fontSize}px
+      {!compact && (
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-4 py-2">
+          <span className="font-mono text-xs text-muted-foreground">
+            {fileName}
           </span>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Increase editor font size"
-            disabled={fontSize >= 22}
-            onClick={() => setFontSize((size) => Math.min(22, size + 1))}
-          >
-            <Plus className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Copy code"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(code);
-                toast.success("Code copied");
-              } catch {
-                toast.error(
-                  "Couldn't copy the code. Select it and copy manually.",
-                );
-              }
-            }}
-          >
-            <Copy className="size-3.5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Decrease editor font size"
+              disabled={fontSize <= 12}
+              onClick={() => setFontSize((size) => Math.max(12, size - 1))}
+            >
+              <Minus className="size-3.5" />
+            </Button>
+            <span className="w-8 text-center text-xs tabular-nums text-muted-foreground">
+              {fontSize}px
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Increase editor font size"
+              disabled={fontSize >= 22}
+              onClick={() => setFontSize((size) => Math.min(22, size + 1))}
+            >
+              <Plus className="size-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Copy code"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(code);
+                  toast.success("Code copied");
+                } catch {
+                  toast.error(
+                    "Couldn't copy the code. Select it and copy manually.",
+                  );
+                }
+              }}
+            >
+              <Copy className="size-3.5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       <div className="min-h-0 flex-1 overflow-hidden">
         <CodeMirror
           value={code}
+          placeholder={placeholder}
           height="100%"
           style={{ height: "100%" }}
           theme={resolvedTheme === "dark" ? "dark" : "light"}
           extensions={extensions}
           readOnly={readOnly}
           editable={!readOnly}
-          onChange={readOnly ? undefined : (next) => {
-            setLocalCode(next);
-            onChange?.(next);
-          }}
+          onChange={
+            readOnly
+              ? undefined
+              : (next) => {
+                  setLocalCode(next);
+                  onChange?.(next);
+                }
+          }
           basicSetup={{
             lineNumbers: true,
             foldGutter: true,
@@ -148,12 +178,14 @@ export function CodeEditor({
           }}
         />
       </div>
-      <div className="flex shrink-0 justify-between border-t px-4 py-2 text-[11px] text-muted-foreground">
-        <span>{readOnly ? "Read only" : "Changes stay in this editor"}</span>
-        <span className="tabular-nums">
-          {code.length.toLocaleString()} characters
-        </span>
-      </div>
+      {!compact && (
+        <div className="flex shrink-0 justify-between border-t px-4 py-2 text-[11px] text-muted-foreground">
+          <span>{readOnly ? "Read only" : "Changes stay in this editor"}</span>
+          <span className="tabular-nums">
+            {code.length.toLocaleString()} characters
+          </span>
+        </div>
+      )}
     </div>
   );
 }

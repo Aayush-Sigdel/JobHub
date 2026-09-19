@@ -9,6 +9,8 @@ export default function SQLArenaHeader({
   onSubmit: () => void;
   isSubmitting: boolean;
   isSubmitted: boolean;
+  pendingLabel?: string;
+  actionLabel?: string;
   jobId?: string | null;
 }) {
   return (

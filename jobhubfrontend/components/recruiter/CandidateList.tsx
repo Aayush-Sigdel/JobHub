@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   IconArrowUpRight,
   IconCalendar,
@@ -9,6 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { calculateSupportedOverallSimilarity } from "@/lib/semantic-match";
+import { paginateCandidates } from "@/lib/candidate-pagination";
 import { cn } from "@/lib/utils";
 import type { CandidateDashboardResponse } from "@/types/api/recruiter";
 import type { ApplicationStatus } from "@/types/api/jobs";
@@ -17,6 +19,7 @@ import {
   candidateSubmissions,
   reviewDate,
 } from "./candidate-review-utils";
+import CandidatePagination from "./CandidatePagination";
 
 const stageStyles: Record<ApplicationStatus, string> = {
   APPLIED: "border-border bg-muted/50 text-muted-foreground",
@@ -52,6 +55,13 @@ export default function CandidateList({
   candidates: CandidateDashboardResponse[];
   onSelect: (candidate: CandidateDashboardResponse) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pagination = useMemo(
+    () => paginateCandidates(candidates, page, pageSize),
+    [candidates, page, pageSize],
+  );
+
   return (
     <div className="@container/candidate-list mt-5 overflow-hidden rounded-xl border border-border bg-background">
       <div
@@ -71,7 +81,7 @@ export default function CandidateList({
         aria-label="Candidate applications"
         className="divide-y divide-border/70"
       >
-        {candidates.map((candidate) => {
+        {pagination.items.map((candidate) => {
           const match = calculateSupportedOverallSimilarity(candidate);
           const submissions = candidateSubmissions(candidate);
           const passed = submissions.filter(({ data }) => data.passed).length;
@@ -232,6 +242,19 @@ export default function CandidateList({
           );
         })}
       </ul>
+      <CandidatePagination
+        page={pagination.page}
+        pageCount={pagination.pageCount}
+        pageSize={pageSize}
+        total={candidates.length}
+        start={pagination.start}
+        end={pagination.end}
+        onPageChange={setPage}
+        onPageSizeChange={(nextPageSize) => {
+          setPageSize(nextPageSize);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }

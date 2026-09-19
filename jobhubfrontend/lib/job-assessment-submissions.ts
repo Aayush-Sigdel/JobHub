@@ -16,7 +16,7 @@ interface ApplicationDraft {
 export function saveJobAssessmentSubmission(
   jobId: string,
   submission: TaskSubmissionResponse,
-  assignedTask?: { taskId: string; taskType: TaskType }
+  assignedTask?: { taskId: string; taskType: TaskType },
 ) {
   if (typeof window === "undefined") return;
 
@@ -30,7 +30,7 @@ export function saveJobAssessmentSubmission(
 
   window.localStorage.setItem(
     storageKey(jobId, normalizedSubmission.taskType),
-    JSON.stringify(normalizedSubmission)
+    JSON.stringify(normalizedSubmission),
   );
   window.dispatchEvent(new Event("job-assessment-submission"));
 }
@@ -38,7 +38,7 @@ export function saveJobAssessmentSubmission(
 export function loadJobAssessmentSubmission(
   jobId: string,
   taskType: TaskType,
-  expectedTaskId?: string
+  expectedTaskId?: string,
 ): TaskSubmissionResponse | undefined {
   if (typeof window === "undefined") return undefined;
 
@@ -46,7 +46,10 @@ export function loadJobAssessmentSubmission(
     const value = window.localStorage.getItem(storageKey(jobId, taskType));
     if (!value) return undefined;
     const submission = JSON.parse(value) as TaskSubmissionResponse;
-    if (!submission.id || (expectedTaskId && submission.taskId !== expectedTaskId)) {
+    if (
+      !submission.id ||
+      (expectedTaskId && submission.taskId !== expectedTaskId)
+    ) {
       return undefined;
     }
     return submission;
@@ -61,14 +64,14 @@ export function saveJobApplicationDraft(jobId: string, coverNote: string) {
   let existingDraft: ApplicationDraft | undefined;
   try {
     const value = window.localStorage.getItem(applicationDraftKey(jobId));
-    existingDraft = value ? JSON.parse(value) as ApplicationDraft : undefined;
+    existingDraft = value ? (JSON.parse(value) as ApplicationDraft) : undefined;
   } catch {
     existingDraft = undefined;
   }
 
   window.localStorage.setItem(
     applicationDraftKey(jobId),
-    JSON.stringify({ coverNote: coverNote || existingDraft?.coverNote })
+    JSON.stringify({ coverNote: coverNote || existingDraft?.coverNote }),
   );
 }
 
@@ -77,9 +80,18 @@ export function clearJobApplicationDraft(jobId: string) {
   window.localStorage.removeItem(applicationDraftKey(jobId));
 }
 
+export function hasCompletedRequiredAssessments(
+  jobId: string,
+  requiredTaskTypes: TaskType[],
+): boolean {
+  return requiredTaskTypes.every((taskType) =>
+    Boolean(loadJobAssessmentSubmission(jobId, taskType)?.id),
+  );
+}
+
 export function buildVerifiedApplicationRequest(
   jobId: string,
-  requiredTaskTypes: TaskType[]
+  requiredTaskTypes: TaskType[],
 ): ApplyJobRequest | undefined {
   if (typeof window === "undefined") return undefined;
 

@@ -14,6 +14,8 @@ export default function ProgramArenaHeader({
   onSubmit: () => void;
   isSubmitting: boolean;
   isSubmitted: boolean;
+  pendingLabel?: string;
+  actionLabel?: string;
   jobId?: string | null;
 }) {
   return (

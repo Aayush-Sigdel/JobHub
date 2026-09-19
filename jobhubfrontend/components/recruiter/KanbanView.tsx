@@ -6,8 +6,12 @@ import { toast } from "sonner";
 import type { CandidateDashboardResponse } from "@/types/api/recruiter";
 import type { ApplicationStatus } from "@/types/api/jobs";
 import { updateApplicationStatusAction } from "@/lib/actions/recruiter";
+import { paginateCandidates } from "@/lib/candidate-pagination";
 import CandidateCard from "./CandidateCard";
+import CandidatePagination from "./CandidatePagination";
 import { candidateStages } from "./candidate-review-utils";
+
+const KANBAN_PAGE_SIZE = 6;
 
 interface KanbanViewProps {
   candidates: CandidateDashboardResponse[];
@@ -23,6 +27,9 @@ export default function KanbanView({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [stagePages, setStagePages] = useState<
+    Partial<Record<ApplicationStatus, number>>
+  >({});
   const [localCandidates, updateOptimistic] = useOptimistic(
     candidates,
     (current, update: { applicationId: string; status: ApplicationStatus }) =>
@@ -99,6 +106,11 @@ export default function KanbanView({
           const items = localCandidates.filter(
             (candidate) => (candidate.status || "APPLIED") === stage.id,
           );
+          const pagination = paginateCandidates(
+            items,
+            stagePages[stage.id] ?? 1,
+            KANBAN_PAGE_SIZE,
+          );
           return (
             <section
               key={stage.id}
@@ -119,7 +131,7 @@ export default function KanbanView({
                 </span>
               </div>
               <div className="min-h-72 space-y-3 p-3">
-                {items.map((candidate) => (
+                {pagination.items.map((candidate) => (
                   <div
                     key={
                       candidate.applicationId ||
@@ -177,6 +189,25 @@ export default function KanbanView({
                   </p>
                 )}
               </div>
+              {items.length > KANBAN_PAGE_SIZE && (
+                <div className="border-t border-border/70">
+                  <CandidatePagination
+                    compact
+                    page={pagination.page}
+                    pageCount={pagination.pageCount}
+                    pageSize={KANBAN_PAGE_SIZE}
+                    total={items.length}
+                    start={pagination.start}
+                    end={pagination.end}
+                    onPageChange={(nextPage) =>
+                      setStagePages((current) => ({
+                        ...current,
+                        [stage.id]: nextPage,
+                      }))
+                    }
+                  />
+                </div>
+              )}
             </section>
           );
         })}

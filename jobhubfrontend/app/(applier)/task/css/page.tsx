@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TaskHeader } from "@/components/task/TaskWorkspace";
 import { CssBattleWorkspace } from "@/components/task/CssBattleWorkspace";
 import { submitTaskAction, getDesignTasksAction } from "@/lib/actions/tasks";
-import { applyJobAction, getJobDetailAction } from "@/lib/actions/jobs";
+import { getJobDetailAction } from "@/lib/actions/jobs";
 import {
-  buildVerifiedApplicationRequest,
-  clearJobApplicationDraft,
+  hasCompletedRequiredAssessments,
   loadJobAssessmentSubmission,
   saveJobAssessmentSubmission,
 } from "@/lib/job-assessment-submissions";
@@ -37,6 +36,7 @@ const INITIAL_CODE = `<!DOCTYPE html>
 </html>`;
 
 function CSSAssessment() {
+  const router = useRouter();
   const params = useSearchParams();
   const jobId = params.get("jobId");
   const requestedTaskId = params.get("taskId");
@@ -145,19 +145,12 @@ function CSSAssessment() {
             taskId: task.id,
             taskType: "DESIGN",
           });
-          const request = buildVerifiedApplicationRequest(
-            jobId,
-            requiredTaskTypes,
-          );
-          if (request) {
-            const application = await applyJobAction(jobId, request);
-            if (application.success) {
-              clearJobApplicationDraft(jobId);
-              toast.success("Your application has been submitted.");
-            } else
-              toast.error(
-                "Assessment saved. Return to the job to finish your application.",
-              );
+          if (hasCompletedRequiredAssessments(jobId, requiredTaskTypes)) {
+            toast.success(
+              "All assessments are complete. Review and submit your application.",
+            );
+            router.replace(`/find-job/${jobId}`);
+            return;
           }
         } catch {
           toast.error(
@@ -223,6 +216,8 @@ function CSSAssessment() {
             onSubmit={submit}
             isSubmitting={isSubmitting}
             isSubmitted={Boolean(result?.id)}
+            actionLabel="Submit solution"
+            pendingLabel="Submitting..."
           />
         }
         task={task}
