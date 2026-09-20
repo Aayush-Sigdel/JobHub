@@ -199,9 +199,10 @@ tasks. Both return `200 OK` and an array of the SQL response above (or `[]`).
 responses. The UI must use `instructions`; it cannot reconstruct the private
 setup/tests from this API.
 
-### Submit an SQL task
+### Test or submit an SQL task
 
-`POST /submit`
+Use `POST /evaluate` for a test run and `POST /submit` for the final recorded
+submission. Both endpoints accept the same payload:
 
 ```json
 {
@@ -217,6 +218,10 @@ setup/tests from this API.
 in-memory database runs each attempt. The setup executes first, then candidate
 statements execute in order.
 
+`POST /evaluate` returns the score without creating a `task_submissions` row;
+its response has a null `id`. `POST /submit` evaluates again and saves the
+result, including failed and errored attempts.
+
 - Candidate statements beginning with `SELECT` or `WITH` become tables: first
   `candidate_result`, then `candidate_result_2`, etc. A final semicolon is
   ignored for this detection.
@@ -227,12 +232,13 @@ statements execute in order.
   assertion count. These are numeric counts (for example `1.0` / `2.0`), not
   percentages.
 
-## Submission response and errors
+## Evaluation and submission responses
 
-All implemented submissions return `200 OK` when grading is reached:
+Evaluation and submission return `200 OK` when grading is reached:
 
 ```json
 {
+  "id": "d7239f60-b248-4d66-8d3d-57de388cf169",
   "taskId": "44b80e2f-2f6e-4909-8bcf-2010d4d01cc7",
   "taskType": "SQL",
   "passed": true,
@@ -242,17 +248,19 @@ All implemented submissions return `200 OK` when grading is reached:
 }
 ```
 
-The response has no submission ID, timestamp, individual assertion/test results,
-or history endpoint.
+For `POST /evaluate`, `id` is null because the result is not recorded. For
+`POST /submit`, `id` identifies the saved submission. Neither response includes
+individual assertion/test results or a submission-history endpoint.
 
-SQL setup/candidate-query execution errors are converted to a normal saved,
-failed `200` submission with `achievedScore: 0.0` and the database error text in
-`message`. Display `message` as plain text. Assertion errors only count as
-failures; their individual messages are not returned.
+SQL setup/candidate-query execution errors are converted to a failed `200`
+result with `achievedScore: 0.0` and the database error text in `message`.
+Evaluation errors are not saved. Final submissions are saved. Display `message`
+as plain text. Assertion errors only count as failures; their individual
+messages are not returned.
 
 Programming compile/runtime/judge errors are also returned as `200` with
-`passed: false`, `achievedScore: 0.0`, and `message` populated, but these error
-responses are currently returned directly and are **not saved** as submissions.
+`passed: false`, `achievedScore: 0.0`, and `message` populated. They are not
+saved by `/evaluate`, and are saved only when sent through `/submit`.
 
 | Status | Message/body | Condition |
 | --- | --- | --- |
@@ -361,9 +369,11 @@ Both return `200 OK` and an array of `ProgrammingTaskDto` (or `[]`). As with
 create response, only `exampleTestCases` are exposed (max 3), not the full test
 set used for judging.
 
-### Submit a programming task
+### Test or submit a programming task
 
-`POST /submit`
+Use `POST /evaluate` to run the hidden cases without recording the result. Use
+`POST /submit` only after the candidate confirms the final submission. Both
+accept the same payload:
 
 ```json
 {
@@ -375,6 +385,9 @@ set used for judging.
 ```
 
 `code` and `language` are required for `PROGRAMMING`. `codes` is ignored.
+The evaluation response has a null `id`; the final submission response contains
+the saved submission ID. Final submission evaluates the code again before
+saving it.
 
 ### Supported languages and how judging works
 
@@ -397,6 +410,7 @@ Success example:
 
 ```json
 {
+  "id": "d7239f60-b248-4d66-8d3d-57de388cf169",
   "taskId": "27a2c4d7-913a-4656-8a95-fd2bd836e489",
   "taskType": "PROGRAMMING",
   "passed": true,

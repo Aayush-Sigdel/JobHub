@@ -9,5 +9,9 @@ interface TaskExecutionService{
 
     val taskType: TaskType
 
+    fun evaluateTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
+        throw UnsupportedOperationException("Task type $taskType does not support test runs")
+    }
+
     fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse
 }

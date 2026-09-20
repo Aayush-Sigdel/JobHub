@@ -9,6 +9,7 @@ import com.example.jobhub.dto.SQLTaskDto
 import com.example.jobhub.dto.SubmitTask
 import com.example.jobhub.dto.TaskSubmissionCodeResponse
 import com.example.jobhub.dto.TaskSubmissionResponse
+import com.example.jobhub.model.task.TaskType
 import com.example.jobhub.security.UserPrincipal
 import com.example.jobhub.service.task.TaskExecutionResolver
 import com.example.jobhub.service.task.TaskSubmissionService
@@ -51,6 +52,25 @@ class TaskController(
             submitTask
         )
         return ResponseEntity.ok(response)
+    }
+
+    @PostMapping("/evaluate")
+    fun evaluate(
+        @AuthenticationPrincipal userDetails: UserPrincipal,
+        @RequestBody submitTask: SubmitTask
+    ): ResponseEntity<TaskSubmissionResponse> {
+        if (submitTask.taskType != TaskType.PROGRAMMING &&
+            submitTask.taskType != TaskType.SQL
+        ) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+        }
+
+        val taskExecution = taskExecutionResolver.resolve(submitTask.taskType)
+            ?: return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+
+        return ResponseEntity.ok(
+            taskExecution.evaluateTask(userDetails.id, submitTask)
+        )
     }
 
     @GetMapping("/submission/{submissionId}")

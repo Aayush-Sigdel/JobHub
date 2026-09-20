@@ -26,6 +26,9 @@ import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.util.UUID
 
+private const val SNAPSHOT_REPLAY_LIMIT = 10
+private const val SNAPSHOT_SUMMARY_LIMIT = 3
+
 @Service
 class RecruiterDashboardService(
     private val jobPostRepository: JobPostRepository,
@@ -269,21 +272,33 @@ class RecruiterDashboardService(
 
             when (platform) {
                 SocialPlatform.GITHUB -> {
-                    val username = rootNode.get("username")?.asText() ?: rootNode.get("name")?.asText()
                     val reposNode = rootNode.get("repositories")
                     if (reposNode != null && reposNode.isArray) {
                         summary["repoCount"] = reposNode.size()
+                        val topRepositories = mutableListOf<String>()
+                        var processedCount = 0
                         reposNode.forEach { repo ->
                             val name = repo.get("name")?.asText() ?: "unknown"
                             val isPinned = repo.get("pinned")?.asBoolean() ?: false
                             val pinnedText = if (isPinned) "[Pinned] " else ""
-                            processingItems.add("Processing repo: $pinnedText$name")
+                            if (processedCount < SNAPSHOT_REPLAY_LIMIT) {
+                                processingItems.add("Processing repo: $pinnedText$name")
+                                processedCount++
+                            }
+                            if (topRepositories.size < SNAPSHOT_SUMMARY_LIMIT) {
+                                topRepositories.add("$pinnedText$name")
+                            }
+                        }
+                        if (topRepositories.isNotEmpty()) {
+                            summary["topRepositories"] = topRepositories
                         }
                     }
                     val langsNode = rootNode.get("uniqueLanguages")
                     if (langsNode != null && langsNode.isArray) {
                         val langs = mutableListOf<String>()
-                        langsNode.forEach { langs.add(it.asText()) }
+                        langsNode.forEach {
+                            if (langs.size < SNAPSHOT_SUMMARY_LIMIT) langs.add(it.asText())
+                        }
                         summary["languages"] = langs
                         if (langs.isNotEmpty()) {
                             processingItems.add("Extracted primary languages: ${langs.joinToString(", ")}")
@@ -294,9 +309,20 @@ class RecruiterDashboardService(
                     val articlesNode = rootNode.get("articles")
                     if (articlesNode != null && articlesNode.isArray) {
                         summary["articleCount"] = articlesNode.size()
+                        val topArticles = mutableListOf<String>()
+                        var processedCount = 0
                         articlesNode.forEach { article ->
                             val title = article.get("title")?.asText() ?: "untitled"
-                            processingItems.add("Processing Dev.to article: $title")
+                            if (processedCount < SNAPSHOT_REPLAY_LIMIT) {
+                                processingItems.add("Processing Dev.to article: $title")
+                                processedCount++
+                            }
+                            if (topArticles.size < SNAPSHOT_SUMMARY_LIMIT) {
+                                topArticles.add(title)
+                            }
+                        }
+                        if (topArticles.isNotEmpty()) {
+                            summary["topArticles"] = topArticles
                         }
                     }
                 }
@@ -309,40 +335,50 @@ class RecruiterDashboardService(
                         tagsNode.forEach { tagNode ->
                             tagNode.get("tagName")?.asText()?.let { tagNames.add(it) }
                         }
-                        summary["topTags"] = tagNames
+                        summary["topTags"] = tagNames.take(SNAPSHOT_SUMMARY_LIMIT)
                         if (tagNames.isNotEmpty()) {
                             processingItems.add("Analyzed StackOverflow tags: ${tagNames.take(5).joinToString(", ")}")
                         }
                     }
                     val questions = rootNode.get("topAnswerTitles")
                     if (questions != null && questions.isArray) {
+                        val topAnswers = mutableListOf<String>()
                         var count = 0
                         questions.forEach { q ->
-                            if (count < 3) {
+                            if (count < SNAPSHOT_SUMMARY_LIMIT) {
                                 processingItems.add("Processing top answer: ${q.asText()}")
+                                topAnswers.add(q.asText())
                                 count++
                             }
                         }
+                        if (topAnswers.isNotEmpty()) summary["topAnswers"] = topAnswers
                     }
                 }
                 SocialPlatform.ORCID -> {
                     val works = rootNode.get("works")
                     if (works != null && works.isArray) {
                         summary["worksCount"] = works.size()
+                        val topPublications = mutableListOf<String>()
                         var count = 0
                         works.forEach { work ->
-                            if (count < 5) {
+                            if (count < SNAPSHOT_REPLAY_LIMIT) {
                                 val title = work.get("title")?.asText() ?: "untitled"
                                 processingItems.add("Processing ORCID publication: $title")
+                                if (topPublications.size < SNAPSHOT_SUMMARY_LIMIT) {
+                                    topPublications.add(title)
+                                }
                                 count++
                             }
+                        }
+                        if (topPublications.isNotEmpty()) {
+                            summary["topPublications"] = topPublications
                         }
                     }
                     val keywords = rootNode.get("keywords")
                     if (keywords != null && keywords.isArray) {
                         val kw = mutableListOf<String>()
                         keywords.forEach { kw.add(it.asText()) }
-                        summary["keywords"] = kw
+                        summary["keywords"] = kw.take(SNAPSHOT_SUMMARY_LIMIT)
                         if (kw.isNotEmpty()) {
                             processingItems.add("Identified research domains: ${kw.joinToString(", ")}")
                         }
@@ -355,13 +391,18 @@ class RecruiterDashboardService(
                     }
                     val headings = rootNode.get("headings")
                     if (headings != null && headings.isArray) {
+                        val topSections = mutableListOf<String>()
                         var count = 0
                         headings.forEach { h ->
-                            if (count < 5) {
+                            if (count < SNAPSHOT_REPLAY_LIMIT) {
                                 processingItems.add("Analyzed section: ${h.asText()}")
+                                if (topSections.size < SNAPSHOT_SUMMARY_LIMIT) {
+                                    topSections.add(h.asText())
+                                }
                                 count++
                             }
                         }
+                        if (topSections.isNotEmpty()) summary["topSections"] = topSections
                     }
                     val links = rootNode.get("links")
                     if (links != null && links.isArray) {

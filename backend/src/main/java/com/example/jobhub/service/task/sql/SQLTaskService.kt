@@ -51,40 +51,47 @@ class SQLTaskService(
         )
     }
 
-    @Transactional
-    override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
+    override fun evaluateTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
         val task = task(submitTask.taskId)
         if(submitTask.codes.isNullOrEmpty()) {
             throw ApiException("The 'codes' must not be null or empty and must contain at least one item", HttpStatus.BAD_REQUEST)
         }
         val totalAssertions = task.assertions.size
-        val allQueries = submitTask.codes.joinToString("") { "<query>$it</query>" }
 
         val results = try {
             sqlExecutionEngine.run(task.setupQueries, submitTask.codes, task.assertions)
         } catch (e: Exception) {
-            val taskSubmission = TaskSubmission(
-                task.id,
-                TaskType.SQL,
-                allQueries,
-                false,
-                0.0,
-                totalAssertions.toDouble(),
-                e.message,
-                user(userId)
-            )
-            return taskSubmissionMapper.toTaskSubmissionResponse(
-                taskSubmissionRepository.save(taskSubmission)
+            return TaskSubmissionResponse(
+                taskId = task.id,
+                taskType = TaskType.SQL,
+                passed = false,
+                achievedScore = 0.0,
+                requiredScore = totalAssertions.toDouble(),
+                message = e.message
             )
         }
         val passedCount = results.count { it.passed }
+        return TaskSubmissionResponse(
+            taskId = task.id,
+            taskType = TaskType.SQL,
+            passed = passedCount == totalAssertions,
+            achievedScore = passedCount.toDouble(),
+            requiredScore = totalAssertions.toDouble()
+        )
+    }
+
+    @Transactional
+    override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
+        val evaluation = evaluateTask(userId, submitTask)
+        val allQueries = submitTask.codes.orEmpty().joinToString("") { "<query>$it</query>" }
         val taskSubmission = TaskSubmission(
-            task.id,
+            evaluation.taskId,
             TaskType.SQL,
             allQueries,
-            passedCount == totalAssertions,
-            passedCount.toDouble(),
-            totalAssertions.toDouble(),
+            evaluation.passed,
+            evaluation.achievedScore,
+            evaluation.requiredScore,
+            evaluation.message,
             user(userId)
         )
         return taskSubmissionMapper.toTaskSubmissionResponse(

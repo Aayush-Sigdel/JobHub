@@ -45,6 +45,7 @@ These images are **built automatically on first startup** (via `SandboxImageInit
 ## Running
 
 Load the environment variables and start the app (Bash terminal):
+
 ```bash
     set -o allexport; source .env; set +o allexport
     ./gradlew bootRun
@@ -57,30 +58,36 @@ Confirm it's running by visiting `http://localhost:8080` (or your configured `SE
 ## Running in Docker
 
 1. Setup network
+
 ```bash
     docker network create jobhub-network
 ```
+
 2. Run redis container
+
 ```bash
     docker run -d --name redis --network jobhub-network redis:latest
 ```
+
 3. Build the image:
+
 ```bash
     docker build -t jobhub .
 ```
+
 4. Run the container using the same `.env` file **and the Docker socket mounted** (required — see below):
+
 ```bash
     docker run -d --name jobhub --network jobhub-network --env-file .env \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -p 8080:8080 jobhub
 ```
 
-
 ## Viewing Logs
 
 - **Local:** output appears in the terminal running `bootRun`
 - **Docker:**
 
-    ```bash
-    docker logs -f jobhub
-    ```
+  ```bash
+  docker logs -f jobhub
+  ```
