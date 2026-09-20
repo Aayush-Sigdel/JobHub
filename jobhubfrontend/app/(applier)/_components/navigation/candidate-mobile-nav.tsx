@@ -19,7 +19,7 @@ const mobileTabs = [
   { name: "Search", href: "/find-job", icon: IconSearch },
   { name: "Tracker", href: "/job-tracker", icon: IconBookmark },
   { name: "Tasks", href: "/task/program", icon: IconCode },
-  { name: "People", href: "/collaborators", icon: IconUsers },
+  { name: "Collab", href: "/collaborators", icon: IconUsers },
   { name: "Profile", href: "/candidate-profile", icon: IconUser },
 ];
 

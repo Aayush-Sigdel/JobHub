@@ -14,6 +14,7 @@ import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
 import { cn } from "@/lib/utils";
 import type { UserProfileResponse } from "@/types/api/user";
+import { CollaborationInboxIndicator } from "@/components/collaboration/inbox-indicator";
 
 const candidateLinks = [
   { name: "Home", href: "/home" },
@@ -35,7 +36,8 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
   const hasInPageSearch =
     pathname === "/home" ||
     pathname === "/find-job" ||
-    pathname === "/job-tracker";
+    pathname === "/job-tracker" ||
+    pathname.startsWith("/collaborators");
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -95,6 +97,7 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
           {isUserLoggedIn ? (
             <div className="flex items-center gap-1">
               <JobTracker />
+              <CollaborationInboxIndicator />
               <MessageCenter />
               <NotificationCenter />
             </div>

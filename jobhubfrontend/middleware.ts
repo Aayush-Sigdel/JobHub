@@ -24,6 +24,7 @@ export default withAuth(
       "/post-task",
     ].some((route) => path.startsWith(route));
     const isCandidateRoute = [
+      "/collaborators",
       "/find-job",
       "/home",
       "/job-tracker",
@@ -65,6 +66,8 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/collaborators",
+    "/collaborators/:path*",
     "/home",
     "/home/:path*",
     "/onboarding",
