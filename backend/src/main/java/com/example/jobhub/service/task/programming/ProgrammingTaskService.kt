@@ -84,8 +84,7 @@ class ProgrammingTaskService(
         )
     }
 
-    @Transactional
-    override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
+    override fun evaluateTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
         val task = task(submitTask.taskId)
         if (submitTask.code == null) {
             throw ApiException("The 'code' field should be present while submitting this task", HttpStatus.BAD_REQUEST)
@@ -101,28 +100,38 @@ class ProgrammingTaskService(
         val results = try {
             judgeService.judge(task, submitTask.code, submitTask.language, testCases)
         } catch (e: Exception) {
-            val taskSubmission = TaskSubmission(
-                task.id,
-                taskType,
-                submitTask.code,
-                false,
-                0.0,
-                totalTestCases.toDouble(),
-                e.message,
-                user(userId)
-            )
-            return taskSubmissionMapper.toTaskSubmissionResponse(
-                taskSubmissionRepository.save(taskSubmission)
+            return TaskSubmissionResponse(
+                taskId = task.id,
+                taskType = taskType,
+                passed = false,
+                achievedScore = 0.0,
+                requiredScore = totalTestCases.toDouble(),
+                message = e.message
             )
         }
         val passedCount = results.count { it.passed }
+        return TaskSubmissionResponse(
+            taskId = task.id,
+            taskType = taskType,
+            passed = passedCount == totalTestCases,
+            achievedScore = passedCount.toDouble(),
+            requiredScore = totalTestCases.toDouble()
+        )
+    }
+
+    @Transactional
+    override fun submitTask(userId: UUID, submitTask: SubmitTask): TaskSubmissionResponse {
+        val evaluation = evaluateTask(userId, submitTask)
+        val code = submitTask.code
+            ?: throw ApiException("The 'code' field should be present while submitting this task", HttpStatus.BAD_REQUEST)
         val taskSubmission = TaskSubmission(
-            task.id,
+            evaluation.taskId,
             taskType,
-            submitTask.code,
-            passedCount == totalTestCases,
-            passedCount.toDouble(),
-            totalTestCases.toDouble(),
+            code,
+            evaluation.passed,
+            evaluation.achievedScore,
+            evaluation.requiredScore,
+            evaluation.message,
             user(userId)
         )
         return taskSubmissionMapper.toTaskSubmissionResponse(
