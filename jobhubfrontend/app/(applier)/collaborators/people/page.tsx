@@ -8,7 +8,7 @@ export default function CollaborationPeoplePage() {
     <>
       <CollaborationPageHeading
         title="Find collaborators"
-        description="Meet candidates whose experience, skills, and professional interests align with yours."
+        description="Find candidates for your project’s open roles, review their skills, and invite them to your team."
       />
       <CollaboratorDirectory />
     </>

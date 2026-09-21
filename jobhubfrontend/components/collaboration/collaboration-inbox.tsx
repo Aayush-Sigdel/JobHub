@@ -70,12 +70,12 @@ function MembershipCard({
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <MembershipButtons membership={membership} isOwner={owner} />
-        <time
+        {membership.updatedAt && <time
           dateTime={membership.updatedAt}
           className="text-xs text-muted-foreground"
         >
           Updated {new Date(membership.updatedAt).toLocaleDateString()}
-        </time>
+        </time>}
       </div>
     </article>
   );

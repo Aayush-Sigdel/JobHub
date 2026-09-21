@@ -20,18 +20,20 @@ export interface RequiredSkill {
 export interface ProjectRole {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   requiredSkills: RequiredSkill[];
   filled?: boolean;
   isFilled?: boolean;
+  filledByUserId?: string | null;
+  filledByName?: string | null;
 }
 export interface TeamMember {
   userId: string;
   name: string;
-  title?: string;
-  imageUrl?: string;
-  roleId?: string;
-  roleTitle?: string;
+  title?: string | null;
+  imageUrl?: string | null;
+  roleId?: string | null;
+  roleTitle?: string | null;
 }
 export interface Membership extends TeamMember {
   id: string;
@@ -41,6 +43,21 @@ export interface Membership extends TeamMember {
   initiatedBy: "OWNER" | "CANDIDATE";
   message?: string;
   updatedAt: string;
+}
+export interface MembershipResponse {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  memberId: string;
+  memberName: string;
+  memberImageUrl: string | null;
+  roleId: string | null;
+  roleTitle: string | null;
+  status: MembershipStatus;
+  initiatedBy: "OWNER" | "CANDIDATE";
+  message: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 export interface MatchExplanation {
   gapFitPercentage: number;
@@ -54,15 +71,19 @@ export interface Project {
   id: string;
   title: string;
   description: string;
+  goals?: string | null;
+  durationWeeks?: number | null;
   teamSize: number;
   activeMemberCount: number;
+  openSeats?: number;
   pendingCount?: number;
   status: ProjectStatus;
   workplaceType: WorkplaceType;
-  location?: string;
-  commitmentHoursPerWeek?: number;
+  location?: string | null;
+  commitmentHoursPerWeek?: number | null;
   ownerId: string;
   ownerName?: string;
+  ownerImageUrl?: string | null;
   owner?: TeamMember;
   roles: ProjectRole[];
   members?: TeamMember[];
@@ -73,9 +94,25 @@ export interface Project {
   matchPercentage?: number;
   explanation?: MatchExplanation;
 }
+export interface ProjectDetailResponse {
+  project: Project;
+  members: TeamMember[];
+  pendingCount: number;
+  myMembership: MembershipResponse | null;
+  isOwner: boolean;
+}
+export interface ProjectSuggestionResponse {
+  project: Project;
+  bestRoleId: string | null;
+  bestRoleTitle: string | null;
+  matchPercentage: number;
+  explanation: MatchExplanation;
+}
 export interface ProjectInput {
   title: string;
   description: string;
+  goals?: string;
+  durationWeeks?: number;
   teamSize: number;
   workplaceType: WorkplaceType;
   location?: string;
@@ -89,20 +126,27 @@ export interface ProjectInput {
 }
 export interface Suggestions {
   projectId: string;
+  projectTitle: string;
   openSeats: number;
-  lambda: number;
   poolSize: number;
   note?: string | null;
   suggestions: {
-    roleId: string;
+    roleId: string | null;
     roleTitle: string;
     requiredSkills: RequiredSkill[];
     candidates: (TeamMember & {
+      bio?: string | null;
+      location?: string | null;
       skills: { name: string }[];
       matchPercentage: number;
       explanation: MatchExplanation;
     })[];
   }[];
+}
+export interface SuggestionFilters {
+  poolSize?: number;
+  shortlistSize?: number;
+  location?: string;
 }
 export interface ProjectFilters {
   query?: string;

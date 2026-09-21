@@ -1,15 +1,27 @@
 "use server";
 
 import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
-import { apiErrorMessage, validateProject } from "@/lib/collaboration";
+import {
+  apiErrorMessage,
+  projectFromDetail,
+  projectFromSuggestion,
+  membershipFromResponse,
+  projectPayload,
+  suggestionParams,
+  validateProject,
+} from "@/lib/collaboration";
 import type {
   CollabResult,
   Membership,
   MembershipAction,
+  MembershipResponse,
   Project,
+  ProjectDetailResponse,
   ProjectFilters,
   ProjectInput,
   ProjectStatus,
+  ProjectSuggestionResponse,
+  SuggestionFilters,
   Suggestions,
 } from "@/types/api/collaboration";
 
@@ -51,24 +63,35 @@ export async function getProjects(
       if (value) params.set(key, value);
     });
   if (view === "for-me") params.set("limit", "20");
+  if (view === "for-me") {
+    const result = await request<ProjectSuggestionResponse[]>(`/projects/for-me?${params}`);
+    if (!result.ok) return result;
+    return { ok: true as const, data: result.data.map(projectFromSuggestion) };
+  }
   return request<Project[]>(
     `/projects${view === "browse" ? "" : `/${view}`}?${params}`,
   );
 }
-export async function getProject(id: string) {
-  return request<Project>(`/projects/${encodeURIComponent(id)}`);
+export async function getProject(id: string): Promise<CollabResult<Project>> {
+  const result = await request<ProjectDetailResponse>(
+    `/projects/${encodeURIComponent(id)}`,
+  );
+  if (!result.ok) return result;
+  return { ok: true, data: projectFromDetail(result.data) };
 }
-export async function getSuggestions(id: string, lambda: number) {
+export async function getSuggestions(id: string, filters: SuggestionFilters = {}) {
   return request<Suggestions>(
-    `/projects/${encodeURIComponent(id)}/suggestions?lambda=${Math.min(1, Math.max(0, lambda))}`,
+    `/projects/${encodeURIComponent(id)}/suggestions?${suggestionParams(filters)}`,
   );
 }
 export async function getMemberships(projectId?: string) {
-  return request<Membership[]>(
+  const result = await request<MembershipResponse[]>(
     projectId
       ? `/projects/${encodeURIComponent(projectId)}/memberships`
       : "/memberships/mine",
   );
+  if (!result.ok) return result;
+  return { ok: true as const, data: result.data.map(membershipFromResponse) };
 }
 export async function saveProject(
   input: ProjectInput,
@@ -79,7 +102,7 @@ export async function saveProject(
   return request<Project>(
     `/projects${id ? `/${encodeURIComponent(id)}` : ""}`,
     id ? "PUT" : "POST",
-    input,
+    projectPayload(input, !!id),
   );
 }
 export async function changeProjectStatus(id: string, status: ProjectStatus) {
@@ -95,10 +118,10 @@ export async function deleteProject(id: string) {
 export async function inviteMember(
   projectId: string,
   userId: string,
-  roleId: string,
+  roleId: string | undefined,
   message: string,
 ) {
-  return request<Membership>(
+  return membershipRequest(
     `/projects/${encodeURIComponent(projectId)}/invite`,
     "POST",
     { userId, roleId, message },
@@ -109,16 +132,22 @@ export async function requestMembership(
   roleId: string | undefined,
   message: string,
 ) {
-  return request<Membership>(
+  return membershipRequest(
     `/projects/${encodeURIComponent(projectId)}/request`,
     "POST",
     { roleId, message },
   );
 }
 export async function changeMembership(id: string, action: MembershipAction) {
-  return request<Membership>(
+  return membershipRequest(
     `/memberships/${encodeURIComponent(id)}`,
     "PATCH",
     { action },
   );
+}
+
+async function membershipRequest(path: string, method: string, body: unknown): Promise<CollabResult<Membership>> {
+  const result = await request<MembershipResponse>(path, method, body);
+  if (!result.ok) return result;
+  return { ok: true, data: membershipFromResponse(result.data) };
 }

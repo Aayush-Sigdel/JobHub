@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   changeProjectStatus,
   deleteProject,
@@ -24,6 +25,7 @@ import {
   requestMembership,
 } from "@/lib/actions/collaboration";
 import {
+  CollaborationError,
   unwrap,
   useCollaborationIdentity,
   useRefreshCollaboration,
@@ -34,6 +36,7 @@ import type {
   Project,
   ProjectStatus,
   TeamMember,
+  SuggestionFilters,
 } from "@/types/api/collaboration";
 import {
   EmptyState,
@@ -59,21 +62,17 @@ function SquadBuilder({
   memberships: Membership[];
 }) {
   const { userId, enabled } = useCollaborationIdentity();
-  const [slider, setSlider] = useState(0.75);
-  const [lambda, setLambda] = useState(0.75);
+  const [draft, setDraft] = useState<SuggestionFilters>({ poolSize: 200, shortlistSize: 10, location: "" });
+  const [filters, setFilters] = useState(draft);
   const [invite, setInvite] = useState<{
     person: TeamMember;
-    roleId: string;
+    roleId: string | null;
     roleTitle: string;
   } | null>(null);
   const refresh = useRefreshCollaboration();
-  useEffect(() => {
-    const timeout = setTimeout(() => setLambda(slider), 350);
-    return () => clearTimeout(timeout);
-  }, [slider]);
   const suggestions = useQuery({
-    queryKey: ["collaboration", userId, "suggestions", project.id, lambda],
-    queryFn: () => unwrap(getSuggestions(project.id, lambda)),
+    queryKey: ["collaboration", userId, "suggestions", project.id, filters],
+    queryFn: () => unwrap(getSuggestions(project.id, filters)),
     enabled,
     staleTime: 0,
     refetchInterval: 15000,
@@ -105,36 +104,26 @@ function SquadBuilder({
             Refresh
           </Button>
         </div>
-        <div className="max-w-lg rounded-xl bg-muted/50 p-4">
-          <label
-            htmlFor="ranking-balance"
-            className="flex justify-between gap-3 text-sm font-medium"
-          >
-            Matching balance{" "}
-            <span className="tabular-nums">{slider.toFixed(2)}</span>
+        <form className="grid gap-3 sm:grid-cols-3" onSubmit={(event) => {
+          event.preventDefault();
+          setFilters({ ...draft });
+        }}>
+          <label className="space-y-2 text-sm">
+            <span>Candidate location</span>
+            <Input placeholder="Anywhere" value={draft.location ?? ""} onChange={(event) => setDraft({ ...draft, location: event.target.value })} />
           </label>
-          <input
-            id="ranking-balance"
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={slider}
-            onChange={(e) => setSlider(Number(e.target.value))}
-            className="my-3 w-full accent-current"
-            aria-valuetext={`${Math.round(slider * 100)} percent relevance weight`}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>More complementary</span>
-            <span>More similar</span>
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            At 1.00, ranking favors similarity. The default 0.75 balances
-            relevance with skills your team lacks.
-          </p>
-        </div>
+          <label className="space-y-2 text-sm">
+            <span>Candidates to consider</span>
+            <Input type="number" required min={10} max={500} step={1} value={draft.poolSize ?? ""} onChange={(event) => setDraft({ ...draft, poolSize: event.target.value ? Number(event.target.value) : undefined })} />
+          </label>
+          <label className="space-y-2 text-sm">
+            <span>Results per role</span>
+            <Input type="number" required min={1} max={25} step={1} value={draft.shortlistSize ?? ""} onChange={(event) => setDraft({ ...draft, shortlistSize: event.target.value ? Number(event.target.value) : undefined })} />
+          </label>
+          <Button type="submit" variant="outline" disabled={suggestions.isFetching}>Find people</Button>
+        </form>
         <p aria-live="polite" className="text-xs text-muted-foreground">
-          {suggestions.isFetching || slider !== lambda
+          {suggestions.isFetching
             ? "Updating ranked candidates…"
             : suggestions.data
               ? `${suggestions.data.poolSize} candidates considered · ${suggestions.data.openSeats} open seats · Updated ${new Date(suggestions.dataUpdatedAt).toLocaleTimeString()}`
@@ -143,6 +132,11 @@ function SquadBuilder({
       </div>
       {suggestions.isPending ? (
         <LoadingState />
+      ) : suggestions.error instanceof CollaborationError && suggestions.error.status === 409 ? (
+        <div className={`${panelClass} space-y-3`}>
+          <p className="text-sm text-muted-foreground">Save this project again to prepare its candidate matches.</p>
+          <Button asChild variant="outline"><Link href={`/collaborators/projects/${project.id}/edit`}>Edit project</Link></Button>
+        </div>
       ) : suggestions.error ? (
         <ErrorState
           error={suggestions.error}
@@ -168,7 +162,7 @@ function SquadBuilder({
               )}
             {suggestions.data.suggestions.map((role, index) => (
               <section
-                key={role.roleId}
+                key={role.roleId ?? role.roleTitle}
                 className="grid gap-4 lg:grid-cols-[220px_1fr]"
               >
                 <div className="space-y-3 lg:sticky lg:top-24 lg:self-start">
@@ -215,6 +209,11 @@ function SquadBuilder({
                               </p>
                             </div>
                           </div>
+                          {person.location && <p className="text-xs text-muted-foreground">{person.location}</p>}
+                          {person.bio && <p className="line-clamp-3 text-sm text-muted-foreground">{person.bio}</p>}
+                          <div className="flex flex-wrap gap-1.5">
+                            {person.skills.map(skill => <span key={skill.name} className="rounded-md border border-border px-2 py-1 text-xs">{skill.name}</span>)}
+                          </div>
                           <Explanation explanation={person.explanation} />
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
                             <Button asChild variant="ghost" size="sm">
@@ -230,7 +229,6 @@ function SquadBuilder({
                                   project.status !== "RECRUITING" ||
                                   project.activeMemberCount >=
                                     project.teamSize ||
-                                  slider !== lambda ||
                                   suggestions.isFetching
                                 }
                                 onClick={() =>
@@ -251,7 +249,7 @@ function SquadBuilder({
                   ) : (
                     <EmptyState
                       title="No candidates for this role"
-                      description="Try adjusting the matching balance or revisit the required skills."
+                      description="Try a different location, consider more candidates, or revisit the required skills."
                     />
                   )}
                 </div>
@@ -272,7 +270,7 @@ function SquadBuilder({
                 inviteMember(
                   project.id,
                   invite.person.userId,
-                  invite.roleId,
+                  invite.roleId ?? undefined,
                   message,
                 ),
               );
@@ -287,7 +285,7 @@ function SquadBuilder({
   );
 }
 
-function OwnerPanel({ project }: { project: Project }) {
+export function ProjectTeamTools({ project }: { project: Project }) {
   const { userId, enabled } = useCollaborationIdentity();
   const [section, setSection] = useState<"suggestions" | "requests">(
     "suggestions",
@@ -388,6 +386,7 @@ function ProjectContent({ project }: { project: Project }) {
   const owner = project.owner || {
     userId: project.ownerId,
     name: project.ownerName || "Project owner",
+    imageUrl: project.ownerImageUrl ?? undefined,
     roleTitle: "Project owner",
   };
   return (
@@ -415,6 +414,7 @@ function ProjectContent({ project }: { project: Project }) {
               {label(project.workplaceType)}
               {project.location ? ` · ${project.location}` : ""}
             </span>
+            {project.durationWeeks != null && <span>{project.durationWeeks} weeks</span>}
             {project.commitmentHoursPerWeek != null && (
               <span className="flex items-center gap-1">
                 <Clock className="size-4" />
@@ -440,6 +440,10 @@ function ProjectContent({ project }: { project: Project }) {
               {project.description}
             </p>
           </section>
+          {project.goals && <section className={`${panelClass} space-y-3`}>
+            <h2 className="font-semibold">Project goals</h2>
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{project.goals}</p>
+          </section>}
           <section className={`${panelClass} space-y-4`}>
             <h2 className="font-semibold">Team roles</h2>
             {project.roles.map((role) => (
@@ -595,7 +599,7 @@ function ProjectContent({ project }: { project: Project }) {
           )}
         </aside>
       </div>
-      {project.isOwner && <OwnerPanel project={project} />}
+      {project.isOwner && <ProjectTeamTools project={project} />}
       {join && (
         <MessageDialog
           open

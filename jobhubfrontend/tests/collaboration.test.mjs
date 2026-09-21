@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { apiErrorMessage, isRoleFilled, membershipActions, unreadMembershipCount, validateProject } from "../lib/collaboration.ts";
+import { apiErrorMessage, isRoleFilled, membershipActions, membershipFromResponse, projectFromDetail, projectFromSuggestion, projectPayload, suggestionParams, unreadMembershipCount, validateProject } from "../lib/collaboration.ts";
 
 test("only the receiving party can accept a pending membership", () => {
   const invited = { status: "INVITED", initiatedBy: "OWNER" };
@@ -28,6 +28,23 @@ const input = {
   roles: [{ id: "design", title: "Designer", requiredSkills: [{ name: "Figma", minLevel: "INTERMEDIATE" }] }, { id: "mobile", title: "Mobile developer", requiredSkills: [] }],
 };
 
+test("project details expose nested project fields and preserve viewer metadata", () => {
+  const project = { ...input, id: "project-1", status: "RECRUITING", ownerId: "owner", activeMemberCount: 2 };
+  const members = [{ userId: "member", name: "Designer", roleId: "design" }];
+  const myMembership = { id: "membership-1", projectId: project.id, projectTitle: project.title, memberId: "member", memberName: "Designer", status: "ACTIVE", initiatedBy: "CANDIDATE", roleId: "design", roleTitle: "Designer", memberImageUrl: null, message: null, updatedAt: "2026-09-21T10:00:00Z", createdAt: null };
+  const detail = { project, members, pendingCount: 1, myMembership, isOwner: false };
+  const result = projectFromDetail(detail);
+
+  assert.deepEqual(result, { ...project, members, pendingCount: 1, myMembership: membershipFromResponse(myMembership), isOwner: false });
+  assert.equal(result.myMembership.userId, "member");
+  assert.equal(result.myMembership.name, "Designer");
+  assert.deepEqual(result.roles.filter(role => !isRoleFilled(role, result)).map(role => role.id), ["mobile"]);
+  assert.equal(projectFromDetail({ ...detail, isOwner: true, myMembership: null }).isOwner, true);
+  assert.deepEqual(projectFromDetail({ ...detail, project: { ...project, roles: [] } }).roles, []);
+  assert.equal(detail.project, project);
+  assert.equal(project.members, undefined);
+});
+
 test("the owner occupies a seat and forms reject invalid role counts", () => {
   assert.equal(validateProject(input), null);
   assert.match(validateProject({ ...input, teamSize: 2 }), /no more roles/);
@@ -37,7 +54,7 @@ test("the owner occupies a seat and forms reject invalid role counts", () => {
   assert.match(validateProject({ ...input, commitmentHoursPerWeek: -1 }), /greater than zero/);
 });
 
-test("editing retains filled role IDs and cannot shrink below the active team", () => {
+test("editing retains filled role titles and cannot shrink below the active team", () => {
   const original = { ...input, activeMemberCount: 3, members: [{ userId: "member", roleId: "design" }] };
   assert.equal(isRoleFilled(original.roles[0], original), true);
   assert.match(validateProject({ ...input, roles: [input.roles[1]] }, original), /Filled roles/);
@@ -65,4 +82,53 @@ test("standard API error messages are shown directly without exposing HTML error
   assert.equal(apiErrorMessage('{"status":409,"message":"This project is full (3 seats)"}', "Retry"), "This project is full (3 seats)");
   assert.equal(apiErrorMessage("<html>Proxy error</html>", "Retry"), "Retry");
   assert.equal(apiErrorMessage("Service unavailable", "Retry"), "Service unavailable");
+});
+
+
+test("recommended projects retain their roles and match explanations", () => {
+  const explanation = { summary: "Your design skills fill a gap", coveredSkills: ["Figma"], missingSkills: [], gapFitPercentage: 90, skillCoveragePercentage: 100, teamOverlapPercentage: 10 };
+  const result = projectFromSuggestion({ project: { ...input, id: "project-1", status: "RECRUITING" }, bestRoleId: "design", bestRoleTitle: "Designer", matchPercentage: 90, explanation });
+  assert.equal(result.id, "project-1");
+  assert.equal(result.status, "RECRUITING");
+  assert.equal(result.roles[0].id, result.bestRoleId);
+  assert.equal(result.matchPercentage, 90);
+  assert.deepEqual(result.explanation, explanation);
+});
+
+test("membership wire fields supply profile links, names and nullable display values", () => {
+  const result = membershipFromResponse({ id: "m1", projectId: "p1", projectTitle: "Project", memberId: "person", memberName: "Taylor", memberImageUrl: null, roleId: null, roleTitle: null, message: null, status: "INVITED", initiatedBy: "OWNER", updatedAt: null, createdAt: "2026-09-21T10:00:00Z" });
+  assert.equal(result.userId, "person");
+  assert.equal(result.name, "Taylor");
+  assert.equal(result.roleId, undefined);
+  assert.equal(result.imageUrl, undefined);
+  assert.equal(result.updatedAt, "2026-09-21T10:00:00Z");
+  assert.deepEqual(membershipActions(result, false).map(item => item.action), ["ACCEPT", "DECLINE"]);
+});
+
+test("project updates clear optional fields using the backend removal flags", () => {
+  const payload = projectPayload({ ...input, goals: "", location: "  ", commitmentHoursPerWeek: undefined, durationWeeks: undefined }, true);
+  for (const field of ["removeGoals", "removeLocation", "removeCommitment", "removeDuration"]) assert.equal(payload[field], true);
+  assert.equal("id" in payload.roles[0], false);
+  assert.deepEqual(payload.roles[0].requiredSkills, input.roles[0].requiredSkills);
+  const populated = projectPayload({ ...input, goals: "Ship", location: "Remote", durationWeeks: 8 }, true);
+  for (const field of ["removeGoals", "removeLocation", "removeCommitment", "removeDuration"]) assert.equal(populated[field], false);
+  assert.equal("removeGoals" in projectPayload(input, false), false);
+});
+
+test("candidate search sends supported filters and respects backend limits", () => {
+  assert.equal(suggestionParams({}).toString(), "");
+  assert.deepEqual(Object.fromEntries(suggestionParams({ location: " Kathmandu ", poolSize: 200, shortlistSize: 10 })), { location: "Kathmandu", poolSize: "200", shortlistSize: "10" });
+  assert.deepEqual(Object.fromEntries(suggestionParams({ poolSize: 999, shortlistSize: 0 })), { poolSize: "500", shortlistSize: "1" });
+  assert.equal(suggestionParams({ poolSize: NaN, shortlistSize: Infinity }).toString(), "");
+});
+
+test("form validation matches numeric limits and title-based filled role retention", () => {
+  assert.match(validateProject({ ...input, teamSize: 21 }), /at most 20/);
+  for (const hours of [0, 1.5, 81]) assert.match(validateProject({ ...input, commitmentHoursPerWeek: hours }), /Weekly commitment/);
+  for (const weeks of [0, -1, 1.5]) assert.match(validateProject({ ...input, durationWeeks: weeks }), /Duration/);
+  assert.equal(validateProject({ ...input, commitmentHoursPerWeek: 80, durationWeeks: 1 }), null);
+  assert.match(validateProject({ ...input, roles: [input.roles[0], { ...input.roles[1], title: " designer " }] }), /unique title/);
+  const original = { ...input, activeMemberCount: 2, roles: [{ ...input.roles[0], filled: true }, input.roles[1]] };
+  assert.match(validateProject({ ...input, roles: [{ ...input.roles[0], title: "Renamed" }, input.roles[1]] }, original), /same title/);
+  assert.equal(validateProject({ ...input, roles: [{ ...input.roles[0], title: " designer " }, input.roles[1]] }, original), null);
 });

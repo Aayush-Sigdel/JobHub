@@ -30,14 +30,16 @@ export function ProjectForm({ project }: { project?: Project }) {
       ? {
           title: project.title,
           description: project.description,
+          goals: project.goals || "",
+          durationWeeks: project.durationWeeks ?? undefined,
           teamSize: project.teamSize,
           workplaceType: project.workplaceType,
           location: project.location || "",
-          commitmentHoursPerWeek: project.commitmentHoursPerWeek,
+          commitmentHoursPerWeek: project.commitmentHoursPerWeek ?? undefined,
           roles: project.roles.map((role) => ({
             id: role.id,
             title: role.title,
-            description: role.description,
+            description: role.description ?? "",
             requiredSkills: role.requiredSkills,
           })),
         }
@@ -71,6 +73,7 @@ export function ProjectForm({ project }: { project?: Project }) {
       ...input,
       title: input.title.trim(),
       description: input.description.trim(),
+      goals: input.goals?.trim(),
       location: input.location?.trim(),
       roles: input.roles.map((role) => ({
         ...role,
@@ -146,6 +149,10 @@ export function ProjectForm({ project }: { project?: Project }) {
                 placeholder="Describe the idea, what success looks like, and what you bring to the team."
               />
             </label>
+            <label className="block space-y-2 text-sm">
+              <span>Goals (optional)</span>
+              <Textarea rows={3} value={input.goals ?? ""} onChange={(event) => setInput({ ...input, goals: event.target.value })} placeholder="What would you like the team to achieve?" />
+            </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm">
                 <span>Team size, including you</span>
@@ -157,6 +164,7 @@ export function ProjectForm({ project }: { project?: Project }) {
                     project?.activeMemberCount ?? 1,
                   )}
                   step="1"
+                  max={20}
                   required
                   value={input.teamSize || ""}
                   onChange={(e) =>
@@ -173,6 +181,8 @@ export function ProjectForm({ project }: { project?: Project }) {
                 <Input
                   type="number"
                   min="1"
+                  max={80}
+                  step={1}
                   value={input.commitmentHoursPerWeek ?? ""}
                   onChange={(e) =>
                     setInput({
@@ -183,6 +193,10 @@ export function ProjectForm({ project }: { project?: Project }) {
                     })
                   }
                 />
+              </label>
+              <label className="space-y-2 text-sm">
+                <span>Duration in weeks (optional)</span>
+                <Input type="number" min={1} step={1} value={input.durationWeeks ?? ""} onChange={(event) => setInput({ ...input, durationWeeks: event.target.value ? Number(event.target.value) : undefined })} />
               </label>
               <label className="space-y-2 text-sm">
                 <span>Workplace</span>
@@ -244,6 +258,8 @@ export function ProjectForm({ project }: { project?: Project }) {
                       <span>Role title</span>
                       <Input
                         required
+                        readOnly={!!filled}
+                        title={filled ? "Filled roles must keep their title" : undefined}
                         value={role.title}
                         onChange={(e) =>
                           updateRole(index, { title: e.target.value })

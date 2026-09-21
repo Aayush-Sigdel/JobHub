@@ -93,7 +93,7 @@ export function Person({ person }: { person: TeamMember }) {
       className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Avatar className="size-10">
-        <AvatarImage src={person.imageUrl} alt="" />
+        <AvatarImage src={person.imageUrl ?? undefined} alt="" />
         <AvatarFallback>
           {(person.name || "?")
             .split(/\s+/)
@@ -274,6 +274,7 @@ export function MessageDialog({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
+              maxLength={1000}
               placeholder="Share what you would like to build together."
             />
           </label>
