@@ -15,7 +15,7 @@ import com.example.jobhub.dto.UpdateSocialLinkRequest
 import com.example.jobhub.dto.UpdateUserProfileRequest
 import com.example.jobhub.dto.UserBasicInfoResponse
 import com.example.jobhub.dto.UserProfileResponse
-import com.example.jobhub.dto.collaborator.UpdateDiscoverabilityRequest
+import com.example.jobhub.dto.UpdateDiscoverabilityRequest
 import com.example.jobhub.dto.social.*
 import com.example.jobhub.model.SocialPlatform
 import com.example.jobhub.security.UserPrincipal
