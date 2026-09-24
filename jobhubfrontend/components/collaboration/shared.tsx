@@ -89,7 +89,10 @@ export function EmptyState({
       className={`${panelClass} flex min-h-64 flex-col items-center justify-center py-12 text-center`}
     >
       <span className="mb-4 rounded-2xl bg-muted p-4">
-        <FolderKanban className="size-6 text-muted-foreground" />
+        <FolderKanban
+          className="size-6 text-muted-foreground"
+          aria-hidden="true"
+        />
       </span>
       <h3 className="font-semibold">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
@@ -103,10 +106,16 @@ export function EmptyState({
     </div>
   );
 }
-export function Person({ person }: { person: TeamMember }) {
+export function Person({
+  person,
+  isYou = false,
+}: {
+  person: TeamMember;
+  isYou?: boolean;
+}) {
   return (
     <Link
-      href={`/preview/${person.userId}`}
+      href={isYou ? "/candidate-profile" : `/preview/${person.userId}`}
       className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Avatar className="size-10">
@@ -122,6 +131,11 @@ export function Person({ person }: { person: TeamMember }) {
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold hover:underline">
           {person.name || "View profile"}
+          {isYou && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              You
+            </span>
+          )}
         </span>
         <span className="block truncate text-xs text-muted-foreground">
           {person.roleTitle || person.title || "Candidate"}

@@ -30,7 +30,12 @@ import {
   useCollaborationIdentity,
   useRefreshCollaboration,
 } from "@/lib/hooks/use-collaboration";
-import { isRoleFilled } from "@/lib/collaboration";
+import {
+  isRoleFilled,
+  projectTeam,
+  membershipAcceptanceIssue,
+} from "@/lib/collaboration";
+import { TeamRoster } from "./team-roster";
 import type {
   Membership,
   Project,
@@ -52,6 +57,7 @@ import {
   StatusBadge,
 } from "./shared";
 import { ProjectForm } from "./project-form";
+import { FieldHint } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 function SquadBuilder({
@@ -361,352 +367,479 @@ export function ProjectTeamTools({
       ) : (
         !members.error &&
         (pending.length ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {pending.map((member) => (
-              <article key={member.id} className={`${panelClass} space-y-4`}>
-                <div className="flex justify-between gap-3">
-                  <Person person={member} />
-                  <StatusBadge status={member.status} />
-                </div>
-                {member.message && (
-                  <blockquote className="whitespace-pre-wrap break-words rounded-xl bg-muted/60 p-3 text-sm">
-                    {member.message}
-                  </blockquote>
-                )}
-                <MembershipButtons
-                  membership={member}
-                  isOwner
-                  canAccept={
-                    project.status === "RECRUITING" &&
-                    project.activeMemberCount < project.teamSize &&
-                    (!member.roleId ||
-                      project.roles.some(
-                        (role) =>
-                          role.id === member.roleId &&
-                          !isRoleFilled(role, project),
-                      ))
-                  }
-                />
-              </article>
-            ))}
+          <div className="space-y-7">
+            {(
+              [
+                ["REQUESTED", "Join requests"],
+                ["INVITED", "Invitations sent"],
+              ] as const
+            ).map(([status, title]) => {
+              const items = pending.filter(
+                (member) => member.status === status,
+              );
+              if (!items.length) return null;
+              return (
+                <section key={status} className="space-y-3">
+                  <h2 className="font-semibold">
+                    {title}{" "}
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">
+                      {items.length}
+                    </span>
+                  </h2>
+                  <div className="divide-y divide-border rounded-xl border border-border bg-card">
+                    {items.map((member) => {
+                      const issue = membershipAcceptanceIssue(project, member);
+                      return (
+                        <article key={member.id} className="space-y-3 p-5">
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <Person person={member} />
+                            <MembershipButtons
+                              membership={member}
+                              isOwner
+                              canAccept={!issue}
+                            />
+                          </div>
+                          {member.message && (
+                            <blockquote className="whitespace-pre-wrap break-words border-l-2 border-border pl-3 text-sm text-muted-foreground">
+                              {member.message}
+                            </blockquote>
+                          )}
+                          {status === "REQUESTED" && issue && (
+                            <p className="text-xs text-muted-foreground">
+                              {issue}
+                            </p>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         ) : (
           <EmptyState
             title="You’re all caught up"
             description="Join requests and sent invitations will appear here."
-          />
+          >
+            <Button asChild variant="outline">
+              <Link
+                href={`/collaborators/projects/${project.id}?section=suggestions`}
+              >
+                Find teammates
+              </Link>
+            </Button>
+          </EmptyState>
         ))
       )}
     </div>
   );
 }
 
-function ProjectContent({ project }: { project: Project }) {
+function ProjectSettings({ project }: { project: Project }) {
   const router = useRouter();
-  const params = useSearchParams();
   const refresh = useRefreshCollaboration();
-  const [section, setSection] = useState<
-    "overview" | "suggestions" | "requests" | "settings"
-  >("overview");
-  const [join, setJoin] = useState(false);
-  const [roleId, setRoleId] = useState(
-    params.get("role") || project.bestRoleId || "",
-  );
   const [busy, setBusy] = useState(false);
   const [nextStatus, setNextStatus] = useState<ProjectStatus>(project.status);
+  return (
+    <div className="max-w-2xl space-y-6">
+      <section className="space-y-4 rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center gap-1">
+          <h2 className="font-semibold">Recruitment status</h2>
+          <FieldHint
+            label="About recruitment status"
+            content="Only recruiting projects can receive new join requests or accept teammates."
+          />
+        </div>
+        <label className="block space-y-2 text-sm">
+          <span>Status</span>
+          <select
+            className={selectClass}
+            value={nextStatus}
+            disabled={busy}
+            onChange={(event) =>
+              setNextStatus(event.target.value as ProjectStatus)
+            }
+          >
+            {["RECRUITING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map(
+              (status) => (
+                <option key={status} value={status}>
+                  {label(status)}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+        <Button
+          disabled={busy || nextStatus === project.status}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await unwrap(changeProjectStatus(project.id, nextStatus));
+              toast.success("Project status updated.");
+            } catch (error) {
+              toast.error((error as Error).message);
+            } finally {
+              await refresh();
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Saving…" : "Save status"}
+        </Button>
+      </section>
+      <section className="space-y-3 rounded-xl border border-destructive/25 p-5">
+        <h2 className="font-semibold">Delete project</h2>
+        <p className="text-sm text-muted-foreground">
+          Permanently removes the project and its memberships.
+        </p>
+        <Button
+          variant="destructive"
+          disabled={busy}
+          onClick={async () => {
+            if (
+              !window.confirm(
+                `Delete “${project.title}” and its memberships? This cannot be undone.`,
+              )
+            )
+              return;
+            setBusy(true);
+            try {
+              await unwrap(deleteProject(project.id));
+              await refresh();
+              router.push("/collaborators/my-projects");
+            } catch (error) {
+              toast.error((error as Error).message);
+              setBusy(false);
+            }
+          }}
+        >
+          <Trash2 className="size-4" />
+          Delete project
+        </Button>
+      </section>
+    </div>
+  );
+}
+
+function ProjectContent({ project }: { project: Project }) {
+  const params = useSearchParams();
+  const viewer = useCollaborationIdentity();
+  const refresh = useRefreshCollaboration();
+  const [join, setJoin] = useState(false);
   const openRoles = project.roles.filter(
     (role) => !isRoleFilled(role, project),
+  );
+  const suggestedRole = params.get("role") || project.bestRoleId || "";
+  const [roleId, setRoleId] = useState(
+    openRoles.some((role) => role.id === suggestedRole) ? suggestedRole : "",
   );
   const canJoin =
     !project.isOwner &&
     !project.myMembership &&
     project.status === "RECRUITING" &&
     project.activeMemberCount < project.teamSize;
-  const owner = project.owner || {
-    userId: project.ownerId,
-    name: project.ownerName || "Project owner",
-    imageUrl: project.ownerImageUrl ?? undefined,
-    roleTitle: "Project owner",
-  };
+  const owner = projectTeam(project, viewer)[0];
+  const tabs = [
+    { key: "overview", title: "Overview" },
+    { key: "team", title: "Team" },
+    ...(project.isOwner
+      ? [
+          {
+            key: "requests",
+            title: `Requests${project.pendingCount ? ` (${project.pendingCount})` : ""}`,
+          },
+          { key: "suggestions", title: "Find teammates" },
+          { key: "settings", title: "Settings" },
+        ]
+      : []),
+  ];
+  const requestedSection = params.get("section");
+  const section = tabs.some((tab) => tab.key === requestedSection)
+    ? requestedSection
+    : "overview";
+  function sectionHref(key: string) {
+    const next = new URLSearchParams(params.toString());
+    if (key === "overview") next.delete("section");
+    else next.set("section", key);
+    return `/collaborators/projects/${project.id}${next.size ? `?${next}` : ""}`;
+  }
+  const acceptanceIssue = project.myMembership
+    ? membershipAcceptanceIssue(project, project.myMembership)
+    : undefined;
+  const roles = (
+    <section className="space-y-4">
+      <h2 className="font-semibold">Roles</h2>
+      {project.roles.length ? (
+        <div className="divide-y divide-border rounded-xl border border-border bg-card">
+          {project.roles.map((role) => {
+            const filled = isRoleFilled(role, project);
+            const holder = project.members?.find(
+              (member) => member.roleId === role.id,
+            );
+            return (
+              <div key={role.id} className="space-y-3 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold">{role.title}</h3>
+                  <StatusBadge
+                    status={
+                      filled
+                        ? "FILLED"
+                        : project.status === "RECRUITING" &&
+                            project.activeMemberCount < project.teamSize
+                          ? "OPEN"
+                          : "CLOSED"
+                    }
+                  />
+                </div>
+                {role.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {role.description}
+                  </p>
+                )}
+                {!!role.requiredSkills.length && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {role.requiredSkills.map((skill) => (
+                      <span
+                        key={skill.name}
+                        className="rounded-md bg-muted px-2 py-1 text-xs"
+                      >
+                        {skill.name} · {label(skill.minLevel)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {filled && (role.filledByName || holder?.name) && (
+                  <p className="text-xs text-muted-foreground">
+                    Filled by {role.filledByName || holder?.name}
+                  </p>
+                )}
+                {canJoin && !filled && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setRoleId(role.id);
+                      setJoin(true);
+                    }}
+                  >
+                    Request this role
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No specific roles listed.
+        </p>
+      )}
+    </section>
+  );
   return (
     <div className="space-y-6">
       <Link
         href={
-          project.isOwner
+          project.isOwner || project.myMembership?.status === "ACTIVE"
             ? "/collaborators/my-projects"
             : "/collaborators/explore"
         }
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 rounded-md text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >
-        <ArrowLeft className="size-4" />
-        {project.isOwner ? "My projects" : "All projects"}
+        <ArrowLeft className="size-3.5" />
+        {project.isOwner || project.myMembership?.status === "ACTIVE"
+          ? "My projects"
+          : "Explore projects"}
       </Link>
-      <header className="flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row">
-        <div className="space-y-3">
-          <StatusBadge status={project.status} />
-          <h1 className="break-words text-2xl font-bold tracking-tight md:text-3xl">
-            {project.title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Users className="size-4" />
-              {project.activeMemberCount}/{project.teamSize} members
+      <header className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-3">
+            <div className="flex items-center gap-2">
+              <StatusBadge status={project.status} />
+              {project.isOwner && (
+                <span className="text-xs font-medium text-muted-foreground">
+                  Your project
+                </span>
+              )}
+            </div>
+            <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">
+              {project.title}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Owned by{" "}
+              <Link
+                className="rounded-sm font-medium text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                href={
+                  project.isOwner
+                    ? "/candidate-profile"
+                    : `/preview/${owner.userId}`
+                }
+              >
+                {owner.name}
+              </Link>
+              {project.isOwner && " · You"}
+            </p>
+          </div>
+          {project.isOwner ? (
+            <Button asChild variant="outline" className="h-10 rounded-lg">
+              <Link href={`/collaborators/projects/${project.id}/edit`}>
+                <Pencil className="size-4" />
+                Edit project
+              </Link>
+            </Button>
+          ) : canJoin ? (
+            <Button className="h-10 rounded-lg" onClick={() => setJoin(true)}>
+              Request to join
+            </Button>
+          ) : project.myMembership ? (
+            <StatusBadge status={project.myMembership.status} />
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              {project.status !== "RECRUITING"
+                ? "Recruitment closed"
+                : "Team full"}
             </span>
-            <span>
-              {label(project.workplaceType)}
-              {project.location ? ` · ${project.location}` : ""}
+          )}
+        </div>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <Users className="size-3.5" />
+            {project.activeMemberCount} / {project.teamSize} members
+          </span>
+          <span>
+            {label(project.workplaceType)}
+            {project.location ? ` · ${project.location}` : ""}
+          </span>
+          {project.commitmentHoursPerWeek != null && (
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-3.5" />
+              {project.commitmentHoursPerWeek} hrs/week
             </span>
-            {project.durationWeeks != null && (
-              <span>{project.durationWeeks} weeks</span>
+          )}
+          {project.durationWeeks != null && (
+            <span>{project.durationWeeks} weeks</span>
+          )}
+        </div>
+      </header>
+      <nav
+        aria-label="Project sections"
+        className="flex gap-5 overflow-x-auto border-b border-border"
+      >
+        {tabs.map((tab) => (
+          <Link
+            key={tab.key}
+            href={sectionHref(tab.key)}
+            scroll={false}
+            aria-current={section === tab.key ? "page" : undefined}
+            className={`shrink-0 border-b-2 px-1 pb-3 pt-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${section === tab.key ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            {tab.title}
+          </Link>
+        ))}
+      </nav>
+      {section === "overview" && (
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-7">
+            <section className="space-y-3">
+              <h2 className="font-semibold">About</h2>
+              <p className="whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
+                {project.description}
+              </p>
+            </section>
+            {project.goals && (
+              <section className="space-y-3">
+                <h2 className="font-semibold">Goals</h2>
+                <p className="whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
+                  {project.goals}
+                </p>
+              </section>
             )}
-            {project.commitmentHoursPerWeek != null && (
-              <span className="flex items-center gap-1">
-                <Clock className="size-4" />
-                {project.commitmentHoursPerWeek} hours / week
-              </span>
+            {roles}
+          </div>
+          <div className="space-y-5">
+            <TeamRoster project={project} />
+            {project.isOwner && (
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline">
+                  <Link href={sectionHref("requests")}>Review requests</Link>
+                </Button>
+                {project.status === "RECRUITING" &&
+                  project.activeMemberCount < project.teamSize && (
+                    <Button asChild>
+                      <Link href={sectionHref("suggestions")}>
+                        Find teammates
+                      </Link>
+                    </Button>
+                  )}
+              </div>
+            )}
+            {!project.isOwner && project.myMembership && (
+              <section className="space-y-3 rounded-xl border border-border bg-card p-5">
+                <h2 className="font-semibold">Your membership</h2>
+                {project.myMembership.roleTitle && (
+                  <p className="text-sm">{project.myMembership.roleTitle}</p>
+                )}
+                {project.myMembership.status === "REQUESTED" && (
+                  <p className="text-sm text-muted-foreground">
+                    Waiting for the owner to review your request.
+                  </p>
+                )}
+                {project.myMembership.status === "INVITED" && (
+                  <p className="text-sm text-muted-foreground">
+                    You’ve been invited to join this team.
+                  </p>
+                )}
+                {project.myMembership.message && (
+                  <blockquote className="whitespace-pre-wrap break-words border-l-2 border-border pl-3 text-sm text-muted-foreground">
+                    {project.myMembership.message}
+                  </blockquote>
+                )}
+                {project.myMembership.status === "INVITED" &&
+                  acceptanceIssue && (
+                    <p className="text-sm text-muted-foreground">
+                      {acceptanceIssue}
+                    </p>
+                  )}
+                <MembershipButtons
+                  membership={project.myMembership}
+                  canAccept={!acceptanceIssue}
+                />
+                {["DECLINED", "LEFT"].includes(project.myMembership.status) && (
+                  <p className="text-xs text-muted-foreground">
+                    This membership is closed. You cannot rejoin.
+                  </p>
+                )}
+              </section>
             )}
           </div>
         </div>
-        {project.isOwner && (
-          <Button asChild variant="outline">
-            <Link href={`/collaborators/projects/${project.id}/edit`}>
-              <Pencil className="size-4" />
-              Edit project
-            </Link>
-          </Button>
-        )}
-      </header>
-      {project.isOwner && (
-        <div
-          aria-label="Manage project"
-          className="flex gap-1 overflow-x-auto border-b border-border pb-3"
-        >
-          {(
-            [
-              ["overview", "Overview"],
-              [
-                "requests",
-                `Requests${project.pendingCount ? ` (${project.pendingCount})` : ""}`,
-              ],
-              ["suggestions", "Find teammates"],
-              ["settings", "Settings"],
-            ] as const
-          ).map(([value, title]) => (
-            <Button
-              className="shrink-0"
-              key={value}
-              aria-pressed={section === value}
-              variant={section === value ? "secondary" : "ghost"}
-              onClick={() => setSection(value)}
-            >
-              {title}
-            </Button>
-          ))}
+      )}
+      {section === "team" && (
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <TeamRoster project={project} />
+          {project.isOwner &&
+            project.status === "RECRUITING" &&
+            project.activeMemberCount < project.teamSize && (
+              <div className="space-y-3">
+                <h2 className="font-semibold">Grow your team</h2>
+                <p className="text-sm text-muted-foreground">
+                  Invite teammates for your open roles.
+                </p>
+                <Button asChild>
+                  <Link href={sectionHref("suggestions")}>Find teammates</Link>
+                </Button>
+              </div>
+            )}
         </div>
       )}
       {project.isOwner &&
         (section === "suggestions" || section === "requests") && (
           <ProjectTeamTools project={project} section={section} />
         )}
-      <div
-        className={
-          section === "overview"
-            ? "grid gap-5 xl:grid-cols-[1fr_280px]"
-            : section === "settings"
-              ? "max-w-lg"
-              : "hidden"
-        }
-      >
-        {section === "overview" && (
-          <>
-            <div className="space-y-5">
-              <section className={`${panelClass} space-y-3`}>
-                <h2 className="font-semibold">About the project</h2>
-                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
-                  {project.description}
-                </p>
-              </section>
-              {project.goals && (
-                <section className={`${panelClass} space-y-3`}>
-                  <h2 className="font-semibold">Project goals</h2>
-                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
-                    {project.goals}
-                  </p>
-                </section>
-              )}
-              <section className={`${panelClass} space-y-4`}>
-                <h2 className="font-semibold">Team roles</h2>
-                {!project.roles.length && (
-                  <p className="text-sm text-muted-foreground">
-                    No roles listed.
-                  </p>
-                )}
-                {project.roles.map((role) => (
-                  <div
-                    key={role.id}
-                    className="space-y-2 rounded-xl bg-muted/40 p-4"
-                  >
-                    <div className="flex justify-between gap-3">
-                      <h3 className="text-sm font-semibold">{role.title}</h3>
-                      <StatusBadge
-                        status={isRoleFilled(role, project) ? "FILLED" : "OPEN"}
-                      />
-                    </div>
-                    {role.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {role.description}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {role.requiredSkills.map((skill) => (
-                        <span
-                          key={skill.name}
-                          className="rounded-md border border-border px-2 py-1 text-xs"
-                        >
-                          {skill.name} · {label(skill.minLevel)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </section>
-            </div>
-          </>
-        )}
-        <aside className="space-y-5">
-          {section === "overview" && (
-            <>
-              <section className={`${panelClass} space-y-4`}>
-                <h2 className="font-semibold">Team</h2>
-                <Person person={{ ...owner, roleTitle: "Project owner" }} />
-                {project.members
-                  ?.filter((member) => member.userId !== owner.userId)
-                  .map((member) => (
-                    <Person key={member.userId} person={member} />
-                  ))}
-              </section>
-              {!project.isOwner && (
-                <section className={`${panelClass} space-y-4`}>
-                  {project.myMembership ? (
-                    <>
-                      <h2 className="font-semibold">Your membership</h2>
-                      <StatusBadge status={project.myMembership.status} />
-                      {project.myMembership.message && (
-                        <blockquote className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                          {project.myMembership.message}
-                        </blockquote>
-                      )}
-                      <MembershipButtons
-                        membership={project.myMembership}
-                        canAccept={
-                          project.status === "RECRUITING" &&
-                          project.activeMemberCount < project.teamSize &&
-                          (!project.myMembership.roleId ||
-                            openRoles.some(
-                              (role) =>
-                                role.id === project.myMembership?.roleId,
-                            ))
-                        }
-                      />
-                      {["DECLINED", "LEFT"].includes(
-                        project.myMembership.status,
-                      ) && (
-                        <p className="text-xs text-muted-foreground">
-                          This membership is closed. You cannot rejoin.
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <h2 className="font-semibold">Join this project</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {canJoin
-                          ? "Choose a role and send a request."
-                          : project.status !== "RECRUITING"
-                            ? "This project is not recruiting right now."
-                            : "This team is currently full."}
-                      </p>
-                      <Button
-                        className="w-full"
-                        disabled={!canJoin}
-                        onClick={() => setJoin(true)}
-                      >
-                        Request to join
-                      </Button>
-                    </>
-                  )}
-                </section>
-              )}
-            </>
-          )}
-          {project.isOwner && section === "settings" && (
-            <section className={`${panelClass} space-y-4`}>
-              <h2 className="font-semibold">Manage project</h2>
-              <label className="block space-y-2 text-sm">
-                <span>Project status</span>
-                <select
-                  className={selectClass}
-                  value={nextStatus}
-                  onChange={(e) =>
-                    setNextStatus(e.target.value as ProjectStatus)
-                  }
-                >
-                  {["RECRUITING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map(
-                    (status) => (
-                      <option key={status} value={status}>
-                        {label(status)}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-              <Button
-                disabled={busy || nextStatus === project.status}
-                onClick={async () => {
-                  setBusy(true);
-                  try {
-                    await unwrap(changeProjectStatus(project.id, nextStatus));
-                    toast.success("Project status updated.");
-                  } catch (e) {
-                    toast.error((e as Error).message);
-                  } finally {
-                    await refresh();
-                    setBusy(false);
-                  }
-                }}
-              >
-                Update status
-              </Button>
-              <div className="border-t border-border pt-3">
-                <Button
-                  variant="destructive"
-                  disabled={busy}
-                  onClick={async () => {
-                    if (
-                      !window.confirm(
-                        `Delete “${project.title}” and its memberships? This cannot be undone.`,
-                      )
-                    )
-                      return;
-                    setBusy(true);
-                    try {
-                      await unwrap(deleteProject(project.id));
-                      await refresh();
-                      router.push("/collaborators/my-projects");
-                    } catch (e) {
-                      toast.error((e as Error).message);
-                      setBusy(false);
-                    }
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                  Delete project
-                </Button>
-              </div>
-            </section>
-          )}
-        </aside>
-      </div>
+      {project.isOwner && section === "settings" && (
+        <ProjectSettings key={project.status} project={project} />
+      )}
       {join && (
         <MessageDialog
           open
@@ -714,6 +847,8 @@ function ProjectContent({ project }: { project: Project }) {
           description={project.title}
           onClose={() => setJoin(false)}
           onSubmit={async (message) => {
+            if (!canJoin)
+              throw new Error("This project is no longer accepting requests.");
             if (roleId && !openRoles.some((role) => role.id === roleId))
               throw new Error(
                 "This role is no longer open. Choose another role.",
@@ -733,7 +868,7 @@ function ProjectContent({ project }: { project: Project }) {
             <select
               className={selectClass}
               value={roleId}
-              onChange={(e) => setRoleId(e.target.value)}
+              onChange={(event) => setRoleId(event.target.value)}
             >
               <option value="">No specific role</option>
               {openRoles.map((role) => (
@@ -780,7 +915,7 @@ export function ProjectDetail({
       />
     );
   return (
-    <div className="mx-auto max-w-6xl py-4">
+    <div>
       <ProjectContent key={project.data.id} project={project.data} />
     </div>
   );

@@ -11,6 +11,8 @@ import {
   suggestionParams,
   unreadMembershipCount,
   validateProject,
+  projectTeam,
+  membershipAcceptanceIssue,
 } from "../lib/collaboration.ts";
 
 test("only the receiving party can accept a pending membership", () => {
@@ -351,5 +353,79 @@ test("form validation matches numeric limits and title-based filled role retenti
       original,
     ),
     null,
+  );
+});
+
+test("the backend's owner and memberships form a deduplicated team", () => {
+  const project = {
+    ...input,
+    ownerId: "owner",
+    ownerName: "Asha",
+    members: [
+      { userId: "member", name: "Rita", roleId: "design" },
+      { userId: "owner", name: "Asha" },
+      { userId: "member", name: "Rita" },
+    ],
+  };
+  const team = projectTeam(project);
+  assert.deepEqual(
+    team.map(({ userId }) => userId),
+    ["owner", "member"],
+  );
+  assert.equal(team[0].name, "Asha");
+  assert.equal(team[0].roleTitle, "Owner");
+  assert.equal(team[1].roleId, "design");
+  assert.equal(project.members.length, 3);
+});
+
+test("owner names fall back to session only for the actual owner", () => {
+  const project = {
+    ...input,
+    ownerId: "owner",
+    ownerName: "  ",
+    owner: { userId: "owner", name: "" },
+    members: [],
+  };
+  assert.equal(
+    projectTeam(project, { userId: "owner", userName: "Asha" })[0].name,
+    "Asha",
+  );
+  assert.equal(
+    projectTeam(project, { userId: "visitor", userName: "Rita" })[0].name,
+    "Project owner",
+  );
+  assert.equal(
+    projectTeam(
+      { ...project, ownerName: "Backend name" },
+      { userId: "owner", userName: "Old name" },
+    )[0].name,
+    "Backend name",
+  );
+});
+
+test("acceptance reports closed recruitment, full teams, and occupied or removed roles", () => {
+  const project = { ...input, activeMemberCount: 1, status: "RECRUITING" };
+  assert.equal(
+    membershipAcceptanceIssue(project, { roleId: "design" }),
+    undefined,
+  );
+  assert.match(
+    membershipAcceptanceIssue({ ...project, status: "COMPLETED" }, {}),
+    /closed/,
+  );
+  assert.match(
+    membershipAcceptanceIssue({ ...project, activeMemberCount: 3 }, {}),
+    /full/,
+  );
+  assert.match(
+    membershipAcceptanceIssue(project, { roleId: "removed" }),
+    /no longer/,
+  );
+  assert.match(
+    membershipAcceptanceIssue(
+      { ...project, roles: [{ ...input.roles[0], filled: true }] },
+      { roleId: "design" },
+    ),
+    /no longer/,
   );
 });

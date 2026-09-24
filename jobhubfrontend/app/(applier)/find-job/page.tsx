@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { JobCard } from "@/components/jobs/JobCard";
 import { JobFilters } from "@/components/jobs/JobFilters";
 import { SearchBar } from "@/components/jobs/SearchBar";
@@ -88,10 +89,19 @@ export default async function FindJobPage({
   return (
     <div className="mx-auto w-full max-w-6xl py-4 md:py-6">
       {/* Page Header */}
-      <div className="mb-6 max-w-2xl">
+      <div className="mb-6 flex min-h-36 items-center justify-between gap-5 overflow-hidden rounded-2xl border border-border bg-card pl-6 sm:pl-8">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
           Find your next role
         </h1>
+        <div className="relative h-36 w-32 shrink-0 sm:w-56" aria-hidden="true">
+          <Image
+            src="/jobhub-team-illustration.png"
+            alt=""
+            fill
+            sizes="(max-width: 639px) 128px, 224px"
+            className="object-cover object-[50%_35%] dark:brightness-90"
+          />
+        </div>
       </div>
 
       {/* Search */}

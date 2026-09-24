@@ -1,5 +1,7 @@
 "use client";
 
+import { Hint } from "@/components/ui/tooltip";
+
 import React, { useState } from "react";
 import {
   DropdownMenu,
@@ -26,7 +28,8 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 1,
     title: "Application reviewed",
-    description: "TechCorp viewed your application for Senior Backend Developer.",
+    description:
+      "TechCorp viewed your application for Senior Backend Developer.",
     time: "2h ago",
     read: false,
     type: "application",
@@ -34,7 +37,8 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 2,
     title: "New match in market",
-    description: "PixelCraft posted a Frontend Developer role matching your skills.",
+    description:
+      "PixelCraft posted a Frontend Developer role matching your skills.",
     time: "1d ago",
     read: false,
     type: "job",
@@ -42,7 +46,8 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 3,
     title: "Assessment ready",
-    description: "Practical coding challenge is available for your active submission.",
+    description:
+      "Practical coding challenge is available for your active submission.",
     time: "2d ago",
     read: true,
     type: "task",
@@ -60,28 +65,42 @@ export default function NotificationCenter() {
   const getIcon = (type: string) => {
     switch (type) {
       case "application":
-        return <IconCircleCheck size={16} stroke={1.75} className="text-emerald-600 dark:text-emerald-400" />;
+        return (
+          <IconCircleCheck
+            size={16}
+            stroke={1.75}
+            className="text-emerald-600 dark:text-emerald-400"
+          />
+        );
       case "task":
         return <IconCode size={16} stroke={1.75} className="text-blue-500" />;
       case "job":
       default:
-        return <IconBriefcase size={16} stroke={1.75} className="text-foreground/80" />;
+        return (
+          <IconBriefcase
+            size={16}
+            stroke={1.75}
+            className="text-foreground/80"
+          />
+        );
     }
   };
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-transparent hover:border-border/60"
-          aria-label="Notifications"
-        >
-          <IconBell size={18} stroke={1.75} />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
-          )}
-        </button>
-      </DropdownMenuTrigger>
+      <Hint content="Notifications">
+        <DropdownMenuTrigger asChild>
+          <button
+            className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-transparent hover:border-border/60"
+            aria-label="Notifications"
+          >
+            <IconBell size={18} stroke={1.75} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
+            )}
+          </button>
+        </DropdownMenuTrigger>
+      </Hint>
 
       <DropdownMenuContent
         align="end"
@@ -89,7 +108,9 @@ export default function NotificationCenter() {
       >
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm text-foreground">Notifications</h3>
+            <h3 className="font-semibold text-sm text-foreground">
+              Notifications
+            </h3>
             {unreadCount > 0 && (
               <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {unreadCount} new
@@ -100,7 +121,7 @@ export default function NotificationCenter() {
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               Mark all as read
             </button>
@@ -138,4 +159,3 @@ export default function NotificationCenter() {
     </DropdownMenu>
   );
 }
-

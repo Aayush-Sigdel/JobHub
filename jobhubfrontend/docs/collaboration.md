@@ -4,23 +4,29 @@
 
 The collaboration backend is project-based. It supports discovery, personal recommendations, owned projects, project-specific candidate suggestions, and memberships. There is no general People directory, chat, member removal, or membership reopening endpoint. The frontend keeps teammate discovery inside an owned project and redirects legacy People links to My projects.
 
-| User intent               | Frontend                                                           | Backend under `/api/collab`                                                  |
-| ------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| Find a project            | Explore → All projects / For you                                   | `GET /projects`, `GET /projects/for-me`                                      |
-| Manage a project          | My projects → Created by me                                        | `GET /projects/mine`                                                         |
-| Return to a joined team   | My projects → Joined                                               | Active records from `GET /memberships/mine`                                  |
-| Review a project          | Project → Overview                                                 | `GET /projects/{id}`                                                         |
-| Review applicants         | Project → Requests                                                 | `GET /projects/{id}/memberships`                                             |
-| Invite teammates          | Project → Find teammates                                           | `GET /projects/{id}/suggestions`, `POST /projects/{id}/invite`               |
-| Join a project            | Overview → Request to join                                         | `POST /projects/{id}/request`                                                |
-| Respond or track progress | Requests → Invitations / Sent requests / For my projects / History | Personal and owner membership endpoints                                      |
-| Update or close a project | Edit project / Settings                                            | `PUT /projects/{id}`, `PATCH /projects/{id}/status`, `DELETE /projects/{id}` |
+| User intent               | Frontend                              | Backend under `/api/collab`                                                  |
+| ------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
+| Find a project            | Explore → All projects / For you      | `GET /projects`, `GET /projects/for-me`                                      |
+| Manage a project          | My projects → Created by me           | `GET /projects/mine`                                                         |
+| Return to a joined team   | My projects → Joined                  | Active records from `GET /memberships/mine`                                  |
+| Review a project          | Project → Overview                    | `GET /projects/{id}`                                                         |
+| Review applicants         | Project → Requests                    | `GET /projects/{id}/memberships`                                             |
+| Invite teammates          | Project → Find teammates              | `GET /projects/{id}/suggestions`, `POST /projects/{id}/invite`               |
+| Join a project            | Overview → Request to join            | `POST /projects/{id}/request`                                                |
+| Respond or track progress | Requests → To review / Sent / History | Personal and owner membership endpoints                                      |
+| Update or close a project | Edit project / Settings               | `PUT /projects/{id}`, `PATCH /projects/{id}/status`, `DELETE /projects/{id}` |
 
 Explore defaults to recruiting projects, as the backend does. Search filters expand on demand. For you uses the backend's best role when opening a project. Match explanations remain available under “Why this match”; the UI does not expose matching pool size or internal scoring metrics.
 
 Created by me and Joined are distinct because `/projects/mine` returns only owned projects. Joined cards use membership fields and link to full project details without inventing status, capacity, or schedule information.
 
-Owners see Overview, Requests, Find teammates, and Settings. Candidate suggestions load only when that section is opened and the project is recruiting with open seats. Settings separates status changes and deletion from ordinary browsing. Visitors see the team, open roles, and their current membership or join action.
+Collab uses a horizontal navigation row with Explore, My projects, Requests, and project creation. There is no section sidebar. Owners see Overview, Team, Requests, Find teammates, and Settings. Project sections use URLs so links, refresh, and browser navigation retain context. Candidate suggestions load only when that section is opened and the project is recruiting with open seats. Settings separates status changes and deletion from ordinary browsing. Visitors see the team, open roles, and their current membership or join action.
+
+The backend returns the owner separately from `members`. `projectTeam` combines those fields into an owner-first, deduplicated roster. The owner occupies one seat and appears by name with Owner and, for the current user, You. Blank owner names fall back to the signed-in name only when the viewer ID matches the owner ID. Both Overview and Team display the roster; filled roles show their assigned teammate.
+
+To review combines personal invitations and join requests to owned projects. Sent combines personal join requests and invitations sent by the owner. History includes accepted and closed memberships. Navigation badges include incoming owner requests. Owner membership queries share a cache, retain successful project results after partial failures, and expose errors instead of showing a false empty inbox.
+
+Collab has no decorative header, cover, or empty-state images. Existing member profile avatars and accessible tooltips remain.
 
 ## States and recovery
 
@@ -34,13 +40,13 @@ Calls use `lib/actions/collaboration.ts` and the existing authenticated `fetchWi
 
 Team size is 2–20 including the owner. Weekly commitment is 1–80 whole hours; duration is at least one whole week. Roles have unique titles and cannot exceed teammate seats. Filled role titles cannot be changed or removed because the backend retains roles by normalized title. Clearing optional fields sends the backend removal flags; role IDs are omitted from save payloads.
 
-Only recipients can accept pending invitations or requests. Either side can close a pending membership. Only active members can leave. Declined and left memberships cannot be reopened, so those actions retain confirmation. The backend rechecks recruiting status, capacity, and role availability on acceptance. Detail-page acceptance controls also respect those constraints; inbox actions still rely on the backend's authoritative validation. Messages are limited to 1,000 characters.
+Only recipients can accept pending invitations or requests. Either side can close a pending membership. Only active members can leave. Declined and left memberships cannot be reopened, so those actions retain confirmation. The backend rechecks recruiting status, capacity, and role availability on acceptance. Detail-page and owner-inbox acceptance controls also respect those constraints and show why acceptance is unavailable. The backend remains authoritative for concurrent changes. Messages are limited to 1,000 characters.
 
 Queries are scoped to the signed-in user. Mutations invalidate collaboration queries, including after conflicts. Details, owner memberships, and visible suggestions refresh every 15 seconds; inbox data refreshes every 30 seconds. Focus refreshes results.
 
 ## Verification
 
-Run `node --test tests/*.test.mjs`, `tsc --noEmit`, and ESLint on collaboration files. Render tests cover navigation, empty/error states, active joined memberships, request grouping, owner-only controls, and full/closed teams. Integration tests cover adapters, API routes, mutation payloads, filtering, numeric limits, and membership actions.
+Run `node --test tests/*.test.mjs`, `tsc --noEmit`, and ESLint on collaboration files. Render tests cover horizontal navigation, owner identity and session fallback, the Team route, empty/error states, active joined memberships, request grouping, owner request badges, occupied roles, owner-only controls, and full/closed teams. Owner-inbox tests cover partial failures and empty project lists. Integration tests cover adapters, API routes, mutation payloads, filtering, numeric limits, and membership actions.
 
 Live checks require a running backend, matching service, and two candidate accounts:
 

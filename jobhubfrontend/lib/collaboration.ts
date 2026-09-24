@@ -8,6 +8,7 @@ import type {
   ProjectRole,
   ProjectSuggestionResponse,
   SuggestionFilters,
+  TeamMember,
 } from "../types/api/collaboration.ts";
 
 export function projectFromDetail({
@@ -190,4 +191,63 @@ export function apiErrorMessage(detail: string, fallback: string) {
   } catch {
     return detail && !detail.trim().startsWith("<") ? detail : fallback;
   }
+}
+
+/** The API's membership roster excludes the owner even though the seat count includes them. */
+export function projectTeam(
+  project: Project,
+  viewer?: {
+    userId?: string;
+    userName?: string | null;
+    userImageUrl?: string | null;
+  },
+): TeamMember[] {
+  const ownProject = !!viewer?.userId && viewer.userId === project.ownerId;
+  const existingOwner = project.members?.find(
+    (member) => member.userId === project.ownerId,
+  );
+  const owner: TeamMember = {
+    userId: project.ownerId,
+    name:
+      project.ownerName?.trim() ||
+      project.owner?.name?.trim() ||
+      existingOwner?.name?.trim() ||
+      (ownProject ? viewer?.userName?.trim() : undefined) ||
+      "Project owner",
+    imageUrl:
+      project.ownerImageUrl ||
+      project.owner?.imageUrl ||
+      existingOwner?.imageUrl ||
+      (ownProject ? viewer?.userImageUrl : undefined),
+    roleTitle: "Owner",
+  };
+  const members = new Map<string, TeamMember>([[owner.userId, owner]]);
+  for (const member of project.members ?? []) {
+    if (member.userId === owner.userId || members.has(member.userId)) continue;
+    members.set(member.userId, {
+      ...member,
+      name:
+        member.name?.trim() ||
+        (member.userId === viewer?.userId
+          ? viewer.userName?.trim()
+          : undefined) ||
+        "Team member",
+    });
+  }
+  return [...members.values()];
+}
+
+export function membershipAcceptanceIssue(
+  project: Project,
+  membership: Pick<Membership, "roleId">,
+): string | undefined {
+  if (project.status !== "RECRUITING") return "Recruitment is closed.";
+  if (project.activeMemberCount >= project.teamSize) return "The team is full.";
+  if (
+    membership.roleId &&
+    !project.roles.some(
+      (role) => role.id === membership.roleId && !isRoleFilled(role, project),
+    )
+  )
+    return "This role is no longer available.";
 }

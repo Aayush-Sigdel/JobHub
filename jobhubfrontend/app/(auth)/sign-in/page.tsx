@@ -16,6 +16,7 @@ import {
 } from "@/components/auth/auth-characters";
 
 import { signIn, getSession } from "next-auth/react";
+import { clearLocalSessionData, synchronizeLocalSession } from "@/lib/local-session-storage";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -83,12 +84,14 @@ function SignInContent() {
       password: data.password,
     });
 
-    if (result?.error) {
+    if (!result?.ok || result.error) {
       setAuthError("Invalid email or password. Please check your credentials.");
       return;
     }
 
+    clearLocalSessionData();
     const session = await getSession();
+    synchronizeLocalSession(session?.user?.id ?? null);
     const callbackUrl = searchParams.get("callbackUrl");
     const isEmployer = Boolean(session?.user?.employer);
 
@@ -123,6 +126,7 @@ function SignInContent() {
   };
 
   const handleGoogleSignIn = () => {
+    clearLocalSessionData();
     signIn("google", { callbackUrl: "/home" });
   };
 

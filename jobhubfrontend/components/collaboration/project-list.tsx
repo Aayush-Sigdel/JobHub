@@ -34,79 +34,101 @@ import {
   StatusBadge,
 } from "./shared";
 import { toast } from "sonner";
+import { projectTeam } from "@/lib/collaboration";
 
 function ProjectCard({ project }: { project: Project }) {
+  const viewer = useCollaborationIdentity();
+  const owner = projectTeam(project, viewer)[0];
+  const isOwner = project.ownerId === viewer.userId;
   return (
-    <article className={`${panelClass} flex flex-col gap-4`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <StatusBadge status={project.status} />
-        <span className="text-xs text-muted-foreground">
-          {label(project.workplaceType)}
-          {project.location ? ` · ${project.location}` : ""}
-        </span>
-      </div>
-      <div>
-        <h2 className="text-lg font-bold">
-          <Link
-            className="hover:underline"
-            href={`/collaborators/projects/${project.id}${project.bestRoleId ? `?role=${encodeURIComponent(project.bestRoleId)}` : ""}`}
-          >
-            {project.title}
-          </Link>
-        </h2>
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-          {project.description}
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {project.roles
-          ?.filter((role) => !role.filled)
-          .slice(0, 3)
-          .map((role) => (
-            <span
-              key={role.id}
-              className="rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-foreground/25 focus-within:ring-2 focus-within:ring-ring/50">
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <StatusBadge status={project.status} />
+          <span className="text-xs text-muted-foreground">
+            {label(project.workplaceType)}
+            {project.location ? ` · ${project.location}` : ""}
+          </span>
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">
+            <Link
+              className="rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+              href={`/collaborators/projects/${project.id}${project.bestRoleId ? `?role=${encodeURIComponent(project.bestRoleId)}` : ""}`}
             >
-              {role.title}
-            </span>
-          ))}
-      </div>
-      {project.explanation && <Explanation explanation={project.explanation} />}
-      {project.bestRoleId && (
-        <p className="text-xs font-medium">
-          Suggested role:{" "}
-          {project.bestRoleTitle ||
-            project.roles?.find((role) => role.id === project.bestRoleId)
-              ?.title ||
-            "View suggested role"}
-        </p>
-      )}
-      <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-border pt-4 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <Users className="size-3.5" />
-          {project.openSeats ??
-            Math.max(0, project.teamSize - project.activeMemberCount)}{" "}
-          open seats
-        </span>
-        {project.commitmentHoursPerWeek != null && (
+              {project.title}
+            </Link>
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {owner.name}
+            {isOwner ? " · Your project" : " · Owner"}
+          </p>
+          <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {project.description}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {project.roles
+            ?.filter((role) => !role.filled)
+            .slice(0, 3)
+            .map((role) => (
+              <span
+                key={role.id}
+                className="rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
+              >
+                {role.title}
+              </span>
+            ))}
+        </div>
+        {project.explanation && (
+          <Explanation explanation={project.explanation} />
+        )}
+        {project.bestRoleId && (
+          <p className="text-xs font-medium">
+            Suggested role:{" "}
+            {project.bestRoleTitle ||
+              project.roles?.find((role) => role.id === project.bestRoleId)
+                ?.title ||
+              "View suggested role"}
+          </p>
+        )}
+        <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-border pt-4 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
-            <Clock className="size-3.5" />
-            {project.commitmentHoursPerWeek} hrs/week
+            <Users className="size-3.5" />
+            {isOwner
+              ? `${project.activeMemberCount} / ${project.teamSize} members`
+              : project.status !== "RECRUITING"
+                ? "Recruitment closed"
+                : `${project.openSeats ?? Math.max(0, project.teamSize - project.activeMemberCount)} open seats`}
           </span>
-        )}
-        {!!project.pendingCount && (
-          <span className="font-semibold text-foreground">
-            {project.pendingCount} pending
-          </span>
-        )}
-        <Button asChild variant="outline" size="sm" className="ml-auto">
-          <Link
-            href={`/collaborators/projects/${project.id}${project.bestRoleId ? `?role=${encodeURIComponent(project.bestRoleId)}` : ""}`}
-          >
-            View project
-            <ArrowRight className="size-3" />
-          </Link>
-        </Button>
+          {project.commitmentHoursPerWeek != null && (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3.5" />
+              {project.commitmentHoursPerWeek} hrs/week
+            </span>
+          )}
+          {isOwner && (
+            <Link
+              href={`/collaborators/projects/${project.id}?section=requests`}
+              className="rounded-sm font-medium text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              Requests
+            </Link>
+          )}
+          {!!project.pendingCount && (
+            <span className="font-semibold text-foreground">
+              {project.pendingCount} pending
+            </span>
+          )}
+          <Button asChild variant="outline" size="sm" className="ml-auto">
+            <Link
+              href={`/collaborators/projects/${project.id}${project.bestRoleId ? `?role=${encodeURIComponent(project.bestRoleId)}` : ""}`}
+            >
+              {isOwner ? "Manage project" : "View project"}
+              <ArrowRight className="size-3" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </article>
   );
@@ -190,10 +212,7 @@ export function ProjectList({
   return (
     <div className="space-y-5">
       {view !== "mine" ? (
-        <nav
-          aria-label="Project discovery"
-          className="flex gap-2 border-b border-border pb-3"
-        >
+        <nav aria-label="Project discovery" className="flex gap-2">
           <Button asChild variant={view === "browse" ? "secondary" : "ghost"}>
             <Link
               href="/collaborators/explore"
@@ -213,10 +232,7 @@ export function ProjectList({
           </Button>
         </nav>
       ) : (
-        <div
-          aria-label="Your projects"
-          className="flex gap-2 border-b border-border pb-3"
-        >
+        <div aria-label="Your projects" className="flex gap-2">
           {[
             ["owned", "Created by me"],
             ["joined", "Joined"],
@@ -234,7 +250,7 @@ export function ProjectList({
       )}
       {view === "browse" && (
         <form
-          className={`${panelClass} space-y-4`}
+          className="space-y-3 rounded-xl bg-muted/35 p-4"
           onSubmit={(event) => {
             event.preventDefault();
             setFilters(draft);
@@ -378,24 +394,31 @@ export function ProjectList({
             {memberships.data
               .filter((member) => member.status === "ACTIVE")
               .map((member) => (
-                <article key={member.id} className={`${panelClass} space-y-4`}>
-                  <h2 className="text-lg font-semibold">
-                    <Link
-                      className="hover:underline"
-                      href={`/collaborators/projects/${member.projectId}`}
-                    >
-                      {member.projectTitle}
-                    </Link>
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {member.roleTitle || "Team member"}
-                  </p>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/collaborators/projects/${member.projectId}`}>
-                      Open project
-                      <ArrowRight className="size-4" />
-                    </Link>
-                  </Button>
+                <article
+                  key={member.id}
+                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-shadow hover:shadow-md"
+                >
+                  <div className="space-y-4 p-5">
+                    <h2 className="text-lg font-semibold">
+                      <Link
+                        className="hover:underline"
+                        href={`/collaborators/projects/${member.projectId}`}
+                      >
+                        {member.projectTitle}
+                      </Link>
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {member.roleTitle || "Team member"}
+                    </p>
+                    <Button asChild variant="outline" size="sm">
+                      <Link
+                        href={`/collaborators/projects/${member.projectId}`}
+                      >
+                        Open project
+                        <ArrowRight className="size-4" />
+                      </Link>
+                    </Button>
+                  </div>
                 </article>
               ))}
           </div>

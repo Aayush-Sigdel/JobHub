@@ -1,18 +1,12 @@
 import { PosterHeader } from "@/components/poster-header";
-import { fetchWithAuth } from "@/lib/service-api";
-import type { UserProfileResponse } from "@/types/api/user";
+import { requireUserRole } from "@/lib/server-user-role";
 
 export default async function PosterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let profile: UserProfileResponse | null = null;
-  try {
-    profile = await fetchWithAuth<UserProfileResponse>("/user/profile");
-  } catch {
-    // Unauthenticated or network error
-  }
+  const { profile } = await requireUserRole(true);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">

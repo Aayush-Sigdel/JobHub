@@ -20,6 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Hint } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { searchApplicantListings } from "@/lib/actions/search";
 import { cn } from "@/lib/utils";
@@ -118,22 +119,24 @@ export function ListingSearch() {
 
   return (
     <Popover open={open} onOpenChange={changeOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Search jobs and projects"
-          aria-keyshortcuts="Control+k Meta+k"
-          className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full border border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring sm:w-full sm:justify-start sm:px-3"
-        >
-          <Search className="size-4 shrink-0" />
-          <span className="hidden truncate text-xs sm:block">
-            Search jobs & projects
-          </span>
-          <kbd className="ml-auto hidden shrink-0 rounded border border-border bg-background px-1 text-[10px] xl:block">
-            ⌘ / Ctrl K
-          </kbd>
-        </button>
-      </PopoverTrigger>
+      <Hint content="Search jobs and projects · Ctrl / ⌘ K">
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label="Search jobs and projects"
+            aria-keyshortcuts="Control+k Meta+k"
+            className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full border border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring sm:w-full sm:justify-start sm:px-3"
+          >
+            <Search className="size-4 shrink-0" />
+            <span className="hidden truncate text-xs sm:block">
+              Search jobs & projects
+            </span>
+            <kbd className="ml-auto hidden shrink-0 rounded border border-border bg-background px-1 text-[10px] xl:block">
+              ⌘ / Ctrl K
+            </kbd>
+          </button>
+        </PopoverTrigger>
+      </Hint>
       <PopoverContent
         align="center"
         sideOffset={12}

@@ -45,7 +45,7 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
                   : "/home"
                 : "/"
             }
-            className="flex items-center transition-opacity hover:opacity-90"
+            className="flex items-center rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             aria-label="JobHub Home"
           >
             <Logo className="[&>span]:hidden sm:[&>span]:inline" />
@@ -63,8 +63,9 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
+                      "rounded-lg px-2 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
                       isActive
                         ? "bg-muted text-foreground font-semibold"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",

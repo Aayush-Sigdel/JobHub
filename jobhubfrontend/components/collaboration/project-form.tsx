@@ -20,6 +20,7 @@ import type {
   SkillLevel,
   WorkplaceType,
 } from "@/types/api/collaboration";
+import { Hint, FieldHint } from "@/components/ui/tooltip";
 import { label, panelClass, selectClass } from "./shared";
 
 export function ProjectForm({ project }: { project?: Project }) {
@@ -248,7 +249,13 @@ export function ProjectForm({ project }: { project?: Project }) {
           </section>
           <section className={`${panelClass} space-y-5`}>
             <div>
-              <h2 className="font-semibold">Open roles</h2>
+              <div className="flex items-center gap-1">
+                <h2 className="font-semibold">Open roles</h2>
+                <FieldHint
+                  label="About project roles"
+                  content="Each role is one teammate seat. Required skills help find matches; filled role titles cannot be changed."
+                />
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 Add up to {Math.max(0, input.teamSize - 1)} roles for teammates.
               </p>
@@ -287,26 +294,33 @@ export function ProjectForm({ project }: { project?: Project }) {
                         placeholder="e.g. Flutter developer"
                       />
                     </label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={!!filled || input.roles.length <= 1}
-                      aria-label={`Remove role ${index + 1}`}
-                      title={
+                    <Hint
+                      content={
                         filled
-                          ? "Filled roles must stay on the project"
-                          : "Remove role"
-                      }
-                      onClick={() =>
-                        setInput({
-                          ...input,
-                          roles: input.roles.filter((_, i) => i !== index),
-                        })
+                          ? "Filled roles cannot be removed."
+                          : input.roles.length <= 1
+                            ? "Keep at least one role."
+                            : "Remove this role"
                       }
                     >
-                      <Trash2 className="size-4" />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-disabled={!!filled || input.roles.length <= 1}
+                        className="aria-disabled:opacity-50"
+                        aria-label={`Remove role ${index + 1}`}
+                        onClick={() => {
+                          if (filled || input.roles.length <= 1) return;
+                          setInput({
+                            ...input,
+                            roles: input.roles.filter((_, i) => i !== index),
+                          });
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </Hint>
                   </div>
                   <label className="block space-y-2 text-sm">
                     <span>Role description (optional)</span>
@@ -369,21 +383,23 @@ export function ProjectForm({ project }: { project?: Project }) {
                           )}
                         </select>
                       </label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Remove skill ${skillIndex + 1} from role ${index + 1}`}
-                        onClick={() =>
-                          updateRole(index, {
-                            requiredSkills: role.requiredSkills.filter(
-                              (_, i) => i !== skillIndex,
-                            ),
-                          })
-                        }
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      <Hint content="Remove this skill">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove skill ${skillIndex + 1} from role ${index + 1}`}
+                          onClick={() =>
+                            updateRole(index, {
+                              requiredSkills: role.requiredSkills.filter(
+                                (_, i) => i !== skillIndex,
+                              ),
+                            })
+                          }
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </Hint>
                     </div>
                   ))}
                   <Button

@@ -41,7 +41,7 @@ function render(file, component, props = {}, state = {}) {
       if (id === "next/navigation")
         return {
           useRouter: () => ({}),
-          useSearchParams: () => new URLSearchParams(),
+          useSearchParams: () => new URLSearchParams(state.params ?? ""),
           usePathname: () => state.path ?? "/collaborators/explore",
         };
       if (id === "@tanstack/react-query")
@@ -61,7 +61,20 @@ function render(file, component, props = {}, state = {}) {
         };
       if (id === "@/lib/hooks/use-collaboration")
         return {
-          useCollaborationIdentity: () => ({ userId: "owner", enabled: true }),
+          useCollaborationIdentity: () => ({
+            userId: "owner",
+            userName: "Asha Sharma",
+            enabled: true,
+            ...state.identity,
+          }),
+          useOwnerMemberships: () => ({
+            projects: { data: [], refetch() {}, ...state.ownedProjects },
+            requests: {
+              data: { memberships: [], failedProjects: [] },
+              refetch() {},
+              ...state.ownerRequests,
+            },
+          }),
           useMyMemberships: () => ({
             data: [],
             refetch() {},
@@ -152,6 +165,7 @@ test("navigation groups recommendations under Explore and removes People", () =>
   assert.doesNotMatch(html, /People|href="\/collaborators\/people"/);
   assert.match(html, /href="\/collaborators\/explore" aria-current="page"/);
   assert.match(html, /Requests/);
+  assert.doesNotMatch(html, /<aside/);
 });
 test("project discovery has useful empty and error states", () => {
   const empty = render(
@@ -266,4 +280,136 @@ test("legacy People links redirect to owned projects", () => {
     ),
     /redirect\("\/collaborators\/my-projects"\)/,
   );
+});
+
+test("the team includes the owner's real name and You even with no memberships", () => {
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectDetail",
+    { id: "p1" },
+    { detail: { data: { ...project, ownerName: "Asha Sharma" } } },
+  );
+  const team = html.match(/aria-label="Project team"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(team);
+  assert.match(team, /Asha Sharma/);
+  assert.match(team, /You/);
+  assert.match(team, /Owner/);
+  assert.match(team, /href="\/candidate-profile"/);
+});
+
+test("the Team route shows the owner with a session-name fallback and no duplicate roster row", () => {
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectDetail",
+    { id: "p1" },
+    {
+      params: "section=team",
+      detail: {
+        data: {
+          ...project,
+          ownerName: "",
+          members: [{ userId: "owner", name: "" }],
+        },
+      },
+    },
+  );
+  const team = html.match(/aria-label="Project team"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(team);
+  assert.equal((team.match(/Asha Sharma/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /About<\/h2>/);
+});
+
+test("request review combines owner applications with personal invitations", () => {
+  const html = render(
+    "components/collaboration/collaboration-inbox.tsx",
+    "CollaborationInbox",
+    {},
+    {
+      memberships: {
+        data: [
+          {
+            ...membership,
+            status: "INVITED",
+            initiatedBy: "OWNER",
+            projectTitle: "Invited project",
+          },
+        ],
+      },
+      ownerRequests: {
+        data: {
+          memberships: [
+            {
+              ...membership,
+              id: "request",
+              status: "REQUESTED",
+              projectTitle: "My project",
+              project,
+            },
+          ],
+          failedProjects: [],
+        },
+      },
+    },
+  );
+  assert.match(html, /Invited project/);
+  assert.match(html, /My project/);
+  assert.match(html, /Join request received/);
+  assert.match(html, /Invitation received/);
+});
+
+test("the request badge includes applications to owned projects", () => {
+  const html = render(
+    "components/collaboration/collaboration-shell.tsx",
+    "CollaborationShell",
+    {},
+    {
+      ownerRequests: {
+        data: {
+          memberships: [{ ...membership, status: "REQUESTED" }],
+          failedProjects: [],
+        },
+      },
+    },
+  );
+  assert.match(html, /Requests<span[^>]*>1<\/span>/);
+});
+
+test("a filled role identifies its teammate and cannot be requested", () => {
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectDetail",
+    { id: "p1" },
+    {
+      identity: { userId: "visitor" },
+      detail: {
+        data: {
+          ...project,
+          isOwner: false,
+          roles: [
+            {
+              id: "design",
+              title: "Designer",
+              filled: true,
+              filledByName: "Rita",
+              requiredSkills: [],
+            },
+          ],
+        },
+      },
+    },
+  );
+  assert.match(html, /Filled by Rita/);
+  assert.doesNotMatch(html, /Request this role/);
+});
+
+test("request loading failures are not presented as an empty inbox", () => {
+  const html = render(
+    "components/collaboration/collaboration-inbox.tsx",
+    "CollaborationInbox",
+    {},
+    { ownerRequests: { data: { memberships: [], failedProjects: [project] } } },
+  );
+  assert.match(html, /role="alert"/);
+  assert.match(html, /Study companion/);
+  assert.doesNotMatch(html, /No requests to review/);
 });

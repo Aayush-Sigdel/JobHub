@@ -2,77 +2,87 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { getMemberships, getProjects } from "@/lib/actions/collaboration";
 import {
-  unwrap,
-  useCollaborationIdentity,
   useMyMemberships,
+  useOwnerMemberships,
 } from "@/lib/hooks/use-collaboration";
+import { membershipAcceptanceIssue } from "@/lib/collaboration";
 import type { Membership, Project } from "@/types/api/collaboration";
 import { useInboxSeen } from "./inbox-indicator";
 import {
   EmptyState,
   ErrorState,
-  label,
   LoadingState,
   MembershipButtons,
-  panelClass,
   Person,
   StatusBadge,
 } from "./shared";
 
-function MembershipCard({
-  membership,
-  owner = false,
-}: {
+type RequestEntry = {
   membership: Membership;
-  owner?: boolean;
-}) {
+  owner: boolean;
+  project?: Project;
+};
+
+function MembershipCard({ membership, owner, project }: RequestEntry) {
+  const issue = project
+    ? membershipAcceptanceIssue(project, membership)
+    : undefined;
   return (
-    <article className={`${panelClass} space-y-4`}>
+    <article className="space-y-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 space-y-1">
           <Link
-            href={`/collaborators/projects/${membership.projectId}`}
-            className="font-semibold hover:underline"
+            href={`/collaborators/projects/${membership.projectId}${owner ? "?section=requests" : ""}`}
+            className="rounded-sm font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-ring"
           >
             {membership.projectTitle || "View project"}
           </Link>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {membership.roleTitle || "Project teammate"} ·{" "}
-            {label(
-              membership.initiatedBy === "OWNER"
-                ? "INVITATION"
-                : "JOIN_REQUEST",
-            )}
+          <p className="text-xs text-muted-foreground">
+            {membership.initiatedBy === "OWNER"
+              ? owner
+                ? "Invitation sent"
+                : "Invitation received"
+              : owner
+                ? "Join request received"
+                : "Join request sent"}
+            {membership.roleTitle ? ` · ${membership.roleTitle}` : ""}
           </p>
         </div>
         <StatusBadge status={membership.status} />
       </div>
       {owner && <Person person={membership} />}
       {membership.message && (
-        <blockquote className="whitespace-pre-wrap break-words rounded-xl bg-muted/60 p-3 text-sm">
+        <blockquote className="whitespace-pre-wrap break-words border-l-2 border-border pl-3 text-sm text-muted-foreground">
           {membership.message}
         </blockquote>
+      )}
+      {owner && membership.status === "REQUESTED" && issue && (
+        <p className="text-xs text-muted-foreground">{issue}</p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {membership.status === "ACTIVE" ? (
           <Button asChild variant="outline" size="sm">
-            <Link href={`/collaborators/projects/${membership.projectId}`}>
-              Open project
+            <Link
+              href={`/collaborators/projects/${membership.projectId}?section=team`}
+            >
+              View team
             </Link>
           </Button>
         ) : (
-          <MembershipButtons membership={membership} isOwner={owner} />
+          <MembershipButtons
+            membership={membership}
+            isOwner={owner}
+            canAccept={!issue}
+          />
         )}
         {membership.updatedAt && (
           <time
             dateTime={membership.updatedAt}
             className="text-xs text-muted-foreground"
           >
-            Updated {new Date(membership.updatedAt).toLocaleDateString()}
+            {new Date(membership.updatedAt).toLocaleDateString()}
           </time>
         )}
       </div>
@@ -80,169 +90,140 @@ function MembershipCard({
   );
 }
 
-function OwnerInbox({ projects }: { projects: Project[] }) {
-  const { userId, enabled } = useCollaborationIdentity();
-  const result = useQuery({
-    queryKey: [
-      "collaboration",
-      userId,
-      "owner-inbox",
-      projects.map((project) => project.id),
-    ],
-    enabled: enabled && projects.length > 0,
-    queryFn: async () => {
-      const results = await Promise.all(
-        projects.map(async (project) =>
-          (await unwrap(getMemberships(project.id))).map((member) => ({
-            ...member,
-            projectId: project.id,
-            projectTitle: project.title,
-          })),
-        ),
-      );
-      return results
-        .flat()
-        .filter(
-          (member) =>
-            member.status === "REQUESTED" || member.status === "INVITED",
-        );
-    },
-    staleTime: 0,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
-    retry: false,
-  });
-  if (!projects.length)
-    return (
-      <EmptyState
-        title="No project requests"
-        description="Create a project to receive join requests."
-      >
-        <Button asChild>
-          <Link href="/collaborators/projects/new">Create project</Link>
-        </Button>
-      </EmptyState>
-    );
-  return (
-    <section className="space-y-4">
-      {result.isPending ? (
-        <LoadingState />
-      ) : result.error ? (
-        <ErrorState error={result.error} retry={() => result.refetch()} />
-      ) : result.data?.length ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {result.data.map((member) => (
-            <MembershipCard key={member.id} membership={member} owner />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="No pending requests"
-          description="Join requests and sent invitations will appear here."
-        />
-      )}
-    </section>
-  );
-}
-
 export function CollaborationInbox() {
   const [section, setSection] = useState("received");
-  const memberships = useMyMemberships();
-  const { userId, enabled } = useCollaborationIdentity();
-  const projects = useQuery({
-    queryKey: ["collaboration", userId, "projects", "mine"],
-    queryFn: () => unwrap(getProjects("mine")),
-    enabled: enabled && section === "projects",
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
-    retry: false,
-  });
+  const personal = useMyMemberships();
+  const { projects, requests } = useOwnerMemberships();
   const { markSeen } = useInboxSeen();
-  const visible = (memberships.data ?? []).filter((member) =>
-    section === "received"
-      ? member.status === "INVITED"
-      : section === "sent"
-        ? member.status === "REQUESTED"
-        : ["ACTIVE", "DECLINED", "LEFT"].includes(member.status),
+  const entries: RequestEntry[] = [
+    ...(personal.data ?? []).map((membership) => ({
+      membership,
+      owner: false,
+    })),
+    ...(requests.data?.memberships ?? []).map((membership) => ({
+      membership,
+      owner: true,
+      project: membership.project,
+    })),
+  ];
+  const incoming = entries.filter(({ membership, owner }) =>
+    owner ? membership.status === "REQUESTED" : membership.status === "INVITED",
   );
+  const sent = entries.filter(({ membership, owner }) =>
+    owner ? membership.status === "INVITED" : membership.status === "REQUESTED",
+  );
+  const history = entries.filter(({ membership }) =>
+    ["ACTIVE", "DECLINED", "LEFT"].includes(membership.status),
+  );
+  const visible =
+    section === "received" ? incoming : section === "sent" ? sent : history;
+  const pending =
+    personal.isPending ||
+    projects.isPending ||
+    (!projects.error && requests.isPending);
+  const failedProjects = requests.data?.failedProjects ?? [];
+  const hasErrors =
+    !!personal.error ||
+    !!projects.error ||
+    !!requests.error ||
+    failedProjects.length > 0;
   const empty =
     section === "received"
-      ? ["No invitations", "Invitations from project owners will appear here."]
+      ? [
+          "No requests to review",
+          "New invitations and join requests will appear here.",
+        ]
       : section === "sent"
-        ? ["No requests sent", "Find a project and request to join."]
+        ? [
+            "Nothing sent yet",
+            "Your invitations and join requests will appear here.",
+          ]
         : [
             "No past activity",
-            "Accepted and closed requests will appear here.",
+            "Accepted and closed memberships will appear here.",
           ];
   return (
     <div className="space-y-5">
-      <div
-        aria-label="Request views"
-        className="flex gap-1 overflow-x-auto border-b border-border pb-3"
-      >
-        {[
-          ["received", "Invitations"],
-          ["sent", "Sent requests"],
-          ["projects", "For my projects"],
-          ["history", "History"],
-        ].map(([value, title]) => (
-          <Button
-            key={value}
-            className="shrink-0"
-            aria-pressed={section === value}
-            variant={section === value ? "secondary" : "ghost"}
-            onClick={() => setSection(value)}
-          >
-            {title}
-          </Button>
-        ))}
-      </div>
-      {section === "projects" ? (
-        projects.error ? (
-          <ErrorState error={projects.error} retry={() => projects.refetch()} />
-        ) : projects.isPending ? (
-          <LoadingState />
-        ) : (
-          <OwnerInbox projects={projects.data ?? []} />
-        )
-      ) : (
-        <>
-          {section === "history" && !!visible.length && (
-            <div className="flex justify-end">
-              <Button variant="ghost" size="sm" onClick={markSeen}>
-                Mark as seen
-              </Button>
-            </div>
-          )}
-          {memberships.isPending ? (
-            <LoadingState />
-          ) : memberships.error ? (
-            <ErrorState
-              error={memberships.error}
-              retry={() => memberships.refetch()}
-            />
-          ) : visible.length ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {[...visible]
-                .sort(
-                  (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
-                )
-                .map((member) => (
-                  <MembershipCard key={member.id} membership={member} />
-                ))}
-            </div>
-          ) : (
-            <EmptyState title={empty[0]} description={empty[1]}>
-              {section !== "history" && (
-                <Button asChild variant="outline">
-                  <Link href="/collaborators/explore">Explore projects</Link>
-                </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div aria-label="Request views" className="flex gap-1">
+          {[
+            ["received", "To review", incoming.length],
+            ["sent", "Sent", sent.length],
+            ["history", "History", 0],
+          ].map(([value, title, count]) => (
+            <Button
+              key={value}
+              aria-pressed={section === value}
+              variant={section === value ? "secondary" : "ghost"}
+              onClick={() => setSection(String(value))}
+            >
+              {title}
+              {Number(count) > 0 && (
+                <span className="ml-1 rounded bg-background px-1.5 text-xs tabular-nums">
+                  {count}
+                </span>
               )}
-            </EmptyState>
-          )}
-        </>
+            </Button>
+          ))}
+        </div>
+        {section === "history" && !!history.length && (
+          <Button variant="ghost" size="sm" onClick={markSeen}>
+            Mark as seen
+          </Button>
+        )}
+      </div>
+      {personal.error && (
+        <ErrorState error={personal.error} retry={() => personal.refetch()} />
       )}
+      {projects.error && (
+        <ErrorState error={projects.error} retry={() => projects.refetch()} />
+      )}
+      {requests.error && (
+        <ErrorState error={requests.error} retry={() => requests.refetch()} />
+      )}
+      {!!failedProjects.length && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
+        >
+          <p className="text-sm text-muted-foreground">
+            Requests couldn’t be loaded for{" "}
+            {failedProjects.map((project) => project.title).join(", ")}.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => requests.refetch()}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+      {pending && <LoadingState />}
+      {visible.length ? (
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+          {[...visible]
+            .sort(
+              (a, b) =>
+                Date.parse(b.membership.updatedAt) -
+                Date.parse(a.membership.updatedAt),
+            )
+            .map((entry) => (
+              <MembershipCard
+                key={`${entry.owner ? "owner" : "member"}-${entry.membership.id}`}
+                {...entry}
+              />
+            ))}
+        </div>
+      ) : !pending && !hasErrors ? (
+        <EmptyState title={empty[0]} description={empty[1]}>
+          {section !== "history" && (
+            <Button asChild variant="outline">
+              <Link href="/collaborators/explore">Explore projects</Link>
+            </Button>
+          )}
+        </EmptyState>
+      ) : null}
     </div>
   );
 }
