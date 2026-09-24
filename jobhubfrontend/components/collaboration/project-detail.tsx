@@ -62,7 +62,11 @@ function SquadBuilder({
   memberships: Membership[];
 }) {
   const { userId, enabled } = useCollaborationIdentity();
-  const [draft, setDraft] = useState<SuggestionFilters>({ poolSize: 200, shortlistSize: 10, location: "" });
+  const [draft, setDraft] = useState<SuggestionFilters>({
+    poolSize: 200,
+    shortlistSize: 10,
+    location: "",
+  });
   const [filters, setFilters] = useState(draft);
   const [invite, setInvite] = useState<{
     person: TeamMember;
@@ -86,11 +90,10 @@ function SquadBuilder({
           <div>
             <h2 className="flex items-center gap-2 text-lg font-bold">
               <Sparkles className="size-5" />
-              Squad builder
+              Find teammates
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Find people who cover your team’s missing skills. Suggestions
-              update when someone joins or leaves.
+              Suggested for your open roles.
             </p>
           </div>
           <Button
@@ -104,38 +107,45 @@ function SquadBuilder({
             Refresh
           </Button>
         </div>
-        <form className="grid gap-3 sm:grid-cols-3" onSubmit={(event) => {
-          event.preventDefault();
-          setFilters({ ...draft });
-        }}>
+        <form
+          className="flex flex-wrap items-end gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setFilters({ ...draft });
+          }}
+        >
           <label className="space-y-2 text-sm">
             <span>Candidate location</span>
-            <Input placeholder="Anywhere" value={draft.location ?? ""} onChange={(event) => setDraft({ ...draft, location: event.target.value })} />
+            <Input
+              placeholder="Anywhere"
+              value={draft.location ?? ""}
+              onChange={(event) =>
+                setDraft({ ...draft, location: event.target.value })
+              }
+            />
           </label>
-          <label className="space-y-2 text-sm">
-            <span>Candidates to consider</span>
-            <Input type="number" required min={10} max={500} step={1} value={draft.poolSize ?? ""} onChange={(event) => setDraft({ ...draft, poolSize: event.target.value ? Number(event.target.value) : undefined })} />
-          </label>
-          <label className="space-y-2 text-sm">
-            <span>Results per role</span>
-            <Input type="number" required min={1} max={25} step={1} value={draft.shortlistSize ?? ""} onChange={(event) => setDraft({ ...draft, shortlistSize: event.target.value ? Number(event.target.value) : undefined })} />
-          </label>
-          <Button type="submit" variant="outline" disabled={suggestions.isFetching}>Find people</Button>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={suggestions.isFetching}
+          >
+            Apply location
+          </Button>
         </form>
-        <p aria-live="polite" className="text-xs text-muted-foreground">
-          {suggestions.isFetching
-            ? "Updating ranked candidates…"
-            : suggestions.data
-              ? `${suggestions.data.poolSize} candidates considered · ${suggestions.data.openSeats} open seats · Updated ${new Date(suggestions.dataUpdatedAt).toLocaleTimeString()}`
-              : ""}
-        </p>
       </div>
       {suggestions.isPending ? (
         <LoadingState />
-      ) : suggestions.error instanceof CollaborationError && suggestions.error.status === 409 ? (
+      ) : suggestions.error instanceof CollaborationError &&
+        suggestions.error.status === 409 ? (
         <div className={`${panelClass} space-y-3`}>
-          <p className="text-sm text-muted-foreground">Save this project again to prepare its candidate matches.</p>
-          <Button asChild variant="outline"><Link href={`/collaborators/projects/${project.id}/edit`}>Edit project</Link></Button>
+          <p className="text-sm text-muted-foreground">
+            Save this project again to prepare its candidate matches.
+          </p>
+          <Button asChild variant="outline">
+            <Link href={`/collaborators/projects/${project.id}/edit`}>
+              Edit project
+            </Link>
+          </Button>
         </div>
       ) : suggestions.error ? (
         <ErrorState
@@ -145,21 +155,18 @@ function SquadBuilder({
       ) : (
         suggestions.data && (
           <>
-            {suggestions.data.note && (
-              <p
-                role="status"
-                className={`${panelClass} text-sm text-muted-foreground`}
+            {suggestions.data.suggestions.length === 0 && (
+              <EmptyState
+                title="No teammate matches yet"
+                description="Try another location or update the role skills."
               >
-                {suggestions.data.note}
-              </p>
+                <Button asChild variant="outline">
+                  <Link href={`/collaborators/projects/${project.id}/edit`}>
+                    Edit roles
+                  </Link>
+                </Button>
+              </EmptyState>
             )}
-            {!suggestions.data.note &&
-              suggestions.data.suggestions.length === 0 && (
-                <EmptyState
-                  title="No suggestions yet"
-                  description="Candidates need profile visibility enabled and refreshed matching data to appear here."
-                />
-              )}
             {suggestions.data.suggestions.map((role, index) => (
               <section
                 key={role.roleId ?? role.roleTitle}
@@ -209,16 +216,31 @@ function SquadBuilder({
                               </p>
                             </div>
                           </div>
-                          {person.location && <p className="text-xs text-muted-foreground">{person.location}</p>}
-                          {person.bio && <p className="line-clamp-3 text-sm text-muted-foreground">{person.bio}</p>}
+                          {person.location && (
+                            <p className="text-xs text-muted-foreground">
+                              {person.location}
+                            </p>
+                          )}
+                          {person.bio && (
+                            <p className="line-clamp-3 text-sm text-muted-foreground">
+                              {person.bio}
+                            </p>
+                          )}
                           <div className="flex flex-wrap gap-1.5">
-                            {person.skills.map(skill => <span key={skill.name} className="rounded-md border border-border px-2 py-1 text-xs">{skill.name}</span>)}
+                            {person.skills.slice(0, 5).map((skill) => (
+                              <span
+                                key={skill.name}
+                                className="rounded-md border border-border px-2 py-1 text-xs"
+                              >
+                                {skill.name}
+                              </span>
+                            ))}
                           </div>
                           <Explanation explanation={person.explanation} />
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
                             <Button asChild variant="ghost" size="sm">
                               <Link href={`/preview/${person.userId}`}>
-                                View profile & contact
+                                View profile
                               </Link>
                             </Button>
                             {membership ? (
@@ -249,7 +271,7 @@ function SquadBuilder({
                   ) : (
                     <EmptyState
                       title="No candidates for this role"
-                      description="Try a different location, consider more candidates, or revisit the required skills."
+                      description="Try another location or update the role skills."
                     />
                   )}
                 </div>
@@ -262,7 +284,7 @@ function SquadBuilder({
         <MessageDialog
           open
           title={`Invite ${invite.person.name}`}
-          description={`Invite them to join as ${invite.roleTitle}. They will need to accept before joining your team.`}
+          description={`Role: ${invite.roleTitle}`}
           onClose={() => setInvite(null)}
           onSubmit={async (message) => {
             try {
@@ -285,11 +307,14 @@ function SquadBuilder({
   );
 }
 
-export function ProjectTeamTools({ project }: { project: Project }) {
+export function ProjectTeamTools({
+  project,
+  section = "suggestions",
+}: {
+  project: Project;
+  section?: "suggestions" | "requests";
+}) {
   const { userId, enabled } = useCollaborationIdentity();
-  const [section, setSection] = useState<"suggestions" | "requests">(
-    "suggestions",
-  );
   const members = useQuery({
     queryKey: ["collaboration", userId, "project-memberships", project.id],
     queryFn: () => unwrap(getMemberships(project.id)),
@@ -305,27 +330,25 @@ export function ProjectTeamTools({ project }: { project: Project }) {
     ) ?? [];
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={section === "suggestions" ? "secondary" : "ghost"}
-          onClick={() => setSection("suggestions")}
-        >
-          Squad builder
-        </Button>
-        <Button
-          variant={section === "requests" ? "secondary" : "ghost"}
-          onClick={() => setSection("requests")}
-        >
-          Requests & invitations{" "}
-          <span className="rounded-md bg-muted px-1.5 text-xs">
-            {members.data ? pending.length : (project.pendingCount ?? 0)}
-          </span>
-        </Button>
-      </div>
       {members.error && (
         <ErrorState error={members.error} retry={() => members.refetch()} />
       )}
-      {section === "suggestions" ? (
+      {section === "suggestions" &&
+      (project.status !== "RECRUITING" ||
+        project.activeMemberCount >= project.teamSize) ? (
+        <EmptyState
+          title={
+            project.status !== "RECRUITING"
+              ? "Recruitment is closed"
+              : "Your team is full"
+          }
+          description={
+            project.status !== "RECRUITING"
+              ? "Set the project to recruiting in Settings to invite teammates."
+              : "All team seats are filled."
+          }
+        />
+      ) : section === "suggestions" ? (
         members.isPending ? (
           <LoadingState />
         ) : (
@@ -350,14 +373,27 @@ export function ProjectTeamTools({ project }: { project: Project }) {
                     {member.message}
                   </blockquote>
                 )}
-                <MembershipButtons membership={member} isOwner />
+                <MembershipButtons
+                  membership={member}
+                  isOwner
+                  canAccept={
+                    project.status === "RECRUITING" &&
+                    project.activeMemberCount < project.teamSize &&
+                    (!member.roleId ||
+                      project.roles.some(
+                        (role) =>
+                          role.id === member.roleId &&
+                          !isRoleFilled(role, project),
+                      ))
+                  }
+                />
               </article>
             ))}
           </div>
         ) : (
           <EmptyState
             title="You’re all caught up"
-            description="New join requests and outstanding invitations will appear here."
+            description="Join requests and sent invitations will appear here."
           />
         ))
       )}
@@ -369,6 +405,9 @@ function ProjectContent({ project }: { project: Project }) {
   const router = useRouter();
   const params = useSearchParams();
   const refresh = useRefreshCollaboration();
+  const [section, setSection] = useState<
+    "overview" | "suggestions" | "requests" | "settings"
+  >("overview");
   const [join, setJoin] = useState(false);
   const [roleId, setRoleId] = useState(
     params.get("role") || project.bestRoleId || "",
@@ -392,11 +431,15 @@ function ProjectContent({ project }: { project: Project }) {
   return (
     <div className="space-y-6">
       <Link
-        href="/collaborators/explore"
+        href={
+          project.isOwner
+            ? "/collaborators/my-projects"
+            : "/collaborators/explore"
+        }
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
-        All projects
+        {project.isOwner ? "My projects" : "All projects"}
       </Link>
       <header className="flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row">
         <div className="space-y-3">
@@ -407,14 +450,15 @@ function ProjectContent({ project }: { project: Project }) {
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="size-4" />
-              {project.activeMemberCount}/{project.teamSize} people, including
-              owner
+              {project.activeMemberCount}/{project.teamSize} members
             </span>
             <span>
               {label(project.workplaceType)}
               {project.location ? ` · ${project.location}` : ""}
             </span>
-            {project.durationWeeks != null && <span>{project.durationWeeks} weeks</span>}
+            {project.durationWeeks != null && (
+              <span>{project.durationWeeks} weeks</span>
+            )}
             {project.commitmentHoursPerWeek != null && (
               <span className="flex items-center gap-1">
                 <Clock className="size-4" />
@@ -432,106 +476,170 @@ function ProjectContent({ project }: { project: Project }) {
           </Button>
         )}
       </header>
-      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-5">
-          <section className={`${panelClass} space-y-3`}>
-            <h2 className="font-semibold">About the project</h2>
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
-              {project.description}
-            </p>
-          </section>
-          {project.goals && <section className={`${panelClass} space-y-3`}>
-            <h2 className="font-semibold">Project goals</h2>
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{project.goals}</p>
-          </section>}
-          <section className={`${panelClass} space-y-4`}>
-            <h2 className="font-semibold">Team roles</h2>
-            {project.roles.map((role) => (
-              <div
-                key={role.id}
-                className="space-y-2 rounded-xl bg-muted/40 p-4"
-              >
-                <div className="flex justify-between gap-3">
-                  <h3 className="text-sm font-semibold">{role.title}</h3>
-                  <StatusBadge
-                    status={isRoleFilled(role, project) ? "FILLED" : "OPEN"}
-                  />
-                </div>
-                {role.description && (
+      {project.isOwner && (
+        <div
+          aria-label="Manage project"
+          className="flex gap-1 overflow-x-auto border-b border-border pb-3"
+        >
+          {(
+            [
+              ["overview", "Overview"],
+              [
+                "requests",
+                `Requests${project.pendingCount ? ` (${project.pendingCount})` : ""}`,
+              ],
+              ["suggestions", "Find teammates"],
+              ["settings", "Settings"],
+            ] as const
+          ).map(([value, title]) => (
+            <Button
+              className="shrink-0"
+              key={value}
+              aria-pressed={section === value}
+              variant={section === value ? "secondary" : "ghost"}
+              onClick={() => setSection(value)}
+            >
+              {title}
+            </Button>
+          ))}
+        </div>
+      )}
+      {project.isOwner &&
+        (section === "suggestions" || section === "requests") && (
+          <ProjectTeamTools project={project} section={section} />
+        )}
+      <div
+        className={
+          section === "overview"
+            ? "grid gap-5 xl:grid-cols-[1fr_280px]"
+            : section === "settings"
+              ? "max-w-lg"
+              : "hidden"
+        }
+      >
+        {section === "overview" && (
+          <>
+            <div className="space-y-5">
+              <section className={`${panelClass} space-y-3`}>
+                <h2 className="font-semibold">About the project</h2>
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+                  {project.description}
+                </p>
+              </section>
+              {project.goals && (
+                <section className={`${panelClass} space-y-3`}>
+                  <h2 className="font-semibold">Project goals</h2>
+                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+                    {project.goals}
+                  </p>
+                </section>
+              )}
+              <section className={`${panelClass} space-y-4`}>
+                <h2 className="font-semibold">Team roles</h2>
+                {!project.roles.length && (
                   <p className="text-sm text-muted-foreground">
-                    {role.description}
+                    No roles listed.
                   </p>
                 )}
-                <div className="flex flex-wrap gap-1.5">
-                  {role.requiredSkills.map((skill) => (
-                    <span
-                      key={skill.name}
-                      className="rounded-md border border-border px-2 py-1 text-xs"
-                    >
-                      {skill.name} · {label(skill.minLevel)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </section>
-        </div>
-        <aside className="space-y-5">
-          <section className={`${panelClass} space-y-4`}>
-            <h2 className="font-semibold">Meet the team</h2>
-            <Person person={{ ...owner, roleTitle: "Project owner" }} />
-            {project.members
-              ?.filter((member) => member.userId !== owner.userId)
-              .map((member) => (
-                <Person key={member.userId} person={member} />
-              ))}
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Open a teammate’s profile for contact details and social links.
-            </p>
-          </section>
-          {!project.isOwner && (
-            <section className={`${panelClass} space-y-4`}>
-              {project.myMembership ? (
-                <>
-                  <h2 className="font-semibold">Your membership</h2>
-                  <StatusBadge status={project.myMembership.status} />
-                  {project.myMembership.message && (
-                    <blockquote className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                      {project.myMembership.message}
-                    </blockquote>
-                  )}
-                  <MembershipButtons membership={project.myMembership} />
-                  {["DECLINED", "LEFT"].includes(
-                    project.myMembership.status,
-                  ) && (
-                    <p className="text-xs text-muted-foreground">
-                      This membership is closed. You cannot request to join this
-                      project again.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h2 className="font-semibold">Bring your skills</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {canJoin
-                      ? "Tell the owner how you can help. They’ll review your request."
-                      : project.status !== "RECRUITING"
-                        ? "This project is not recruiting right now."
-                        : "This team is currently full."}
-                  </p>
-                  <Button
-                    className="w-full"
-                    disabled={!canJoin}
-                    onClick={() => setJoin(true)}
+                {project.roles.map((role) => (
+                  <div
+                    key={role.id}
+                    className="space-y-2 rounded-xl bg-muted/40 p-4"
                   >
-                    Ask to join
-                  </Button>
-                </>
+                    <div className="flex justify-between gap-3">
+                      <h3 className="text-sm font-semibold">{role.title}</h3>
+                      <StatusBadge
+                        status={isRoleFilled(role, project) ? "FILLED" : "OPEN"}
+                      />
+                    </div>
+                    {role.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {role.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {role.requiredSkills.map((skill) => (
+                        <span
+                          key={skill.name}
+                          className="rounded-md border border-border px-2 py-1 text-xs"
+                        >
+                          {skill.name} · {label(skill.minLevel)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            </div>
+          </>
+        )}
+        <aside className="space-y-5">
+          {section === "overview" && (
+            <>
+              <section className={`${panelClass} space-y-4`}>
+                <h2 className="font-semibold">Team</h2>
+                <Person person={{ ...owner, roleTitle: "Project owner" }} />
+                {project.members
+                  ?.filter((member) => member.userId !== owner.userId)
+                  .map((member) => (
+                    <Person key={member.userId} person={member} />
+                  ))}
+              </section>
+              {!project.isOwner && (
+                <section className={`${panelClass} space-y-4`}>
+                  {project.myMembership ? (
+                    <>
+                      <h2 className="font-semibold">Your membership</h2>
+                      <StatusBadge status={project.myMembership.status} />
+                      {project.myMembership.message && (
+                        <blockquote className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
+                          {project.myMembership.message}
+                        </blockquote>
+                      )}
+                      <MembershipButtons
+                        membership={project.myMembership}
+                        canAccept={
+                          project.status === "RECRUITING" &&
+                          project.activeMemberCount < project.teamSize &&
+                          (!project.myMembership.roleId ||
+                            openRoles.some(
+                              (role) =>
+                                role.id === project.myMembership?.roleId,
+                            ))
+                        }
+                      />
+                      {["DECLINED", "LEFT"].includes(
+                        project.myMembership.status,
+                      ) && (
+                        <p className="text-xs text-muted-foreground">
+                          This membership is closed. You cannot rejoin.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="font-semibold">Join this project</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {canJoin
+                          ? "Choose a role and send a request."
+                          : project.status !== "RECRUITING"
+                            ? "This project is not recruiting right now."
+                            : "This team is currently full."}
+                      </p>
+                      <Button
+                        className="w-full"
+                        disabled={!canJoin}
+                        onClick={() => setJoin(true)}
+                      >
+                        Request to join
+                      </Button>
+                    </>
+                  )}
+                </section>
               )}
-            </section>
+            </>
           )}
-          {project.isOwner && (
+          {project.isOwner && section === "settings" && (
             <section className={`${panelClass} space-y-4`}>
               <h2 className="font-semibold">Manage project</h2>
               <label className="block space-y-2 text-sm">
@@ -599,12 +707,11 @@ function ProjectContent({ project }: { project: Project }) {
           )}
         </aside>
       </div>
-      {project.isOwner && <ProjectTeamTools project={project} />}
       {join && (
         <MessageDialog
           open
           title="Request to join"
-          description={`Ask to join ${project.title}. The owner will review your request.`}
+          description={project.title}
           onClose={() => setJoin(false)}
           onSubmit={async (message) => {
             if (roleId && !openRoles.some((role) => role.id === roleId))
@@ -628,7 +735,7 @@ function ProjectContent({ project }: { project: Project }) {
               value={roleId}
               onChange={(e) => setRoleId(e.target.value)}
             >
-              <option value="">Let the owner choose</option>
+              <option value="">No specific role</option>
               {openRoles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.title}

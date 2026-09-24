@@ -92,9 +92,6 @@ export default async function FindJobPage({
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
           Find your next role
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          A new opportunity starts with the right fit.
-        </p>
       </div>
 
       {/* Search */}

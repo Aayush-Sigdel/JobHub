@@ -118,11 +118,8 @@ export function ProjectForm({ project }: { project?: Project }) {
       </Link>
       <header>
         <h1 className="text-2xl font-bold tracking-tight">
-          {project ? "Edit project" : "Build something together"}
+          {project ? "Edit project" : "Create project"}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Share your idea and the skills your team is missing.
-        </p>
       </header>
       <form onSubmit={submit} className="space-y-5">
         <fieldset disabled={busy} className="space-y-5">
@@ -146,12 +143,19 @@ export function ProjectForm({ project }: { project?: Project }) {
                 onChange={(e) =>
                   setInput({ ...input, description: e.target.value })
                 }
-                placeholder="Describe the idea, what success looks like, and what you bring to the team."
+                placeholder="What are you building?"
               />
             </label>
             <label className="block space-y-2 text-sm">
               <span>Goals (optional)</span>
-              <Textarea rows={3} value={input.goals ?? ""} onChange={(event) => setInput({ ...input, goals: event.target.value })} placeholder="What would you like the team to achieve?" />
+              <Textarea
+                rows={3}
+                value={input.goals ?? ""}
+                onChange={(event) =>
+                  setInput({ ...input, goals: event.target.value })
+                }
+                placeholder="What would you like the team to achieve?"
+              />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm">
@@ -196,7 +200,20 @@ export function ProjectForm({ project }: { project?: Project }) {
               </label>
               <label className="space-y-2 text-sm">
                 <span>Duration in weeks (optional)</span>
-                <Input type="number" min={1} step={1} value={input.durationWeeks ?? ""} onChange={(event) => setInput({ ...input, durationWeeks: event.target.value ? Number(event.target.value) : undefined })} />
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={input.durationWeeks ?? ""}
+                  onChange={(event) =>
+                    setInput({
+                      ...input,
+                      durationWeeks: event.target.value
+                        ? Number(event.target.value)
+                        : undefined,
+                    })
+                  }
+                />
               </label>
               <label className="space-y-2 text-sm">
                 <span>Workplace</span>
@@ -231,10 +248,9 @@ export function ProjectForm({ project }: { project?: Project }) {
           </section>
           <section className={`${panelClass} space-y-5`}>
             <div>
-              <h2 className="font-semibold">Who does your team need?</h2>
+              <h2 className="font-semibold">Open roles</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Add up to {Math.max(0, input.teamSize - 1)} roles. Required
-                skills help us find people who complement your team.
+                Add up to {Math.max(0, input.teamSize - 1)} roles for teammates.
               </p>
             </div>
             {input.roles.map((role, index) => {
@@ -259,7 +275,11 @@ export function ProjectForm({ project }: { project?: Project }) {
                       <Input
                         required
                         readOnly={!!filled}
-                        title={filled ? "Filled roles must keep their title" : undefined}
+                        title={
+                          filled
+                            ? "Filled roles must keep their title"
+                            : undefined
+                        }
                         value={role.title}
                         onChange={(e) =>
                           updateRole(index, { title: e.target.value })

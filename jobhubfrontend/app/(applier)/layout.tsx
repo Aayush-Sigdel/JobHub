@@ -32,7 +32,7 @@ export default async function ApplierLayout({
           <NavigationBar profile={profile} />
         </Suspense>
       )}
-      <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-4 pb-20 md:pb-8">
+      <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-4 pb-20 lg:pb-8">
         {children}
       </main>
       {!isEmployer && <CandidateMobileNav />}

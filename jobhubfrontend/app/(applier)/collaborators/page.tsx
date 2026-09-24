@@ -5,7 +5,7 @@ const destinations: Record<string, string> = {
   "for-me": "/collaborators/for-you",
   mine: "/collaborators/my-projects",
   inbox: "/collaborators/inbox",
-  people: "/collaborators/people",
+  people: "/collaborators/my-projects",
 };
 
 export default async function CollaboratorsPage({

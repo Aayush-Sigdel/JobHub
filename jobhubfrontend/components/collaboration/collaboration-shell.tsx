@@ -9,7 +9,6 @@ import {
   Inbox,
   Plus,
   Settings2,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,15 +18,13 @@ import { useMyMemberships } from "@/lib/hooks/use-collaboration";
 import { useInboxSeen } from "./inbox-indicator";
 
 const pages = [
-  { href: "/collaborators/explore", label: "Explore projects", icon: Compass },
-  { href: "/collaborators/for-you", label: "For you", icon: Sparkles },
+  { href: "/collaborators/explore", label: "Explore", icon: Compass },
   {
     href: "/collaborators/my-projects",
     label: "My projects",
     icon: FolderKanban,
   },
-  { href: "/collaborators/inbox", label: "Inbox", icon: Inbox },
-  { href: "/collaborators/people", label: "People", icon: Users },
+  { href: "/collaborators/inbox", label: "Requests", icon: Inbox },
 ];
 
 export function CollaborationShell({
@@ -54,9 +51,6 @@ export function CollaborationShell({
             </span>
             Collaboration
           </Link>
-          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            Find your people. Build something together.
-          </p>
           <nav
             aria-label="Collaboration section"
             className="mt-4 flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
@@ -65,10 +59,18 @@ export function CollaborationShell({
               <Link
                 key={href}
                 href={href}
-                aria-current={pathname === href ? "page" : undefined}
+                aria-current={
+                  pathname === href ||
+                  (href === "/collaborators/explore" &&
+                    pathname === "/collaborators/for-you")
+                    ? "page"
+                    : undefined
+                }
                 className={cn(
                   "flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                  pathname === href
+                  pathname === href ||
+                    (href === "/collaborators/explore" &&
+                      pathname === "/collaborators/for-you")
                     ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                 )}

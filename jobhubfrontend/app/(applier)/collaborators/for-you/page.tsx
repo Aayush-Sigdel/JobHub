@@ -6,10 +6,7 @@ export const metadata = { title: "For you | JobHub Collaboration" };
 export default function RecommendedProjectsPage() {
   return (
     <>
-      <CollaborationPageHeading
-        title="Projects for you"
-        description="Discover teams where your experience fills a missing skill."
-      />
+      <CollaborationPageHeading title="Explore projects" />
       <ProjectList view="for-me" />
     </>
   );

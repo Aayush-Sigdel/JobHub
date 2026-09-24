@@ -67,53 +67,64 @@ export function SearchBar() {
         role="search"
         aria-label="Find jobs"
         aria-busy={isPending}
-        className="rounded-2xl border border-border bg-muted/25 p-2 flex flex-col md:flex-row items-center gap-2"
+        className="grid gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-primary/30 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.65fr)_auto] md:items-center"
       >
         {/* Role & Keyword Input */}
-        <div className="relative w-full flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+        <div className="relative min-w-0 rounded-xl bg-muted/30 px-3 pb-1 pt-2">
+          <label htmlFor="job-query" className="block pl-7 text-xs font-medium">
+            Role or company
+          </label>
+          <Search className="absolute left-3.5 top-8 h-4 w-4 text-muted-foreground" />
           <Input
+            id="job-query"
             ref={searchInputRef}
             type="text"
             aria-label="Role, skill, or company"
-            placeholder="Role, tech stack, or company..."
+            placeholder="Job title, skill, or company"
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
-            className="pl-10 pr-14 h-11 rounded-xl bg-transparent border-transparent shadow-none text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
+            className="h-9 rounded-lg border-0 bg-transparent pl-7 pr-8 text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           {queryInput ? (
             <button
               type="button"
               onClick={() => setQueryInput("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
+              className="absolute right-3 top-8 p-0.5 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
               aria-label="Clear query"
             >
               <X className="h-4 w-4" />
             </button>
           ) : (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/70 font-mono bg-muted px-1.5 py-0.5 rounded border border-border/60 select-none">
-              <span>⌘</span>
+            <div className="absolute right-3 top-2 hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/70 font-mono bg-muted px-1.5 py-0.5 rounded border border-border/60 select-none">
+              <span>⌘ / Ctrl</span>
               <span>K</span>
             </div>
           )}
         </div>
 
         {/* Location Input */}
-        <div className="relative w-full md:w-64">
-          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+        <div className="relative min-w-0 rounded-xl bg-muted/30 px-3 pb-1 pt-2">
+          <label
+            htmlFor="job-location"
+            className="block pl-7 text-xs font-medium"
+          >
+            Location
+          </label>
+          <MapPin className="absolute left-3.5 top-8 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
+            id="job-location"
             aria-label="Job location"
             placeholder="City or country"
             value={locationInput}
             onChange={(e) => setLocationInput(e.target.value)}
-            className="pl-10 pr-9 h-11 rounded-xl bg-transparent border-transparent shadow-none text-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary"
+            className="h-9 rounded-lg border-0 bg-transparent pl-7 pr-8 text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           {locationInput && (
             <button
               type="button"
               onClick={() => setLocationInput("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
+              className="absolute right-3 top-8 p-0.5 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
               aria-label="Clear location"
             >
               <X className="h-4 w-4" />
@@ -125,7 +136,7 @@ export function SearchBar() {
         <Button
           type="submit"
           disabled={isPending}
-          className="w-full md:w-auto h-11 px-7 rounded-xl bg-primary text-black font-bold hover:bg-primary/90 shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          className="h-12 w-full rounded-xl px-6 font-semibold md:h-16 md:w-auto"
         >
           {isPending ? (
             <Loader2 className="h-4 w-4 motion-safe:animate-spin" />

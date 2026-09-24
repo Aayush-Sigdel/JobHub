@@ -49,8 +49,8 @@ export function CollaborationInboxIndicator() {
   return (
     <Link
       href="/collaborators/inbox"
-      aria-label={`Collaboration inbox${count ? `, ${count} updates` : ""}`}
-      title="Collaboration inbox"
+      aria-label={`Collaboration requests${count ? `, ${count} updates` : ""}`}
+      title="Collaboration requests"
       className="relative inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
     >
       <Inbox className="size-4" />

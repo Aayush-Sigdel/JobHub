@@ -22,7 +22,9 @@ export function projectFromDetail({
   };
 }
 
-export function membershipFromResponse(response: MembershipResponse): Membership {
+export function membershipFromResponse(
+  response: MembershipResponse,
+): Membership {
   return {
     id: response.id,
     projectId: response.projectId,
@@ -39,30 +41,52 @@ export function membershipFromResponse(response: MembershipResponse): Membership
   };
 }
 
-export function projectFromSuggestion({ project, bestRoleId, bestRoleTitle, ...match }: ProjectSuggestionResponse): Project {
-  return { ...project, ...match, bestRoleId: bestRoleId ?? undefined, bestRoleTitle: bestRoleTitle ?? undefined };
+export function projectFromSuggestion({
+  project,
+  bestRoleId,
+  bestRoleTitle,
+  ...match
+}: ProjectSuggestionResponse): Project {
+  return {
+    ...project,
+    ...match,
+    bestRoleId: bestRoleId ?? undefined,
+    bestRoleTitle: bestRoleTitle ?? undefined,
+  };
 }
 
 export function suggestionParams(filters: SuggestionFilters) {
   const params = new URLSearchParams();
   if (filters.location?.trim()) params.set("location", filters.location.trim());
   if (filters.poolSize != null && Number.isFinite(filters.poolSize))
-    params.set("poolSize", String(Math.min(500, Math.max(10, Math.trunc(filters.poolSize)))));
+    params.set(
+      "poolSize",
+      String(Math.min(500, Math.max(10, Math.trunc(filters.poolSize)))),
+    );
   if (filters.shortlistSize != null && Number.isFinite(filters.shortlistSize))
-    params.set("shortlistSize", String(Math.min(25, Math.max(1, Math.trunc(filters.shortlistSize)))));
+    params.set(
+      "shortlistSize",
+      String(Math.min(25, Math.max(1, Math.trunc(filters.shortlistSize)))),
+    );
   return params;
 }
 
 export function projectPayload(input: ProjectInput, updating: boolean) {
   return {
     ...input,
-    roles: input.roles.map(({ title, description, requiredSkills }) => ({ title, description, requiredSkills })),
-    ...(updating ? {
-      removeGoals: !input.goals?.trim(),
-      removeLocation: !input.location?.trim(),
-      removeCommitment: input.commitmentHoursPerWeek == null,
-      removeDuration: input.durationWeeks == null,
-    } : {}),
+    roles: input.roles.map(({ title, description, requiredSkills }) => ({
+      title,
+      description,
+      requiredSkills,
+    })),
+    ...(updating
+      ? {
+          removeGoals: !input.goals?.trim(),
+          removeLocation: !input.location?.trim(),
+          removeCommitment: input.commitmentHoursPerWeek == null,
+          removeDuration: input.durationWeeks == null,
+        }
+      : {}),
   };
 }
 
@@ -109,7 +133,10 @@ export function validateProject(
     return "Add at least one role, with no more roles than available seats. You occupy one seat.";
   if (input.roles.some((role) => !role.title.trim()))
     return "Give every role a title.";
-  if (new Set(input.roles.map(role => role.title.trim().toLowerCase())).size !== input.roles.length)
+  if (
+    new Set(input.roles.map((role) => role.title.trim().toLowerCase())).size !==
+    input.roles.length
+  )
     return "Give every role a unique title.";
   if (
     input.roles.some((role) =>
@@ -120,16 +147,23 @@ export function validateProject(
   if (
     input.commitmentHoursPerWeek != null &&
     (!Number.isInteger(input.commitmentHoursPerWeek) ||
-      input.commitmentHoursPerWeek <= 0 || input.commitmentHoursPerWeek > 80)
+      input.commitmentHoursPerWeek <= 0 ||
+      input.commitmentHoursPerWeek > 80)
   )
     return "Weekly commitment must be a whole number greater than zero and no more than 80 hours.";
-  if (input.durationWeeks != null && (!Number.isInteger(input.durationWeeks) || input.durationWeeks < 1))
+  if (
+    input.durationWeeks != null &&
+    (!Number.isInteger(input.durationWeeks) || input.durationWeeks < 1)
+  )
     return "Duration must be a whole number of at least one week.";
   if (
     original?.roles.some(
       (role) =>
         isRoleFilled(role, original) &&
-        !input.roles.some((next) => next.title.trim().toLowerCase() === role.title.trim().toLowerCase()),
+        !input.roles.some(
+          (next) =>
+            next.title.trim().toLowerCase() === role.title.trim().toLowerCase(),
+        ),
     )
   )
     return "Filled roles must stay on the project with the same title.";

@@ -1,52 +1,60 @@
-# Collaboration projects frontend
+# Collaboration frontend
 
-The candidate navigation's **Collaboration** link enters a dedicated section at `/collaborators`, which redirects to `/collaborators/explore`. A persistent sidebar (horizontal navigation on smaller screens) provides real page links:
+## Backend assessment and flow
 
-- `/collaborators/explore`: project search and filters.
-- `/collaborators/for-you`: gap-based recommendations with a suggested role.
-- `/collaborators/my-projects`: owned projects and pending counts.
-- `/collaborators/inbox`: invitations, sent requests, membership history, and requests for owned projects.
-- `/collaborators/people`: the existing collaborator directory.
+The collaboration backend is project-based. It supports discovery, personal recommendations, owned projects, project-specific candidate suggestions, and memberships. There is no general People directory, chat, member removal, or membership reopening endpoint. The frontend keeps teammate discovery inside an owned project and redirects legacy People links to My projects.
 
-Each page has its own heading and URL and supports browser back/forward navigation. Legacy `?tab=` links redirect to the corresponding page. The section navigation remains visible on project detail, create, and edit pages.
+| User intent               | Frontend                                                           | Backend under `/api/collab`                                                  |
+| ------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Find a project            | Explore → All projects / For you                                   | `GET /projects`, `GET /projects/for-me`                                      |
+| Manage a project          | My projects → Created by me                                        | `GET /projects/mine`                                                         |
+| Return to a joined team   | My projects → Joined                                               | Active records from `GET /memberships/mine`                                  |
+| Review a project          | Project → Overview                                                 | `GET /projects/{id}`                                                         |
+| Review applicants         | Project → Requests                                                 | `GET /projects/{id}/memberships`                                             |
+| Invite teammates          | Project → Find teammates                                           | `GET /projects/{id}/suggestions`, `POST /projects/{id}/invite`               |
+| Join a project            | Overview → Request to join                                         | `POST /projects/{id}/request`                                                |
+| Respond or track progress | Requests → Invitations / Sent requests / For my projects / History | Personal and owner membership endpoints                                      |
+| Update or close a project | Edit project / Settings                                            | `PUT /projects/{id}`, `PATCH /projects/{id}/status`, `DELETE /projects/{id}` |
 
-Create projects at `/collaborators/projects/new`. Project detail and its squad builder live at `/collaborators/projects/[id]`; editing is at `/collaborators/projects/[id]/edit`.
+Explore defaults to recruiting projects, as the backend does. Search filters expand on demand. For you uses the backend's best role when opening a project. Match explanations remain available under “Why this match”; the UI does not expose matching pool size or internal scoring metrics.
 
-## Integration
+Created by me and Joined are distinct because `/projects/mine` returns only owned projects. Joined cards use membership fields and link to full project details without inventing status, capacity, or schedule information.
 
-All API calls are in `lib/actions/collaboration.ts`, using the frontend's existing authenticated `fetchWithAuth` mechanism and configured API base URL. No backend implementation is included or changed. Requests target the `/collab` endpoints from the supplied frontend guide.
+Owners see Overview, Requests, Find teammates, and Settings. Candidate suggestions load only when that section is opened and the project is recruiting with open seats. Settings separates status changes and deletion from ordinary browsing. Visitors see the team, open roles, and their current membership or join action.
 
-`types/api/collaboration.ts` holds the expected wire types. The supplied guide includes a complete suggestions example but does **not** include full project, membership, or create/update payload examples. The referenced Postman collection and `/api/collab` backend controllers are absent from this checkout. Consequently these portions need confirmation against the deployed API:
+## States and recovery
 
-- Project fields use `id`, `title`, `description`, `teamSize`, `workplaceType`, `location`, `commitmentHoursPerWeek`, and `roles`.
-- Roles use `id`, `title`, `description`, and `requiredSkills`. Filled state supports `filled` / `isFilled`, or an active roster entry with that `roleId`.
-- Project and membership lists are JSON arrays. Recommended projects expose project fields alongside `bestRoleId`, optional `bestRoleTitle`, and optional `explanation`.
-- Membership display fields use `projectTitle`, `name`, `imageUrl`, and `roleTitle` alongside the documented IDs and lifecycle fields.
-- Project owner display uses `owner` or `ownerId` / `ownerName`.
+Empty lists show a short explanation and a relevant action: create a project, explore projects, reset filters, or edit role requirements. Joined projects, invitations, sent requests, history, owner requests, full teams, and closed recruitment each have distinct empty states. Loading and API failures remain separate from empty results.
 
-Match these types to the actual payloads if the API uses different field names or envelopes. The frontend displays actual API errors and does not substitute demo data.
+Missing profile matching data offers profile review and refresh. Missing project matching data offers edit/save recovery. Suggestions remain project-specific and owner-only, retain backend ordering, and exclude existing memberships. Later role shortlists are conditional on earlier picks, as the backend matching algorithm specifies.
 
-## Freshness and membership rules
+## Integration and constraints
 
-Collaboration queries are scoped by signed-in user. Every membership mutation invalidates project lists, details, memberships, and suggestions, including after conflicts. Owner details and suggestions poll every 15 seconds while visible, and the inbox polls every 30 seconds. Window focus also refreshes data. The ranking slider debounces requests by 350 ms; roles and candidates retain the order returned by the API.
+Calls use `lib/actions/collaboration.ts` and the existing authenticated `fetchWithAuth` client. All collaboration endpoints require a candidate account. Types are in `types/api/collaboration.ts`; adapters in `lib/collaboration.ts` flatten detail and recommendation envelopes and normalize membership person fields.
 
-Only recipients can accept invitations or requests. Owners cannot remove active members. Declined and left memberships have no further actions. Edit forms retain role IDs and submit the complete role list, preventing removal of filled roles and respecting the owner's seat.
+Team size is 2–20 including the owner. Weekly commitment is 1–80 whole hours; duration is at least one whole week. Roles have unique titles and cannot exceed teammate seats. Filled role titles cannot be changed or removed because the backend retains roles by normalized title. Clearing optional fields sends the backend removal flags; role IDs are omitted from save payloads.
 
-The navigation inbox badge uses memberships and a per-user localStorage seen timestamp. Pending invitations stay badged until acted on. New active, declined, and left states count as updates. No notification or messaging API is assumed; profiles provide contact details.
+Only recipients can accept pending invitations or requests. Either side can close a pending membership. Only active members can leave. Declined and left memberships cannot be reopened, so those actions retain confirmation. The backend rechecks recruiting status, capacity, and role availability on acceptance. Detail-page acceptance controls also respect those constraints; inbox actions still rely on the backend's authoritative validation. Messages are limited to 1,000 characters.
+
+Queries are scoped to the signed-in user. Mutations invalidate collaboration queries, including after conflicts. Details, owner memberships, and visible suggestions refresh every 15 seconds; inbox data refreshes every 30 seconds. Focus refreshes results.
 
 ## Verification
 
-Run `node --test tests/*.test.mjs`, `tsc --noEmit`, and ESLint on the collaboration files.
+Run `node --test tests/*.test.mjs`, `tsc --noEmit`, and ESLint on collaboration files. Render tests cover navigation, empty/error states, active joined memberships, request grouping, owner-only controls, and full/closed teams. Integration tests cover adapters, API routes, mutation payloads, filtering, numeric limits, and membership actions.
 
-With the deployed API and two candidate accounts, check:
+Live checks require a running backend, matching service, and two candidate accounts:
 
-1. Create a three-person project with two roles and required skills; verify it appears in Explore and My projects.
-2. Adjust the squad builder slider; confirm requests carry `lambda` and retain API ranking order.
-3. Invite another candidate. The owner sees Withdraw; the invited candidate sees Accept / Decline in the inbox.
-4. Accept from the second account; verify the owner's roster, seat count, pending count, and remaining suggestions refresh.
-5. Send and accept a join request in the reverse direction. Verify the sender cannot accept their own request.
-6. Decline a request and check the sender's inbox status and update badge.
-7. Leave an active team and verify the role reopens; the owner must have no removal action.
-8. Edit a project with a filled role, change status, and delete a disposable project through its confirmation.
-9. Check missing matching data (`409`), creation outage (`503` with retained form and retry), and full/filled-role conflicts.
-10. Check mobile and dark-mode layouts; confirm signed-out users and employers cannot access project routes.
+1. Create a project with roles and skills; verify it in Explore and Created by me.
+2. Open Find teammates and invite a suggested candidate.
+3. Accept from the candidate account; verify Joined, roster, capacity, and filled roles.
+4. Request a role from For you; review and accept it as owner.
+5. Check decline, withdrawal, leaving, and history.
+6. Edit and clear optional fields; retain filled role titles.
+7. Change recruitment status, check full-team states, and delete a disposable project.
+8. Check phone-width layouts, keyboard navigation, unavailable matching, and API failures.
+
+## Applicant search
+
+Applicant pages other than Find Job have a compact navbar search based on the supplied command-palette reference. Opening or clearing it shows the latest active jobs and recruiting projects, with up to five results per group in backend date order. Typing filters both groups after a 250 ms debounce. Ctrl/Cmd+K focuses search; arrow keys choose a result, Enter opens it, and Escape closes the popover. Search terms are highlighted literally, so punctuation never becomes a regular expression.
+
+The server action in `lib/actions/search.ts` uses the authenticated `/jobs` and `/collab/projects` endpoints concurrently. Each group has its own empty/error state; one endpoint failing preserves the other results. View all links retain the query on Find Job or Explore. Find Job keeps its dedicated labeled keyword/location form and existing URL filters.

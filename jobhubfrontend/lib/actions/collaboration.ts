@@ -64,7 +64,9 @@ export async function getProjects(
     });
   if (view === "for-me") params.set("limit", "20");
   if (view === "for-me") {
-    const result = await request<ProjectSuggestionResponse[]>(`/projects/for-me?${params}`);
+    const result = await request<ProjectSuggestionResponse[]>(
+      `/projects/for-me?${params}`,
+    );
     if (!result.ok) return result;
     return { ok: true as const, data: result.data.map(projectFromSuggestion) };
   }
@@ -79,7 +81,10 @@ export async function getProject(id: string): Promise<CollabResult<Project>> {
   if (!result.ok) return result;
   return { ok: true, data: projectFromDetail(result.data) };
 }
-export async function getSuggestions(id: string, filters: SuggestionFilters = {}) {
+export async function getSuggestions(
+  id: string,
+  filters: SuggestionFilters = {},
+) {
   return request<Suggestions>(
     `/projects/${encodeURIComponent(id)}/suggestions?${suggestionParams(filters)}`,
   );
@@ -139,14 +144,16 @@ export async function requestMembership(
   );
 }
 export async function changeMembership(id: string, action: MembershipAction) {
-  return membershipRequest(
-    `/memberships/${encodeURIComponent(id)}`,
-    "PATCH",
-    { action },
-  );
+  return membershipRequest(`/memberships/${encodeURIComponent(id)}`, "PATCH", {
+    action,
+  });
 }
 
-async function membershipRequest(path: string, method: string, body: unknown): Promise<CollabResult<Membership>> {
+async function membershipRequest(
+  path: string,
+  method: string,
+  body: unknown,
+): Promise<CollabResult<Membership>> {
   const result = await request<MembershipResponse>(path, method, body);
   if (!result.ok) return result;
   return { ok: true, data: membershipFromResponse(result.data) };

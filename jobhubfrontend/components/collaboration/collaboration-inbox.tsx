@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -51,31 +52,29 @@ function MembershipCard({
         <StatusBadge status={membership.status} />
       </div>
       {owner && <Person person={membership} />}
-      {membership.status === "DECLINED" && (
-        <p className="text-sm text-muted-foreground">
-          This invitation or request was declined or withdrawn. It is now
-          closed.
-        </p>
-      )}
-      {membership.status === "ACTIVE" && (
-        <p className="text-sm text-muted-foreground">
-          You’re on the team. Open the project to find your teammates’ profiles
-          and contact details.
-        </p>
-      )}
       {membership.message && (
         <blockquote className="whitespace-pre-wrap break-words rounded-xl bg-muted/60 p-3 text-sm">
           {membership.message}
         </blockquote>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <MembershipButtons membership={membership} isOwner={owner} />
-        {membership.updatedAt && <time
-          dateTime={membership.updatedAt}
-          className="text-xs text-muted-foreground"
-        >
-          Updated {new Date(membership.updatedAt).toLocaleDateString()}
-        </time>}
+        {membership.status === "ACTIVE" ? (
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/collaborators/projects/${membership.projectId}`}>
+              Open project
+            </Link>
+          </Button>
+        ) : (
+          <MembershipButtons membership={membership} isOwner={owner} />
+        )}
+        {membership.updatedAt && (
+          <time
+            dateTime={membership.updatedAt}
+            className="text-xs text-muted-foreground"
+          >
+            Updated {new Date(membership.updatedAt).toLocaleDateString()}
+          </time>
+        )}
       </div>
     </article>
   );
@@ -113,13 +112,19 @@ function OwnerInbox({ projects }: { projects: Project[] }) {
     refetchOnWindowFocus: true,
     retry: false,
   });
-  if (!projects.length) return null;
+  if (!projects.length)
+    return (
+      <EmptyState
+        title="No project requests"
+        description="Create a project to receive join requests."
+      >
+        <Button asChild>
+          <Link href="/collaborators/projects/new">Create project</Link>
+        </Button>
+      </EmptyState>
+    );
   return (
     <section className="space-y-4">
-      <h2 className="font-semibold">
-        Requests & invitations for your projects{" "}
-        {result.data?.length ? `(${result.data.length})` : ""}
-      </h2>
       {result.isPending ? (
         <LoadingState />
       ) : result.error ? (
@@ -131,68 +136,112 @@ function OwnerInbox({ projects }: { projects: Project[] }) {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          No pending requests or invitations for your projects.
-        </p>
+        <EmptyState
+          title="No pending requests"
+          description="Join requests and sent invitations will appear here."
+        />
       )}
     </section>
   );
 }
 
 export function CollaborationInbox() {
+  const [section, setSection] = useState("received");
   const memberships = useMyMemberships();
   const { userId, enabled } = useCollaborationIdentity();
   const projects = useQuery({
     queryKey: ["collaboration", userId, "projects", "mine"],
     queryFn: () => unwrap(getProjects("mine")),
-    enabled,
+    enabled: enabled && section === "projects",
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchInterval: 30000,
     retry: false,
   });
   const { markSeen } = useInboxSeen();
+  const visible = (memberships.data ?? []).filter((member) =>
+    section === "received"
+      ? member.status === "INVITED"
+      : section === "sent"
+        ? member.status === "REQUESTED"
+        : ["ACTIVE", "DECLINED", "LEFT"].includes(member.status),
+  );
+  const empty =
+    section === "received"
+      ? ["No invitations", "Invitations from project owners will appear here."]
+      : section === "sent"
+        ? ["No requests sent", "Find a project and request to join."]
+        : [
+            "No past activity",
+            "Accepted and closed requests will appear here.",
+          ];
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">Your invitations & activity</h2>
-          <Button variant="ghost" size="sm" onClick={markSeen}>
-            Mark updates as seen
+    <div className="space-y-5">
+      <div
+        aria-label="Request views"
+        className="flex gap-1 overflow-x-auto border-b border-border pb-3"
+      >
+        {[
+          ["received", "Invitations"],
+          ["sent", "Sent requests"],
+          ["projects", "For my projects"],
+          ["history", "History"],
+        ].map(([value, title]) => (
+          <Button
+            key={value}
+            className="shrink-0"
+            aria-pressed={section === value}
+            variant={section === value ? "secondary" : "ghost"}
+            onClick={() => setSection(value)}
+          >
+            {title}
           </Button>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Track invitations, requests, and team changes here, including declined
-          requests.
-        </p>
-        {memberships.isPending ? (
+        ))}
+      </div>
+      {section === "projects" ? (
+        projects.error ? (
+          <ErrorState error={projects.error} retry={() => projects.refetch()} />
+        ) : projects.isPending ? (
           <LoadingState />
-        ) : memberships.error ? (
-          <ErrorState
-            error={memberships.error}
-            retry={() => memberships.refetch()}
-          />
-        ) : memberships.data?.length ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {[...memberships.data]
-              .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
-              .map((member) => (
-                <MembershipCard key={member.id} membership={member} />
-              ))}
-          </div>
         ) : (
-          <EmptyState
-            title="Your next team starts here"
-            description="Invitations you receive and requests you send will appear here."
-          />
-        )}
-      </section>
-      {projects.error ? (
-        <ErrorState error={projects.error} retry={() => projects.refetch()} />
-      ) : projects.isPending ? (
-        <LoadingState />
+          <OwnerInbox projects={projects.data ?? []} />
+        )
       ) : (
-        <OwnerInbox projects={projects.data ?? []} />
+        <>
+          {section === "history" && !!visible.length && (
+            <div className="flex justify-end">
+              <Button variant="ghost" size="sm" onClick={markSeen}>
+                Mark as seen
+              </Button>
+            </div>
+          )}
+          {memberships.isPending ? (
+            <LoadingState />
+          ) : memberships.error ? (
+            <ErrorState
+              error={memberships.error}
+              retry={() => memberships.refetch()}
+            />
+          ) : visible.length ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {[...visible]
+                .sort(
+                  (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
+                )
+                .map((member) => (
+                  <MembershipCard key={member.id} membership={member} />
+                ))}
+            </div>
+          ) : (
+            <EmptyState title={empty[0]} description={empty[1]}>
+              {section !== "history" && (
+                <Button asChild variant="outline">
+                  <Link href="/collaborators/explore">Explore projects</Link>
+                </Button>
+              )}
+            </EmptyState>
+          )}
+        </>
       )}
     </div>
   );
