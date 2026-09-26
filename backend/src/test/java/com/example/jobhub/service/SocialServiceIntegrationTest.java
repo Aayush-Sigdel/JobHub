@@ -1,6 +1,7 @@
-package com.example.jobhub.service.social;
+package com.example.jobhub.service;
 
 import com.example.jobhub.dto.GithubProfile;
+import com.example.jobhub.service.social.GithubService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

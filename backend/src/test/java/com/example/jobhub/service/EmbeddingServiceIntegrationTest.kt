@@ -1,6 +1,12 @@
-package com.example.jobhub.service.embedding
+package com.example.jobhub.service
 
 import com.example.jobhub.client.EmbeddingApiClient
+import com.example.jobhub.service.embedding.CosineSimilarity
+import com.example.jobhub.service.embedding.DevtoEmbeddingService
+import com.example.jobhub.service.embedding.GithubEmbeddingService
+import com.example.jobhub.service.embedding.OrcidEmbeddingService
+import com.example.jobhub.service.embedding.PortfolioEmbeddingService
+import com.example.jobhub.service.embedding.StackoverflowEmbeddingService
 import com.example.jobhub.service.social.DevtoService
 import com.example.jobhub.service.social.GithubService
 import com.example.jobhub.service.social.OrcidService
@@ -133,7 +139,6 @@ class EmbeddingServiceIntegrationTest{
     @Test
     fun comparePortfolioEmbeddings() = runTest{
         val profile1 = portfolioService.fetch("https://www.aayushsigdel.com.np/")
-        val profile2 = portfolioService.fetch("https://bikram-bk.com.np/")
 
         val embeddings1 = portfolioEmbeddingService.generateEmbeddings(profile1)
         val embeddings2 = embeddingApiClient.embed(MACHINE_LEARNING_ENGINEER_JOB_DESCRIPTION)
