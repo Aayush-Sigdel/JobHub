@@ -29,6 +29,7 @@ const AssessmentContext = createContext({
 export const useAssessmentSession = () => useContext(AssessmentContext);
 
 export function AssessmentSession({
+  userId,
   jobId,
   taskId,
   title,
@@ -38,6 +39,7 @@ export function AssessmentSession({
   completed,
   children,
 }: {
+  userId: string | undefined;
   jobId?: string | null;
   taskId?: string;
   title: string;
@@ -47,7 +49,7 @@ export function AssessmentSession({
   completed: boolean;
   children: ReactNode;
 }) {
-  const sessionKey = `jobhub:assessment-monitor:v2:${jobId}:${kind}:${taskId}`;
+  const sessionKey = `jobhub:assessment-monitor:v3:${userId}:${jobId}:${kind}:${taskId}`;
   const [started, setStarted] = useState(false);
   const [starting, setStarting] = useState(false);
   const [initialCount, setInitialCount] = useState(0);
@@ -56,7 +58,7 @@ export function AssessmentSession({
   const ownsFullscreen = useRef(false);
   const mounted = useRef(true);
   const startInFlight = useRef(false);
-  const eligible = Boolean(monitored && jobId && taskId);
+  const eligible = Boolean(userId && monitored && jobId && taskId);
   const monitoring = eligible && started && !completed;
   const expanded = eligible && started;
   const { tabSwitchCount } = useTabLock({

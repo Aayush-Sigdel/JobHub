@@ -5,7 +5,7 @@ import { IconMenu2 } from "@tabler/icons-react";
 import { landing } from "./landing-styles";
 
 const links = [
-  { label: "Explore jobs", href: "/find-job" },
+  { label: "Explore jobs", href: "/home" },
   { label: "Discover companies", href: "#companies" },
   { label: "For employers", href: "#for-employers" },
 ];

@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "motion/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { clearLocalSessionData } from "@/lib/local-session-storage";
 
 import { RegisterFormInput, registerSchema } from "@/lib/validation/auth";
 import {
@@ -112,6 +113,7 @@ export default function SignUpPage() {
   };
 
   const handleGoogleSignUp = () => {
+    clearLocalSessionData();
     signIn("google", { callbackUrl: "/home" });
   };
 

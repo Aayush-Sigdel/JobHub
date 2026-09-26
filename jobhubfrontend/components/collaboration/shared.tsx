@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2, RefreshCw, Users } from "lucide-react";
+import { FolderKanban, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -38,7 +38,13 @@ export function StatusBadge({ status }: { status: string }) {
     <span
       className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${status === "DECLINED" || status === "CANCELLED" ? "border-destructive/30 bg-destructive/10 text-destructive" : status === "ACTIVE" || status === "RECRUITING" ? "border-primary/30 bg-primary/15 text-foreground" : "border-border bg-muted text-muted-foreground"}`}
     >
-      {label(status)}
+      {status === "REQUESTED"
+        ? "Awaiting approval"
+        : status === "INVITED"
+          ? "Invitation pending"
+          : status === "DECLINED"
+            ? "Closed"
+            : label(status)}
     </span>
   );
 }
@@ -49,7 +55,7 @@ export function LoadingState() {
       className={`${panelClass} flex items-center gap-3 text-sm text-muted-foreground`}
     >
       <Loader2 className="size-4 animate-spin" />
-      Loading collaboration projects…
+      Loading…
     </div>
   );
 }
@@ -72,24 +78,44 @@ export function ErrorState({
 export function EmptyState({
   title,
   description,
+  children,
 }: {
   title: string;
   description: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className={`${panelClass} py-12 text-center`}>
-      <Users className="mx-auto mb-3 size-7 text-muted-foreground" />
+    <div
+      className={`${panelClass} flex min-h-64 flex-col items-center justify-center py-12 text-center`}
+    >
+      <span className="mb-4 rounded-2xl bg-muted p-4">
+        <FolderKanban
+          className="size-6 text-muted-foreground"
+          aria-hidden="true"
+        />
+      </span>
       <h3 className="font-semibold">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
         {description}
       </p>
+      {children && (
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
-export function Person({ person }: { person: TeamMember }) {
+export function Person({
+  person,
+  isYou = false,
+}: {
+  person: TeamMember;
+  isYou?: boolean;
+}) {
   return (
     <Link
-      href={`/preview/${person.userId}`}
+      href={isYou ? "/candidate-profile" : `/preview/${person.userId}`}
       className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Avatar className="size-10">
@@ -105,6 +131,11 @@ export function Person({ person }: { person: TeamMember }) {
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold hover:underline">
           {person.name || "View profile"}
+          {isYou && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              You
+            </span>
+          )}
         </span>
         <span className="block truncate text-xs text-muted-foreground">
           {person.roleTitle || person.title || "Candidate"}
@@ -119,54 +150,36 @@ export function Explanation({
   explanation: MatchExplanation;
 }) {
   return (
-    <div className="space-y-3">
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        {explanation.summary}
-      </p>
-      <dl className="grid grid-cols-3 gap-2 rounded-xl bg-muted/60 p-3">
-        {[
-          ["Team gap fit", explanation.gapFitPercentage],
-          ["Role skills", explanation.skillCoveragePercentage],
-          ["Team overlap", explanation.teamOverlapPercentage],
-        ].map(([name, value]) => (
-          <div key={name}>
-            <dt className="text-[11px] text-muted-foreground">{name}</dt>
-            <dd className="mt-1 text-base font-semibold tabular-nums">
-              {value}%
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <p className="text-xs text-muted-foreground">
-        Lower team overlap means more complementary skills.
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {explanation.coveredSkills.map((skill) => (
-          <span
-            key={skill}
-            className="rounded-md bg-primary/15 px-2 py-1 text-xs"
-          >
-            Covers {skill}
-          </span>
-        ))}
-        {explanation.missingSkills.map((skill) => (
-          <span
-            key={skill}
-            className="rounded-md border border-dashed border-border px-2 py-1 text-xs text-muted-foreground"
-          >
-            Missing {skill}
-          </span>
-        ))}
+    <details className="text-sm">
+      <summary className="cursor-pointer rounded-md text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
+        Why this match
+      </summary>
+      <div className="mt-3 space-y-3 rounded-xl bg-muted/40 p-3">
+        <p className="text-sm text-muted-foreground">{explanation.summary}</p>
+        {explanation.coveredSkills.length > 0 && (
+          <p className="text-xs">
+            <span className="font-medium">Matched skills: </span>
+            {explanation.coveredSkills.join(", ")}
+          </p>
+        )}
+        {explanation.missingSkills.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">Missing skills: </span>
+            {explanation.missingSkills.join(", ")}
+          </p>
+        )}
       </div>
-    </div>
+    </details>
   );
 }
 export function MembershipButtons({
   membership,
   isOwner = false,
+  canAccept = true,
 }: {
   membership: Membership;
   isOwner?: boolean;
+  canAccept?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const refresh = useRefreshCollaboration();
@@ -189,9 +202,7 @@ export function MembershipButtons({
     try {
       await unwrap(changeMembership(membership.id, action));
       toast.success(
-        action === "ACCEPT"
-          ? "Team updated. Suggestions are being refreshed."
-          : "Membership updated.",
+        action === "ACCEPT" ? "Team updated." : "Membership updated.",
       );
     } catch (error) {
       toast.error((error as Error).message);
@@ -206,7 +217,7 @@ export function MembershipButtons({
         ({ action, label: title }) => (
           <Button
             key={action}
-            disabled={busy}
+            disabled={busy || (action === "ACCEPT" && !canAccept)}
             variant={action === "ACCEPT" ? "default" : "outline"}
             onClick={() => act(action)}
           >
@@ -267,8 +278,7 @@ export function MessageDialog({
           {children}
           <label className="block space-y-2 text-sm">
             <span>
-              Introduce yourself{" "}
-              <span className="text-muted-foreground">(optional)</span>
+              Message <span className="text-muted-foreground">(optional)</span>
             </span>
             <Textarea
               value={message}
@@ -278,10 +288,6 @@ export function MessageDialog({
               placeholder="Share what you would like to build together."
             />
           </label>
-          <p className="text-xs text-muted-foreground">
-            This message is sent once. Once you join, use profile contact
-            details to keep in touch.
-          </p>
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

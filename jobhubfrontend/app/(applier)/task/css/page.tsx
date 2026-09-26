@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,6 +38,8 @@ const INITIAL_CODE = `<!DOCTYPE html>
 </html>`;
 
 function CSSAssessment() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const router = useRouter();
   const params = useSearchParams();
   const jobId = params.get("jobId");
@@ -103,7 +107,7 @@ function CSSAssessment() {
         setTask(selected);
         if (jobId)
           setResult(
-            loadJobAssessmentSubmission(jobId, "DESIGN", selected.id) ?? null,
+            loadJobAssessmentSubmission(userId, jobId, "DESIGN", selected.id) ?? null,
           );
       } catch {
         if (!cancelled)
@@ -116,7 +120,7 @@ function CSSAssessment() {
     return () => {
       cancelled = true;
     };
-  }, [jobId, requestedTaskId, retry]);
+  }, [userId, jobId, requestedTaskId, retry]);
 
   async function submit() {
     if (!task || result?.id || submitInFlight.current) return;
@@ -141,11 +145,11 @@ function CSSAssessment() {
       }
       if (jobId) {
         try {
-          saveJobAssessmentSubmission(jobId, response, {
+          saveJobAssessmentSubmission(userId, jobId, response, {
             taskId: task.id,
             taskType: "DESIGN",
           });
-          if (hasCompletedRequiredAssessments(jobId, requiredTaskTypes)) {
+          if (hasCompletedRequiredAssessments(userId, jobId, requiredTaskTypes)) {
             toast.success(
               "All assessments are complete. Review and submit your application.",
             );
@@ -197,6 +201,7 @@ function CSSAssessment() {
 
   return (
     <AssessmentSession
+      userId={userId}
       key={`${jobId}:${task.id}`}
       jobId={jobId}
       taskId={task.id}

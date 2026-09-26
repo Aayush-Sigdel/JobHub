@@ -1,13 +1,9 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-option";
-import { resolveEmployerRole } from "@/lib/user-role";
+import { requireUserRole } from "@/lib/server-user-role";
 import { fetchWithAuth } from "@/lib/service-api";
 import { JobTrackerTabs } from "@/components/job-tracker/JobTrackerTabs";
 import type { JobApplicationResponse } from "@/components/job-tracker/ApplicationCard";
-import type { UserProfileResponse } from "@/types/api/user";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { applicationLoadError } from "@/lib/application-load-error";
@@ -31,15 +27,7 @@ function TrackerSkeleton() {
 }
 
 export default async function JobTrackerPage() {
-  const session = await getServerSession(authOptions);
-  let profile: UserProfileResponse | null = null;
-  try {
-    profile = await fetchWithAuth<UserProfileResponse>("/user/profile");
-  } catch {}
-
-  if (resolveEmployerRole(profile, session?.user)) {
-    redirect("/dashboard");
-  }
+  await requireUserRole(false);
 
   let applications: JobApplicationResponse[] = [];
   let errorMsg = "";
