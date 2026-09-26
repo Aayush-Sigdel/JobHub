@@ -76,7 +76,7 @@ test("project queries adapt the actual detail and recommendation envelopes", asy
       return {
         project,
         members: [],
-        isOwner: false,
+        owner: false,
         pendingCount: 1,
         myMembership: membership,
       };
@@ -224,4 +224,41 @@ test("authorization, missing matching data and service errors stay visible", asy
       });
     }
   }
+});
+
+test("candidate details use the existing profile endpoint and return only displayed fields", async () => {
+  const api = actions(async (path, options) => {
+    assert.equal(path, "/user/profile/candidate");
+    assert.equal(options.cache, "no-store");
+    return {
+      id: "candidate",
+      name: "Taylor",
+      title: "Designer",
+      bio: "Builds tools",
+      location: "Kathmandu",
+      skills: [{ name: "Figma", level: "EXPERT" }],
+      experiences: [],
+      educations: [],
+      email: "private@example.test",
+      contactNumbers: ["private"],
+      employer: false,
+    };
+  });
+  const result = await api.getCandidateProfile("candidate");
+  assert.equal(result.ok, true);
+  assert.equal(result.data.skills[0].level, "EXPERT");
+  assert.equal("email" in result.data, false);
+  assert.equal("contactNumbers" in result.data, false);
+});
+
+test("the actual backend owner response exposes management and recommendations", async () => {
+  const api = actions(async () => ({
+    project,
+    owner: true,
+    members: [],
+    pendingCount: 0,
+    myMembership: null,
+  }));
+  const result = await api.getProject(project.id);
+  assert.equal(result.data.isOwner, true);
 });

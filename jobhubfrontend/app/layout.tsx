@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-option";
 
 const jetBrainMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -20,11 +22,12 @@ export const metadata: Metadata = {
     "JobHub connects job seekers and employers through advanced recruitment features.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions);
   return (
     <html
       lang="en"
@@ -38,19 +41,19 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        <SessionProvider>
-          <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SessionProvider session={session}>
+            <QueryProvider>
               {children}
               <Toaster position="bottom-right" richColors />
-            </ThemeProvider>
-          </QueryProvider>
-        </SessionProvider>
+            </QueryProvider>
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

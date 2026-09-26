@@ -5,6 +5,7 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useRef,
   useTransition,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,6 +37,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import KanbanView from "@/components/recruiter/KanbanView";
 import CandidateDetailDrawer from "@/components/recruiter/CandidateDetailDrawer";
 import CandidatePagination from "@/components/recruiter/CandidatePagination";
+import CandidateHighlight from "./CandidateHighlight";
+import { candidateStages } from "./candidate-review-utils";
+import styles from "./candidates-pipeline.module.css";
 import {
   IconSearch,
   IconFilter,
@@ -89,6 +93,16 @@ export default function CandidatesPipeline({
     setJobsState(jobs);
   }
   const [isActionPending, startActionTransition] = useTransition();
+  const [isFiltering, startFilterTransition] = useTransition();
+  const reviewTrigger = useRef<HTMLElement | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const selectCandidate = (candidate: CandidateDashboardResponse) => {
+    reviewTrigger.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setSelectedCandidate(candidate);
+  };
 
   const [jobSearch, setJobSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
@@ -150,7 +164,10 @@ export default function CandidatesPipeline({
       } else {
         params.delete(key);
       }
-      router.push(`?${params.toString()}`);
+      setCandidatePage(1);
+      startFilterTransition(() => {
+        router.push(`?${params.toString()}`, { scroll: false });
+      });
     },
     [router, searchParams],
   );
@@ -321,9 +338,20 @@ export default function CandidatesPipeline({
   ].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5.5rem)] w-full min-h-0 overflow-hidden animate-in fade-in duration-200">
+    <div
+      className={`${styles.workspace} flex w-full min-w-0 flex-col gap-4 lg:h-[calc(100dvh-7rem)] lg:min-h-[36rem] lg:flex-row`}
+    >
+      <a
+        href="#candidate-workspace"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:rounded-lg focus:bg-foreground focus:p-3 focus:text-background"
+      >
+        Skip job listings and go to candidates
+      </a>
       {/* Left Sidebar: Claude/Gemini-Style Job Navigator */}
-      <aside className="w-full lg:w-80 xl:w-88 shrink-0 flex flex-col rounded-2xl bg-card border border-border shadow-xs overflow-hidden h-full">
+      <aside
+        aria-label="Job listings"
+        className="flex w-full shrink-0 flex-col overflow-hidden bg-background lg:h-full lg:w-64 lg:border-r lg:border-border xl:w-72"
+      >
         {/* Sidebar Fixed Top Header */}
         <div className="p-3.5 space-y-3 border-b border-border/70 shrink-0">
           <div className="flex items-center justify-between px-1">
@@ -356,6 +384,7 @@ export default function CandidatesPipeline({
           <div className="relative">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
+              aria-label="Search job listings"
               placeholder="Search job listings..."
               value={jobSearch}
               onChange={(e) => setJobSearch(e.target.value)}
@@ -364,8 +393,9 @@ export default function CandidatesPipeline({
             {jobSearch && (
               <button
                 type="button"
+                aria-label="Clear job listing search"
                 onClick={() => setJobSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <IconX className="size-3.5" />
               </button>
@@ -375,10 +405,11 @@ export default function CandidatesPipeline({
           {/* Pinned Item: All Job Postings */}
           <button
             type="button"
+            aria-pressed={isAllJobs}
             onClick={() => updateFilters("jobId", "all")}
             className={`w-full flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer ${
               isAllJobs
-                ? "bg-muted text-foreground border-2 border-foreground/30 font-bold shadow-xs"
+                ? "bg-primary/15 text-foreground border border-foreground/60 ring-1 ring-inset ring-foreground/20 font-bold"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/70 border border-transparent font-medium"
             }`}
           >
@@ -393,8 +424,11 @@ export default function CandidatesPipeline({
                 <IconUsers className="size-4" />
               </div>
               <div className="text-left truncate">
-                <span className="block truncate font-bold text-sm text-foreground">
+                <span className="flex items-center gap-2 text-sm font-bold text-foreground">
                   All Job Postings
+                  {isAllJobs && (
+                    <IconCircleCheck aria-hidden="true" className="size-4" />
+                  )}
                 </span>
                 <span className="text-xs block font-normal text-muted-foreground">
                   Across {jobsState.length} listings
@@ -414,7 +448,7 @@ export default function CandidatesPipeline({
         </div>
 
         {/* Scrollable Job Listings List (Independent Scrollbar) */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin">
+        <div className="max-h-52 space-y-1.5 overflow-y-auto p-3 lg:max-h-none lg:min-h-0 lg:flex-1">
           <div className="flex items-center justify-between px-1.5 pb-1">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Recent Postings ({filteredJobs.length})
@@ -437,10 +471,11 @@ export default function CandidatesPipeline({
                 <button
                   key={job.id}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => updateFilters("jobId", job.id)}
                   className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between gap-3 group cursor-pointer ${
                     isSelected
-                      ? "bg-muted text-foreground border-2 border-foreground/30 font-bold shadow-xs"
+                      ? "bg-primary/15 text-foreground border border-foreground/60 ring-1 ring-inset ring-foreground/20 font-bold"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/70 border border-transparent"
                   }`}
                 >
@@ -454,7 +489,19 @@ export default function CandidatesPipeline({
                         }`}
                       />
                       <span className="truncate text-sm font-semibold text-foreground group-hover:text-foreground">
-                        {job.title}
+                        <CandidateHighlight
+                          text={job.title}
+                          query={jobSearch}
+                        />
+                      </span>
+                      {isSelected && (
+                        <IconCircleCheck
+                          aria-hidden="true"
+                          className="size-4"
+                        />
+                      )}
+                      <span className="sr-only">
+                        {active ? "Active listing" : "Closed listing"}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 truncate pl-4.5">
@@ -502,19 +549,24 @@ export default function CandidatesPipeline({
       </aside>
 
       {/* Right Main Content Area: Chatbot-Style Active Workspace */}
-      <main className="flex-1 min-w-0 h-full flex flex-col rounded-2xl bg-card border border-border shadow-xs overflow-hidden">
+      <section
+        id="candidate-workspace"
+        aria-label="Candidate workspace"
+        tabIndex={-1}
+        className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background lg:h-full"
+      >
         {/* Main Workspace Sticky Top Bar (Claude / Gemini Style) */}
-        <div className="px-5 py-3.5 border-b border-border bg-card/95 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+        <div className="px-5 py-3.5 border-b border-border bg-card/95 backdrop-blur-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
           {/* Left: Active Scope Title & Metadata */}
           <div className="min-w-0 flex-1">
             {isAllJobs ? (
               <div>
                 <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">
-                  All Job Postings & Candidates
+                  Candidates
                 </h1>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Managing {jobsState.length} listings • {candidates.length}{" "}
-                  total applicant pool
+                  applications in this view
                 </p>
               </div>
             ) : selectedJob ? (
@@ -563,9 +615,14 @@ export default function CandidatesPipeline({
           </div>
 
           {/* Center: View Switcher (Claude / Gemini Style Segment Tabs) */}
-          <div className="flex items-center p-1 rounded-xl bg-secondary border border-border shrink-0 self-start md:self-auto">
+          <div
+            role="group"
+            aria-label="Workspace view"
+            className="flex max-w-full flex-wrap items-center gap-1 p-1 rounded-xl bg-secondary border border-border self-start md:self-auto"
+          >
             <button
               type="button"
+              aria-pressed={activeTab === "candidates"}
               onClick={() => updateFilters("tab", "candidates")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === "candidates"
@@ -588,6 +645,7 @@ export default function CandidatesPipeline({
 
             <button
               type="button"
+              aria-pressed={activeTab === "details"}
               onClick={() => updateFilters("tab", "details")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === "details"
@@ -602,7 +660,7 @@ export default function CandidatesPipeline({
 
           {/* Right: Quick Action Controls */}
           {selectedJob && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant={isJobActive(selectedJob) ? "outline" : "default"}
                 size="sm"
@@ -655,6 +713,7 @@ export default function CandidatesPipeline({
                 onClick={() => removeListing(selectedJob)}
                 disabled={isActionPending}
                 className="h-9 w-9 p-0 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10 border-border cursor-pointer"
+                aria-label={`Delete ${selectedJob.title}`}
                 title="Delete job listing"
               >
                 <IconTrash className="size-3.5" />
@@ -664,7 +723,7 @@ export default function CandidatesPipeline({
         </div>
 
         {/* Scrollable Main Workspace Body (Independent Scrollbar) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-thin">
+        <div className="min-w-0 flex-1 space-y-5 p-3 sm:p-5 lg:min-h-0 lg:overflow-y-auto">
           {activeTab === "details" ? (
             /* TAB 1: JOB DETAILS & LISTING MANAGEMENT VIEW */
             selectedJob ? (
@@ -1108,7 +1167,11 @@ export default function CandidatesPipeline({
               </div>
 
               {/* Interactive Pipeline Stage Filter Tabs */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div
+                role="group"
+                aria-label="Filter by application stage"
+                className="flex flex-wrap items-center gap-2"
+              >
                 {[
                   { id: "ALL", label: "All Candidates", count: stats.total },
                   { id: "APPLIED", label: "Applied", count: stats.applied },
@@ -1132,6 +1195,8 @@ export default function CandidatesPipeline({
                     <button
                       key={stage.id}
                       type="button"
+                      aria-pressed={isActive}
+                      aria-controls="candidate-results"
                       onClick={() =>
                         updateFilters(
                           "status",
@@ -1144,6 +1209,12 @@ export default function CandidatesPipeline({
                           : "bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
                       }`}
                     >
+                      {isActive && (
+                        <IconCircleCheck
+                          aria-hidden="true"
+                          className="size-4"
+                        />
+                      )}
                       <span>{stage.label}</span>
                       <span
                         className={`font-mono text-xs px-2 py-0.5 rounded-full ${
@@ -1162,11 +1233,13 @@ export default function CandidatesPipeline({
               {/* Candidate Search & Filter Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-card border border-border shadow-xs">
                 {/* Left: Search + Stage Filter + Sort + Advanced */}
-                <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[260px]">
+                <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
                   {/* Search Input */}
-                  <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+                  <div className="relative w-full min-w-0 sm:w-auto sm:min-w-60 sm:flex-1">
                     <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                     <Input
+                      aria-label="Search candidates by name, skill or title"
+                      aria-controls="candidate-results"
                       placeholder="Search candidate, skill, title..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
@@ -1175,8 +1248,9 @@ export default function CandidatesPipeline({
                     {search && (
                       <button
                         type="button"
+                        aria-label="Clear candidate search"
                         onClick={() => setSearch("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                        className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                       >
                         <IconX className="size-4" />
                       </button>
@@ -1190,7 +1264,10 @@ export default function CandidatesPipeline({
                       updateFilters("status", value === "ALL" ? "" : value)
                     }
                   >
-                    <SelectTrigger className="h-10 w-[145px] rounded-xl text-sm font-medium bg-secondary/50 border-border">
+                    <SelectTrigger
+                      aria-label="Filter by application stage"
+                      className="h-10 w-[145px] rounded-xl text-sm font-medium bg-secondary/50 border-border"
+                    >
                       <SelectValue placeholder="All Stages" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1211,7 +1288,10 @@ export default function CandidatesPipeline({
                       updateFilters("sortBy", val);
                     }}
                   >
-                    <SelectTrigger className="h-10 w-[165px] rounded-xl text-sm font-medium bg-secondary/50 border-border">
+                    <SelectTrigger
+                      aria-label="Sort candidates"
+                      className="h-10 w-[165px] rounded-xl text-sm font-medium bg-secondary/50 border-border"
+                    >
                       <SelectValue placeholder="Sort" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1253,7 +1333,7 @@ export default function CandidatesPipeline({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-80 p-4 space-y-3.5 rounded-2xl"
+                      className={`${styles.workspace} w-80 max-w-[calc(100vw-2rem)] p-4 space-y-3.5 rounded-2xl`}
                       align="start"
                     >
                       <div className="flex items-center justify-between border-b border-border pb-2.5">
@@ -1280,8 +1360,11 @@ export default function CandidatesPipeline({
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-foreground">
-                          Min Similarity
+                        <Label
+                          htmlFor="candidate-min-match"
+                          className="text-xs font-semibold text-foreground"
+                        >
+                          Minimum job match
                         </Label>
                         <Select
                           value={minSimilarity}
@@ -1292,7 +1375,10 @@ export default function CandidatesPipeline({
                             )
                           }
                         >
-                          <SelectTrigger className="w-full h-10 rounded-xl text-sm">
+                          <SelectTrigger
+                            id="candidate-min-match"
+                            className="w-full h-10 rounded-xl text-sm"
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -1345,9 +1431,15 @@ export default function CandidatesPipeline({
 
                 {/* Right: View Toggle */}
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center p-1 rounded-xl bg-secondary border border-border">
+                  <div
+                    role="group"
+                    aria-label="Candidate display"
+                    className="flex items-center p-1 rounded-xl bg-secondary border border-border"
+                  >
                     <button
                       type="button"
+                      aria-pressed={viewMode === "list"}
+                      aria-controls="candidate-results"
                       onClick={() => setViewMode("list")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                         viewMode === "list"
@@ -1361,6 +1453,8 @@ export default function CandidatesPipeline({
                     </button>
                     <button
                       type="button"
+                      aria-pressed={viewMode === "kanban"}
+                      aria-controls="candidate-results"
                       onClick={() => setViewMode("kanban")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                         viewMode === "kanban"
@@ -1398,8 +1492,25 @@ export default function CandidatesPipeline({
                 </div>
               </div>
 
+              <p
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className="text-sm text-muted-foreground"
+              >
+                {isFiltering
+                  ? "Updating candidates…"
+                  : `${sortedCandidates.length} application${sortedCandidates.length === 1 ? "" : "s"} found${searchParams.get("search") ? ` for “${searchParams.get("search")}”` : ""}.`}
+              </p>
               {/* Candidate Table or Kanban Arena */}
-              <div className="flex-1 min-h-[400px]">
+              <div
+                id="candidate-results"
+                ref={resultsRef}
+                tabIndex={-1}
+                aria-label="Candidate results"
+                aria-busy={isFiltering}
+                className="min-w-0 flex-1 scroll-mt-4"
+              >
                 {sortedCandidates.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-14 text-center bg-card space-y-2.5">
                     <div className="size-11 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground">
@@ -1436,24 +1547,48 @@ export default function CandidatesPipeline({
                 ) : viewMode === "kanban" ? (
                   <KanbanView
                     candidates={sortedCandidates}
-                    onCandidateSelect={setSelectedCandidate}
+                    onCandidateSelect={selectCandidate}
                   />
                 ) : (
                   /* High-Density Clean Scannable Candidate Table */
                   <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
-                    <div className="overflow-x-auto">
+                    <div
+                      role="region"
+                      aria-label="Candidate applications, scroll horizontally for more columns"
+                      tabIndex={0}
+                      className="overflow-x-auto p-1"
+                    >
                       <table className="w-full text-left border-collapse">
+                        <caption className="sr-only">
+                          Candidate applications with job match, assessments and
+                          stage. Open a candidate name or use Review to read
+                          their application.
+                        </caption>
                         <thead>
                           <tr className="border-b border-border bg-secondary/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                            <th className="py-3.5 px-5">Candidate</th>
+                            <th scope="col" className="py-3.5 px-5">
+                              Candidate
+                            </th>
                             {isAllJobs && (
-                              <th className="py-3.5 px-4">Role Applied</th>
+                              <th scope="col" className="py-3.5 px-4">
+                                Role Applied
+                              </th>
                             )}
-                            <th className="py-3.5 px-4">Applied</th>
-                            <th className="py-3.5 px-4">Match Evidence</th>
-                            <th className="py-3.5 px-4">Evaluations</th>
-                            <th className="py-3.5 px-4">Stage</th>
-                            <th className="py-3.5 px-5 text-right">Actions</th>
+                            <th scope="col" className="py-3.5 px-4">
+                              Applied
+                            </th>
+                            <th scope="col" className="py-3.5 px-4">
+                              Match Evidence
+                            </th>
+                            <th scope="col" className="py-3.5 px-4">
+                              Evaluations
+                            </th>
+                            <th scope="col" className="py-3.5 px-4">
+                              Stage
+                            </th>
+                            <th scope="col" className="py-3.5 px-5 text-right">
+                              Actions
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
@@ -1492,11 +1627,10 @@ export default function CandidatesPipeline({
                             return (
                               <tr
                                 key={
-                                  candidate.candidateId ||
-                                  candidate.applicationId
+                                  candidate.applicationId ||
+                                  `${candidate.jobId}:${candidate.candidateId}`
                                 }
-                                onClick={() => setSelectedCandidate(candidate)}
-                                className="hover:bg-muted/40 transition-colors cursor-pointer group"
+                                className="group transition-colors hover:bg-muted/60 focus-within:bg-primary/10"
                               >
                                 {/* Candidate Identity + Skills */}
                                 <td className="py-4.5 px-5">
@@ -1504,6 +1638,7 @@ export default function CandidatesPipeline({
                                     <Avatar className="size-12 rounded-xl border border-border shrink-0">
                                       <AvatarImage
                                         src={candidate.imageUrl}
+                                        alt=""
                                         className="object-cover"
                                       />
                                       <AvatarFallback className="bg-foreground text-background font-bold text-sm">
@@ -1513,11 +1648,29 @@ export default function CandidatesPipeline({
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
-                                      <span className="font-bold text-base text-foreground block truncate group-hover:underline transition-all">
-                                        {candidate.name}
-                                      </span>
+                                      <button
+                                        type="button"
+                                        aria-label={`Review ${candidate.name}'s application${candidate.jobTitle ? ` for ${candidate.jobTitle}` : ""}`}
+                                        aria-haspopup="dialog"
+                                        onClick={() =>
+                                          selectCandidate(candidate)
+                                        }
+                                        className="block min-h-9 rounded-md text-left text-base font-semibold text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground"
+                                      >
+                                        <CandidateHighlight
+                                          text={candidate.name}
+                                          query={
+                                            searchParams.get("search") || ""
+                                          }
+                                        />
+                                      </button>
                                       <span className="text-sm text-foreground/80 font-medium block truncate">
-                                        {candidate.title || "Applicant"}
+                                        <CandidateHighlight
+                                          text={candidate.title || "Applicant"}
+                                          query={
+                                            searchParams.get("search") || ""
+                                          }
+                                        />
                                         {candidate.location
                                           ? ` • ${candidate.location}`
                                           : ""}
@@ -1534,7 +1687,14 @@ export default function CandidatesPipeline({
                                                   key={skill.id}
                                                   className="text-xs px-2 py-0.5 rounded-md bg-secondary text-foreground font-medium border border-border"
                                                 >
-                                                  {skill.name}
+                                                  <CandidateHighlight
+                                                    text={skill.name}
+                                                    query={
+                                                      searchParams.get(
+                                                        "search",
+                                                      ) || ""
+                                                    }
+                                                  />
                                                 </span>
                                               ))}
                                             {candidate.skills.length > 3 && (
@@ -1562,7 +1722,8 @@ export default function CandidatesPipeline({
                                               candidate.jobId,
                                             );
                                         }}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary hover:bg-muted border border-border text-xs font-semibold text-foreground transition-colors truncate max-w-full text-left cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 min-h-9 px-3 py-1 rounded-lg bg-secondary hover:bg-muted border border-border text-xs font-semibold text-foreground transition-colors truncate max-w-full text-left cursor-pointer"
+                                        aria-label={`Filter candidates for ${candidate.jobTitle}`}
                                         title="Filter to this job in sidebar"
                                       >
                                         <IconBriefcase className="size-3.5 text-muted-foreground shrink-0" />
@@ -1593,8 +1754,8 @@ export default function CandidatesPipeline({
                                   <div className="flex flex-col gap-1">
                                     <span className="font-mono text-sm sm:text-base font-bold text-foreground tabular-nums">
                                       {similarity !== null
-                                        ? similarity.toFixed(3)
-                                        : "N/A"}
+                                        ? `${Math.round(similarity * 100)}%`
+                                        : "Not available"}
                                     </span>
                                     {matchTier && (
                                       <span
@@ -1641,16 +1802,17 @@ export default function CandidatesPipeline({
                                   <Badge
                                     className={`text-xs font-semibold px-2.5 py-1 border ${stageStyle}`}
                                   >
-                                    {candidate.status || "APPLIED"}
+                                    {candidateStages.find(
+                                      (stage) =>
+                                        stage.id ===
+                                        (candidate.status || "APPLIED"),
+                                    )?.label || candidate.status}
                                   </Badge>
                                 </td>
 
                                 {/* Actions */}
                                 <td className="py-4.5 px-5 text-right whitespace-nowrap">
-                                  <div
-                                    className="flex items-center justify-end gap-2"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
+                                  <div className="flex items-center justify-end gap-2">
                                     {candidate.candidateId && (
                                       <Button
                                         asChild
@@ -1661,6 +1823,7 @@ export default function CandidatesPipeline({
                                       >
                                         <Link
                                           href={`/preview/${candidate.candidateId}`}
+                                          aria-label={`Preview ${candidate.name}’s profile (opens in a new tab)`}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                         >
@@ -1671,9 +1834,9 @@ export default function CandidatesPipeline({
 
                                     <Button
                                       size="sm"
-                                      onClick={() =>
-                                        setSelectedCandidate(candidate)
-                                      }
+                                      aria-label={`Review ${candidate.name}'s application${candidate.jobTitle ? ` for ${candidate.jobTitle}` : ""}`}
+                                      aria-haspopup="dialog"
+                                      onClick={() => selectCandidate(candidate)}
                                       className="h-9.5 px-4 rounded-xl text-sm font-bold bg-primary text-black hover:bg-primary/90 shadow-xs gap-1.5 cursor-pointer"
                                     >
                                       <span>Review</span>
@@ -1694,7 +1857,10 @@ export default function CandidatesPipeline({
                       total={sortedCandidates.length}
                       start={candidatePagination.start}
                       end={candidatePagination.end}
-                      onPageChange={setCandidatePage}
+                      onPageChange={(page) => {
+                        setCandidatePage(page);
+                        resultsRef.current?.focus();
+                      }}
                       onPageSizeChange={(nextPageSize) => {
                         setCandidatePageSize(nextPageSize);
                         setCandidatePage(1);
@@ -1706,7 +1872,7 @@ export default function CandidatesPipeline({
             </>
           )}
         </div>
-      </main>
+      </section>
 
       {/* Candidate Detail Drawer */}
       {selectedCandidate && (
@@ -1715,7 +1881,10 @@ export default function CandidatesPipeline({
           jobId={selectedJobId}
           open
           onOpenChange={(open) => {
-            if (!open) setSelectedCandidate(null);
+            if (!open) {
+              setSelectedCandidate(null);
+              requestAnimationFrame(() => reviewTrigger.current?.focus());
+            }
           }}
         />
       )}

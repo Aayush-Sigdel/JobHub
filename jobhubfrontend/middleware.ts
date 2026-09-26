@@ -5,6 +5,18 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
+    if (process.env.NODE_ENV === "development") {
+      console.info("[reload-trace]", JSON.stringify({
+        path, method: req.method,
+        destination: req.headers.get("sec-fetch-dest"),
+        rsc: req.headers.get("rsc"),
+        action: Boolean(req.headers.get("next-action")),
+        prefetch: req.headers.get("next-router-prefetch"),
+        onboarding: token?.user?.onboardingCompleted,
+        authenticated: Boolean(token),
+      }));
+    }
+
 
     if (!token) return NextResponse.next();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import {
   IconSearch,
   IconX,
   IconRefresh,
+  IconChevronDown,
 } from "@tabler/icons-react";
 import {
   Dialog,
@@ -25,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { getJobTaskOptionsAction } from "@/lib/actions/recruiter";
 import type { TaskLibraryOption } from "@/types/api/tasks";
 import { cn } from "@/lib/utils";
+import styles from "./job-post-form.module.css";
 
 const loadingBuilder = () => (
   <p role="status" className="p-6 text-sm text-muted-foreground">
@@ -87,6 +89,7 @@ export default function AssessmentPicker({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const openButton = useRef<HTMLButtonElement>(null);
   const [creating, setCreating] = useState(false);
   const [creatingPending, setCreatingPending] = useState(false);
   const [created, setCreated] = useState<Library>({
@@ -121,7 +124,7 @@ export default function AssessmentPicker({
   const current = categories[category];
   const visible = options[current.source].filter(
     (task) =>
-      task.title.toLowerCase().includes(search.toLowerCase()) &&
+      task.title.toLowerCase().includes(search.trim().toLowerCase()) &&
       (scope === "all" ||
         (scope === "public" ? task.scope === "PUBLIC" : task.isOwned)),
   );
@@ -136,10 +139,11 @@ export default function AssessmentPicker({
           </p>
         </div>
         <Button
+          ref={openButton}
           type="button"
-          variant="outline"
+          variant={attached.length ? "outline" : "default"}
           disabled={disabled}
-          className="rounded-lg"
+          className="min-h-11 rounded-md"
           onClick={() => {
             setDraft(value);
             setOpen(true);
@@ -154,11 +158,13 @@ export default function AssessmentPicker({
           {attached.map(({ key, label, source, icon: Icon }) => (
             <div
               key={key}
-              className="flex items-center gap-3 rounded-lg border border-border bg-muted/15 px-4 py-3"
+              className="flex items-center gap-3 border-b border-border px-1 py-3"
             >
-              <Icon className="size-4 shrink-0 text-muted-foreground" />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary/20">
+                <Icon aria-hidden="true" className="size-4" />
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
+                <p className="break-words text-sm font-medium">
                   {options[source].find((task) => task.id === value[key])
                     ?.title || `Attached ${label.toLowerCase()} assessment`}
                 </p>
@@ -168,6 +174,7 @@ export default function AssessmentPicker({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
+                className="size-11 shrink-0"
                 disabled={disabled}
                 aria-label={`Remove ${label.toLowerCase()} assessment`}
                 onClick={() => onChange({ ...value, [key]: "" })}
@@ -192,9 +199,14 @@ export default function AssessmentPicker({
       >
         <DialogContent
           className={cn(
+            styles.form,
             "flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0",
-            creating ? "sm:max-w-6xl" : "sm:max-w-xl",
+            creating ? "sm:max-w-6xl" : "sm:max-w-3xl",
           )}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            openButton.current?.focus();
+          }}
           showCloseButton={!creatingPending}
           onEscapeKeyDown={(event) => {
             if (creatingPending) event.preventDefault();
@@ -206,7 +218,7 @@ export default function AssessmentPicker({
         >
           <DialogHeader
             className={
-              creating ? "sr-only" : "border-b border-border p-5 pr-14"
+              creating ? "sr-only" : "shrink-0 border-b border-border p-5 pr-14"
             }
           >
             <DialogTitle className="text-lg font-semibold">
@@ -247,11 +259,11 @@ export default function AssessmentPicker({
             </div>
           ) : (
             <>
-              <div className="min-w-0 space-y-4 p-4 pb-4 sm:p-5">
+              <div className="min-w-0 shrink-0 space-y-3 border-b border-border p-4 sm:p-5">
                 <div
                   role="group"
                   aria-label="Assessment type"
-                  className="flex gap-4 border-b border-border"
+                  className="flex gap-1"
                 >
                   {categories.map(({ label, icon: Icon }, index) => (
                     <button
@@ -260,10 +272,10 @@ export default function AssessmentPicker({
                       aria-pressed={category === index}
                       onClick={() => setCategory(index as 0 | 1 | 2)}
                       className={cn(
-                        "flex min-h-10 items-center justify-center gap-1.5 border-b-2 px-1 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-sm px-2 text-xs font-medium sm:min-h-9 sm:flex-none sm:px-3",
                         category === index
-                          ? "border-foreground text-foreground"
-                          : "border-transparent text-muted-foreground hover:text-foreground",
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       )}
                     >
                       <Icon className="size-4" />
@@ -272,21 +284,24 @@ export default function AssessmentPicker({
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <div className="relative min-w-0 flex-1">
-                    <IconSearch className="absolute top-3 left-3 size-4 text-muted-foreground" />
+                  <div className="relative min-w-0 basis-full sm:flex-1 sm:basis-auto">
+                    <IconSearch
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-3.5 left-3 size-4 text-muted-foreground"
+                    />
                     <Input
                       aria-label="Search assessments"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search assessments"
-                      className="h-10 rounded-lg border border-border bg-background pl-9"
+                      className="h-11 rounded-md bg-background pl-9"
                     />
                   </div>
                   <select
                     aria-label="Assessment visibility"
                     value={scope}
                     onChange={(e) => setScope(e.target.value)}
-                    className="h-10 rounded-lg border border-border bg-background px-3 text-xs"
+                    className="h-11 rounded-md border border-border bg-background px-3 text-sm"
                   >
                     <option value="all">All assessments</option>
                     <option value="public">Public assessments</option>
@@ -298,7 +313,7 @@ export default function AssessmentPicker({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="rounded-lg"
+                    className="min-h-9 rounded-md"
                     onClick={() => setCreating(true)}
                   >
                     <IconPlus className="size-3.5" />
@@ -316,7 +331,7 @@ export default function AssessmentPicker({
                   </Button>
                 </div>
               </div>
-              <div className="min-h-40 min-w-0 overflow-y-auto px-4 pb-5 sm:px-5">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5">
                 {query.isPending ? (
                   <p
                     role="status"
@@ -345,53 +360,66 @@ export default function AssessmentPicker({
                 ) : visible.length ? (
                   <div className="divide-y divide-border">
                     {visible.map((task) => (
-                      <label
+                      <article
                         key={task.id}
                         className={cn(
-                          "flex cursor-pointer items-start gap-3 px-2 py-4 transition-colors hover:bg-muted/25",
+                          "px-3 py-4 transition-colors",
                           draft[current.key] === task.id
-                            ? "bg-muted/30"
+                            ? "bg-primary/10"
                             : "bg-background",
                         )}
                       >
-                        <input
-                          type="checkbox"
-                          className="mt-1 size-4 shrink-0 accent-foreground"
-                          checked={draft[current.key] === task.id}
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              [current.key]: e.target.checked ? task.id : "",
-                            })
-                          }
-                        />
-                        <div className="min-w-0 flex-1">
-                          <span className="block break-words text-sm font-medium [overflow-wrap:anywhere]">
-                            {task.title}
-                          </span>
-                          <span className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                            <span>
-                              {task.scope === "PUBLIC" ? "Public" : "Private"}
+                        <label className="flex min-h-11 cursor-pointer items-start gap-3">
+                          <input
+                            type="checkbox"
+                            className="mt-1 size-4 shrink-0 accent-primary"
+                            disabled={disabled}
+                            aria-label={`Select ${task.title}`}
+                            checked={draft[current.key] === task.id}
+                            onChange={(e) =>
+                              setDraft({
+                                ...draft,
+                                [current.key]: e.target.checked ? task.id : "",
+                              })
+                            }
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="block break-words text-sm font-medium [overflow-wrap:anywhere]">
+                              {task.title}
                             </span>
-                            {task.isOwned && <span>Created by you</span>}
-                            {task.skillLevel && (
-                              <span className="capitalize">
-                                {task.skillLevel.toLowerCase()}
+                            <span className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                              <span>
+                                {task.scope === "PUBLIC" ? "Public" : "Private"}
                               </span>
-                            )}
-                          </span>
-                          {task.instructions && (
-                            <div className="mt-2 max-h-10 max-w-full overflow-hidden [overflow-wrap:anywhere]">
-                              <JobMarkdown
-                                compact
-                                className="line-clamp-2 text-xs leading-5"
-                              >
-                                {task.instructions}
-                              </JobMarkdown>
+                              {task.isOwned && <span>Created by you</span>}
+                              {task.skillLevel && (
+                                <span className="capitalize">
+                                  {task.skillLevel.toLowerCase()}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </label>
+                        {task.instructions?.trim() ? (
+                          <details className="group/description mt-3">
+                            <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 rounded text-sm font-medium underline decoration-foreground/30 underline-offset-4 [&::-webkit-details-marker]:hidden">
+                              Read full description
+                              <span className="sr-only"> for {task.title}</span>
+                              <IconChevronDown
+                                aria-hidden="true"
+                                className="size-4 transition-transform group-open/description:rotate-180"
+                              />
+                            </summary>
+                            <div className="mt-3 min-w-0 pb-2 text-sm leading-7 [overflow-wrap:anywhere]">
+                              <JobMarkdown>{task.instructions}</JobMarkdown>
                             </div>
-                          )}
-                        </div>
-                      </label>
+                          </details>
+                        ) : (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            No description provided.
+                          </p>
+                        )}
+                      </article>
                     ))}
                   </div>
                 ) : (
@@ -401,7 +429,7 @@ export default function AssessmentPicker({
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border p-4">
                 <span className="text-xs text-muted-foreground">
                   {Object.values(draft).filter(Boolean).length} assessments
                   selected
@@ -410,12 +438,14 @@ export default function AssessmentPicker({
                   <Button
                     type="button"
                     variant="ghost"
+                    className="min-h-11 rounded-md"
                     onClick={() => setOpen(false)}
                   >
                     Cancel
                   </Button>
                   <Button
                     type="button"
+                    className="min-h-11 rounded-md"
                     disabled={
                       query.isPending ||
                       query.isError ||

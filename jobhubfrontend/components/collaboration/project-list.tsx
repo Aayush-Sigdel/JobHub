@@ -34,14 +34,15 @@ import {
   StatusBadge,
 } from "./shared";
 import { toast } from "sonner";
-import { projectTeam } from "@/lib/collaboration";
+import { isRoleFilled, projectTeam } from "@/lib/collaboration";
+import { ProjectMarkdown } from "./project-markdown";
 
 function ProjectCard({ project }: { project: Project }) {
   const viewer = useCollaborationIdentity();
   const owner = projectTeam(project, viewer)[0];
   const isOwner = project.ownerId === viewer.userId;
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-foreground/25 focus-within:ring-2 focus-within:ring-ring/50">
+    <article className="flex min-w-0 flex-col rounded-lg border border-border bg-background transition-colors hover:border-foreground/30 focus-within:border-foreground/50">
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <StatusBadge status={project.status} />
@@ -51,7 +52,7 @@ function ProjectCard({ project }: { project: Project }) {
           </span>
         </div>
         <div>
-          <h2 className="text-lg font-bold">
+          <h2 className="break-words text-lg font-semibold">
             <Link
               className="rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
               href={`/collaborators/projects/${project.id}${project.bestRoleId ? `?role=${encodeURIComponent(project.bestRoleId)}` : ""}`}
@@ -63,18 +64,18 @@ function ProjectCard({ project }: { project: Project }) {
             {owner.name}
             {isOwner ? " · Your project" : " · Owner"}
           </p>
-          <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {project.description}
-          </p>
+          <div className="mt-3">
+            <ProjectMarkdown summary>{project.description}</ProjectMarkdown>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {project.roles
-            ?.filter((role) => !role.filled)
+            ?.filter((role) => !isRoleFilled(role, project))
             .slice(0, 3)
             .map((role) => (
               <span
                 key={role.id}
-                className="rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
+                className="rounded-sm bg-muted px-2 py-1 text-xs"
               >
                 {role.title}
               </span>
@@ -115,12 +116,23 @@ function ProjectCard({ project }: { project: Project }) {
               Requests
             </Link>
           )}
+          {isOwner &&
+            project.status === "RECRUITING" &&
+            project.activeMemberCount < project.teamSize && (
+              <Link
+                href={`/collaborators/projects/${project.id}?section=suggestions`}
+                className="inline-flex items-center gap-1 rounded-sm font-medium text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <Sparkles className="size-3.5" aria-hidden="true" />
+                Recommended candidates
+              </Link>
+            )}
           {!!project.pendingCount && (
             <span className="font-semibold text-foreground">
               {project.pendingCount} pending
             </span>
           )}
-          <Button asChild variant="outline" size="sm" className="ml-auto">
+          <Button asChild size="sm" className="ml-auto min-h-11 rounded-md">
             <Link
               href={`/collaborators/projects/${project.id}${project.bestRoleId ? `?role=${encodeURIComponent(project.bestRoleId)}` : ""}`}
             >
@@ -213,7 +225,11 @@ export function ProjectList({
     <div className="space-y-5">
       {view !== "mine" ? (
         <nav aria-label="Project discovery" className="flex gap-2">
-          <Button asChild variant={view === "browse" ? "secondary" : "ghost"}>
+          <Button
+            asChild
+            className="min-h-11 rounded-md sm:min-h-9"
+            variant={view === "browse" ? "default" : "ghost"}
+          >
             <Link
               href="/collaborators/explore"
               aria-current={view === "browse" ? "page" : undefined}
@@ -221,7 +237,11 @@ export function ProjectList({
               All projects
             </Link>
           </Button>
-          <Button asChild variant={view === "for-me" ? "secondary" : "ghost"}>
+          <Button
+            asChild
+            className="min-h-11 rounded-md sm:min-h-9"
+            variant={view === "for-me" ? "default" : "ghost"}
+          >
             <Link
               href="/collaborators/for-you"
               aria-current={view === "for-me" ? "page" : undefined}
@@ -240,7 +260,8 @@ export function ProjectList({
             <Button
               key={value}
               aria-pressed={mineTab === value}
-              variant={mineTab === value ? "secondary" : "ghost"}
+              className="min-h-11 rounded-md sm:min-h-9"
+              variant={mineTab === value ? "default" : "ghost"}
               onClick={() => setMineTab(value)}
             >
               {title}
@@ -250,7 +271,7 @@ export function ProjectList({
       )}
       {view === "browse" && (
         <form
-          className="space-y-3 rounded-xl bg-muted/35 p-4"
+          className="space-y-3 border-b border-border pb-5"
           onSubmit={(event) => {
             event.preventDefault();
             setFilters(draft);
@@ -261,13 +282,13 @@ export function ProjectList({
               <span className="sr-only">Search projects</span>
               <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
               <Input
-                className="h-10 pl-9"
+                className="h-11 rounded-md pl-9"
                 placeholder="Search projects"
                 value={draft.query ?? ""}
                 onChange={(e) => setDraft({ ...draft, query: e.target.value })}
               />
             </label>
-            <Button type="submit" className="h-10">
+            <Button type="submit" className="min-h-11 rounded-md">
               Search
             </Button>
           </div>
@@ -396,10 +417,10 @@ export function ProjectList({
               .map((member) => (
                 <article
                   key={member.id}
-                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-shadow hover:shadow-md"
+                  className="min-w-0 rounded-lg border border-border bg-background transition-colors hover:border-foreground/30"
                 >
                   <div className="space-y-4 p-5">
-                    <h2 className="text-lg font-semibold">
+                    <h2 className="break-words text-lg font-semibold">
                       <Link
                         className="hover:underline"
                         href={`/collaborators/projects/${member.projectId}`}
@@ -410,7 +431,7 @@ export function ProjectList({
                     <p className="text-sm text-muted-foreground">
                       {member.roleTitle || "Team member"}
                     </p>
-                    <Button asChild variant="outline" size="sm">
+                    <Button asChild size="sm" className="min-h-11 rounded-md">
                       <Link
                         href={`/collaborators/projects/${member.projectId}`}
                       >

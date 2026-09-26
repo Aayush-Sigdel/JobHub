@@ -1,0 +1,22 @@
+.workspace
+  :is(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+  scroll-margin-block: 5rem 1rem;
+}
+
+.workspace :is(input:not([type="checkbox"]), textarea, select) {
+  border-color: color-mix(in srgb, var(--foreground) 45%, var(--background));
+}
+
+.workspace :is(input, textarea)[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

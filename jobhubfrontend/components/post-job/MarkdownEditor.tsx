@@ -24,6 +24,8 @@ export default function MarkdownEditor({
   label,
   error,
   disabled = false,
+  required = false,
+  height = 260,
 }: {
   id: string;
   value: string;
@@ -32,6 +34,8 @@ export default function MarkdownEditor({
   label?: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
+  height?: number;
 }) {
   const { resolvedTheme } = useTheme();
   return (
@@ -44,8 +48,8 @@ export default function MarkdownEditor({
         onChange={(value) => {
           if (!disabled) onChange(value ?? "");
         }}
-        height={260}
-        minHeight={180}
+        height={height}
+        minHeight={Math.min(180, height)}
         preview="edit"
         visibleDragbar={false}
         commandsFilter={(command) =>
@@ -55,6 +59,7 @@ export default function MarkdownEditor({
           id,
           placeholder,
           disabled,
+          required,
           "aria-label":
             label ??
             (id === "description" ? "Role description" : "Requirements"),

@@ -1,0 +1,27 @@
+.workspace :is(button, a, input, select, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+  scroll-margin: 1rem;
+}
+
+.workspace :is(input, [role="combobox"]) {
+  border-color: color-mix(in srgb, var(--foreground) 45%, var(--background));
+}
+
+.workspace input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+.workspace svg {
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace,
+  .workspace * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

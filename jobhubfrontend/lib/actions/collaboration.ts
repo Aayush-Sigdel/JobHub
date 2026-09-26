@@ -23,9 +23,11 @@ import type {
   ProjectSuggestionResponse,
   SuggestionFilters,
   Suggestions,
+  CollaborationCandidateProfile,
 } from "@/types/api/collaboration";
+import type { UserProfileResponse } from "@/types/api/user";
 
-async function request<T>(
+async function apiRequest<T>(
   path: string,
   method = "GET",
   body?: unknown,
@@ -33,7 +35,7 @@ async function request<T>(
   try {
     return {
       ok: true,
-      data: await fetchWithAuth<T>(`/collab${path}`, {
+      data: await fetchWithAuth<T>(path, {
         method,
         cache: "no-store",
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -52,6 +54,41 @@ async function request<T>(
           : "Unable to connect. Please try again.",
     };
   }
+}
+function request<T>(path: string, method = "GET", body?: unknown) {
+  return apiRequest<T>(`/collab${path}`, method, body);
+}
+
+export async function getCandidateProfile(
+  id: string,
+): Promise<CollabResult<CollaborationCandidateProfile>> {
+  const result = await apiRequest<UserProfileResponse>(
+    `/user/profile/${encodeURIComponent(id)}`,
+  );
+  if (!result.ok) return result;
+  const {
+    id: userId,
+    name,
+    title,
+    bio,
+    location,
+    skills,
+    experiences,
+    educations,
+  } = result.data;
+  return {
+    ok: true,
+    data: {
+      id: userId,
+      name,
+      title,
+      bio,
+      location,
+      skills,
+      experiences,
+      educations,
+    },
+  };
 }
 export async function getProjects(
   view: "browse" | "mine" | "for-me",

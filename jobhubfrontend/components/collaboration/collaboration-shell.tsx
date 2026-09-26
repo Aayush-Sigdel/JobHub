@@ -12,6 +12,7 @@ import {
   useOwnerMemberships,
 } from "@/lib/hooks/use-collaboration";
 import { useInboxSeen } from "./inbox-indicator";
+import styles from "./collaboration.module.css";
 
 const pages = [
   { href: "/collaborators/explore", label: "Explore" },
@@ -34,8 +35,11 @@ export function CollaborationShell({
       (member) => member.status === "REQUESTED",
     ).length ?? 0);
   const creating = pathname === "/collaborators/projects/new";
+  const editing = pathname.endsWith("/edit");
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-7 py-2 md:py-3">
+    <div
+      className={`${styles.workspace} mx-auto w-full max-w-6xl space-y-6 py-2 md:py-3`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border pb-3">
         <nav aria-label="Collaboration section" className="flex min-w-0 gap-1">
           {pages.map(({ href, label }) => {
@@ -50,9 +54,9 @@ export function CollaborationShell({
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  "inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors sm:min-h-9",
                   active
-                    ? "bg-primary/20 text-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
@@ -77,8 +81,8 @@ export function CollaborationShell({
               </Link>
             </Button>
           </Hint>
-          {!creating && (
-            <Button asChild className="h-10 rounded-lg px-4">
+          {!creating && !editing && (
+            <Button asChild className="min-h-11 rounded-md px-4">
               <Link href="/collaborators/projects/new">
                 <Plus className="size-4" />
                 Create project

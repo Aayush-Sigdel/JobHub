@@ -9,10 +9,7 @@ export function TeamRoster({ project }: { project: Project }) {
   const viewer = useCollaborationIdentity();
   const team = projectTeam(project, viewer);
   return (
-    <section
-      aria-label="Project team"
-      className="rounded-xl border border-border bg-card p-5"
-    >
+    <section aria-label="Project team" className="min-w-0 py-1">
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="font-semibold">Team</h2>
         <span className="text-xs tabular-nums text-muted-foreground">

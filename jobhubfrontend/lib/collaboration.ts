@@ -14,11 +14,14 @@ import type {
 export function projectFromDetail({
   project,
   myMembership,
+  owner,
+  isOwner,
   ...detail
 }: ProjectDetailResponse): Project {
   return {
     ...project,
     ...detail,
+    isOwner: isOwner ?? owner,
     myMembership: myMembership ? membershipFromResponse(myMembership) : null,
   };
 }
