@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { JobCard } from "@/components/jobs/JobCard";
+import { PaginatedJobFeed } from "./paginated-job-feed";
 import { useLocalSavedJobs } from "@/lib/hooks/use-local-jobs";
 import type { JobPostResponse, JobApplicationResponse } from "@/types/api/jobs";
 
@@ -64,7 +64,7 @@ export function PersonalizedFeed({
     tabs.push({ id: activeTab, label: extraLabels[activeTab] });
 
   return (
-    <section aria-label="Your job feed" className="min-w-0">
+    <section id="job-feed" aria-label="Your job feed" className="min-w-0 scroll-mt-24">
       <header className="mb-4">
         <h2 className="text-lg font-semibold">Opportunities to explore</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -97,15 +97,11 @@ export function PersonalizedFeed({
         </div>
         <TabsContent value={activeTab} className="mt-0">
           {jobs.length ? (
-            <div>
-              {jobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  isApplied={appliedIds.has(job.id)}
-                />
-              ))}
-            </div>
+            <PaginatedJobFeed
+              key={activeTab}
+              jobs={jobs}
+              appliedIds={appliedIds}
+            />
           ) : (
             <div className="py-16 text-center">
               <h2 className="text-base font-semibold">

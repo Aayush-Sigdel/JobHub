@@ -53,6 +53,7 @@ function render(overrides = {}) {
     React.createElement(
       exports.AssessmentSession,
       {
+        userId: "user-one",
         jobId: "job-one",
         taskId: "task-one",
         title: "Build a solution",
@@ -98,12 +99,13 @@ test("submitted assignments show results without restarting monitoring", () => {
   assert.equal(options.enabled, false);
 });
 
-test("different jobs and task types use separate saved assignment counts", () => {
+test("different users, jobs, and task types use separate saved assignment counts", () => {
   const keys = [
     render({ kind: "Programming" }).options.sessionKey,
     render({ kind: "SQL" }).options.sessionKey,
     render({ taskId: "task-two" }).options.sessionKey,
     render({ jobId: "job-two" }).options.sessionKey,
+    render({ userId: "user-two" }).options.sessionKey,
   ];
-  assert.equal(new Set(keys).size, 4);
+  assert.equal(new Set(keys).size, 5);
 });

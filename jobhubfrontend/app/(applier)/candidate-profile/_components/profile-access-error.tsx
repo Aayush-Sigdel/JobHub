@@ -1,7 +1,7 @@
 "use client";
 
 import { ShieldAlert } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOutAndClearLocalData } from "@/lib/sign-out";
 import { Button } from "@/components/ui/button";
 
 export function ProfileAccessError() {
@@ -17,7 +17,7 @@ export function ProfileAccessError() {
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               JobHub could not authenticate this profile request. Sign in again to reload your profile and continue editing.
             </p>
-            <Button className="mt-5" onClick={() => signOut({ callbackUrl: "/sign-in" })}>
+            <Button className="mt-5" onClick={() => signOutAndClearLocalData()}>
               Sign in again
             </Button>
           </div>

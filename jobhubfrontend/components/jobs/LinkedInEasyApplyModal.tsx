@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 import { useState, useEffect, useTransition, useCallback, useId } from "react";
 import Link from "next/link";
 import {
@@ -44,6 +46,8 @@ export function LinkedInEasyApplyModal({
   detail,
   profile,
 }: LinkedInEasyApplyModalProps) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const { job } = detail;
   const noteId = useId();
   const [isOpen, setIsOpen] = useState(false);
@@ -60,22 +64,26 @@ export function LinkedInEasyApplyModal({
   const loadSubmissions = useCallback(() => {
     setSubmissions({
       design: loadJobAssessmentSubmission(
+        userId,
         job.id,
         "DESIGN",
         detail.designTask?.id ?? job.designTaskId,
       ),
       programming: loadJobAssessmentSubmission(
+        userId,
         job.id,
         "PROGRAMMING",
         detail.programmingTask?.id ?? job.programmingTaskId,
       ),
       sql: loadJobAssessmentSubmission(
+        userId,
         job.id,
         "SQL",
         detail.sqlTask?.id ?? job.sqlTaskId,
       ),
     });
   }, [
+    userId,
     detail.designTask?.id,
     detail.programmingTask?.id,
     detail.sqlTask?.id,
@@ -435,7 +443,7 @@ export function LinkedInEasyApplyModal({
                             <Link
                               href={assessment.href}
                               onClick={() =>
-                                saveJobApplicationDraft(job.id, coverNote)
+                                saveJobApplicationDraft(userId, job.id, coverNote)
                               }
                             >
                               Start <ArrowRight className="size-3.5" />

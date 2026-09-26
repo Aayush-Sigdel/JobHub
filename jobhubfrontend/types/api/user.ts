@@ -52,28 +52,6 @@ export interface UserProfileResponse {
   updatedAt: string;
 }
 
-export type CollaboratorSource =
-  | "PLATFORM"
-  | "GITHUB"
-  | "DEVTO"
-  | "STACKOVERFLOW"
-  | "ORCID"
-  | "OVERALL";
-
-export interface CollaboratorMatchResponse {
-  userId: string;
-  name: string;
-  email: string;
-  title?: string;
-  bio?: string;
-  location?: string;
-  imageUrl?: string;
-  skills: SkillDto[];
-  similarity: number;
-  matchPercentage: number;
-  source: CollaboratorSource;
-}
-
 export interface UserBasicInfoResponse {
   id: string;
   name: string;

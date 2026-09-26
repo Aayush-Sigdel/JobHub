@@ -1,9 +1,10 @@
 "use client";
 
+import { Hint } from "@/components/ui/tooltip";
+
 import {
   IconUser,
   IconUsers,
-  IconCreditCard,
   IconSettings,
   IconHelpCircle,
   IconLogout,
@@ -17,8 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutAndClearLocalData } from "@/lib/sign-out";
 
 interface DropdownMenuIconsProps {
   profile?: {
@@ -37,8 +40,7 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
   const user = session?.user;
   const userName = profile?.name || user?.name || "Candidate";
   const userEmail = profile?.email || user?.email || "";
-  const userImage =
-    profile?.imageUrl || (user as any)?.imageUrl || (user as any)?.image;
+  const userImage = profile?.imageUrl || user?.imageUrl || user?.image;
 
   const getInitials = (name: string) => {
     if (!name) return "U";
@@ -49,25 +51,30 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Candidate profile menu"
-          className="flex items-center gap-2 rounded-full border border-border bg-muted p-0.5 transition-opacity hover:opacity-85 focus:outline-none cursor-pointer"
-        >
-          {userImage ? (
-            <img
-              src={userImage}
-              alt={userName}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-foreground">
-              {getInitials(userName)}
-            </div>
-          )}
-        </button>
-      </DropdownMenuTrigger>
+      <Hint content="Profile and settings">
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Candidate profile menu"
+            className="flex items-center gap-2 rounded-full border border-border bg-muted p-0.5 transition-opacity hover:opacity-85 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {userImage ? (
+              <Image
+                unoptimized
+                width={36}
+                height={36}
+                src={userImage}
+                alt={userName}
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-foreground">
+                {getInitials(userName)}
+              </div>
+            )}
+          </button>
+        </DropdownMenuTrigger>
+      </Hint>
 
       <DropdownMenuContent
         align="end"
@@ -84,7 +91,10 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
           <div className="flex items-center gap-3 border-b border-border px-3 py-3 mb-1">
             <div className="shrink-0">
               {userImage ? (
-                <img
+                <Image
+                  unoptimized
+                  width={36}
+                  height={36}
                   src={userImage}
                   alt={userName}
                   className="h-9 w-9 rounded-full object-cover border border-border"
@@ -105,12 +115,19 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
             </div>
           </div>
 
-          <DropdownMenuItem asChild className="rounded-lg px-2.5 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted">
+          <DropdownMenuItem
+            asChild
+            className="rounded-lg px-2.5 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted"
+          >
             <Link
               href="/candidate-profile"
               className="flex items-center gap-2.5 w-full"
             >
-              <IconUser size={16} stroke={1.75} className="text-muted-foreground" />
+              <IconUser
+                size={16}
+                stroke={1.75}
+                className="text-muted-foreground"
+              />
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
@@ -119,7 +136,11 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
             onClick={() => router.push("/find-job")}
             className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted"
           >
-            <IconUsers size={16} stroke={1.75} className="text-muted-foreground" />
+            <IconUsers
+              size={16}
+              stroke={1.75}
+              className="text-muted-foreground"
+            />
             <span>Community & Network</span>
           </DropdownMenuItem>
 
@@ -127,7 +148,11 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
             onClick={() => router.push("/setting")}
             className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted"
           >
-            <IconSettings size={16} stroke={1.75} className="text-muted-foreground" />
+            <IconSettings
+              size={16}
+              stroke={1.75}
+              className="text-muted-foreground"
+            />
             <span className="flex-1">Settings</span>
           </DropdownMenuItem>
 
@@ -137,14 +162,18 @@ export function DropdownMenuIcons({ profile }: DropdownMenuIconsProps) {
             onClick={() => router.push("/help")}
             className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors focus:bg-muted"
           >
-            <IconHelpCircle size={16} stroke={1.75} className="text-muted-foreground" />
+            <IconHelpCircle
+              size={16}
+              stroke={1.75}
+              className="text-muted-foreground"
+            />
             <span>Help center</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="my-1 bg-border h-px" />
 
           <DropdownMenuItem
-            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            onClick={() => signOutAndClearLocalData()}
             className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive"
           >
             <IconLogout size={16} stroke={1.75} />

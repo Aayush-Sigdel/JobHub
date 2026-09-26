@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { applyJobAction } from "@/lib/actions/jobs";
@@ -53,6 +55,8 @@ export function JobApplicationModal({
   tabLockWarningLimit,
   tasks,
 }: JobApplicationModalProps) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const [isOpen, setIsOpen] = useState(false);
   const [coverNote, setCoverNote] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -75,16 +79,16 @@ export function JobApplicationModal({
 
     const loadSubmissions = () => {
       setSubmissions({
-        DESIGN: loadJobAssessmentSubmission(jobId, "DESIGN", tasks.design?.id),
-        PROGRAMMING: loadJobAssessmentSubmission(jobId, "PROGRAMMING", tasks.programming?.id),
-        SQL: loadJobAssessmentSubmission(jobId, "SQL", tasks.sql?.id),
+        DESIGN: loadJobAssessmentSubmission(userId, jobId, "DESIGN", tasks.design?.id),
+        PROGRAMMING: loadJobAssessmentSubmission(userId, jobId, "PROGRAMMING", tasks.programming?.id),
+        SQL: loadJobAssessmentSubmission(userId, jobId, "SQL", tasks.sql?.id),
       });
     };
 
     loadSubmissions();
     window.addEventListener("storage", loadSubmissions);
     return () => window.removeEventListener("storage", loadSubmissions);
-  }, [isOpen, jobId, tasks.design?.id, tasks.programming?.id, tasks.sql?.id]);
+  }, [userId, isOpen, jobId, tasks.design?.id, tasks.programming?.id, tasks.sql?.id]);
 
   if (hasApplied) {
     return <Button disabled size="lg" className="w-full bg-emerald-600 text-white opacity-100"><CheckCircle2 />Application submitted</Button>;
@@ -150,7 +154,7 @@ export function JobApplicationModal({
                   <div className="space-y-3">
                     {assessmentCards.map((assessment) => {
                       const Icon = assessment.icon;
-                      return <div key={assessment.type} className="flex items-center justify-between gap-3 rounded-md border bg-background p-3"><div className="min-w-0"><div className="flex items-center gap-2"><Icon className="size-4 text-primary" /><p className="truncate text-sm font-medium">{assessment.title}</p></div><div className="mt-1"><TaskStatus submission={submissions[assessment.type]} /></div></div><Button asChild type="button" size="sm" variant="outline"><Link href={assessment.href} onClick={() => saveJobApplicationDraft(jobId, coverNote)}>Open editor <ExternalLink /></Link></Button></div>;
+                      return <div key={assessment.type} className="flex items-center justify-between gap-3 rounded-md border bg-background p-3"><div className="min-w-0"><div className="flex items-center gap-2"><Icon className="size-4 text-primary" /><p className="truncate text-sm font-medium">{assessment.title}</p></div><div className="mt-1"><TaskStatus submission={submissions[assessment.type]} /></div></div><Button asChild type="button" size="sm" variant="outline"><Link href={assessment.href} onClick={() => saveJobApplicationDraft(userId, jobId, coverNote)}>Open editor <ExternalLink /></Link></Button></div>;
                     })}
                   </div>
                 </section>

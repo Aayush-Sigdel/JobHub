@@ -1,0 +1,41 @@
+.review :is(button, a, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+  scroll-margin-block: 5rem 1rem;
+}
+
+.tabs [role="tab"][data-state="active"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.tabs [role="tab"][data-state="active"] * {
+  color: inherit;
+}
+
+.stage {
+  color: var(--foreground);
+}
+
+@media (max-width: 380px) {
+  .tabs [role="tab"] {
+    gap: 0.25rem;
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .tabs [role="tab"] > svg {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review,
+  .review * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

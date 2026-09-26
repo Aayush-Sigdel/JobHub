@@ -1,6 +1,6 @@
 "use server";
 
-import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
+import { fetchWithAuth } from "@/lib/service-api";
 import { revalidatePath } from "next/cache";
 import type {
   CreateEducationRequest,
@@ -12,7 +12,6 @@ import type {
   UpdateEducationRequest,
   UpdateExperienceRequest,
   UserProfileResponse,
-  CollaboratorMatchResponse,
 } from "@/types/api/user";
 
 async function refreshPlatformMatchingData() {
@@ -86,35 +85,6 @@ export async function updateDiscoverabilityAction(discoverable: boolean) {
   revalidatePath("/profile");
   revalidatePath("/home");
   return result;
-}
-
-export interface CollaboratorDirectoryResult {
-  collaborators: CollaboratorMatchResponse[];
-  error: string | null;
-}
-
-export async function getCollaboratorsAction(): Promise<CollaboratorDirectoryResult> {
-  try {
-    const collaborators = await fetchWithAuth<CollaboratorMatchResponse[]>(
-      "/collaborators?limit=50",
-      { cache: "no-store" },
-    );
-    return {
-      collaborators: Array.isArray(collaborators) ? collaborators : [],
-      error: null,
-    };
-  } catch (error) {
-    const status = error instanceof ServiceApiError ? error.status : undefined;
-    const message =
-      status === 409
-        ? "Your matching data is not ready yet. Refresh it from your profile, then try again."
-        : status === 401
-          ? "Your session has expired. Sign in again to find collaborators."
-          : status === 403
-            ? "Collaborator discovery is available to candidate accounts."
-            : "Collaborators could not be loaded right now. Please try again.";
-    return { collaborators: [], error: message };
-  }
 }
 
 // ─── Skills CRUD ────────────────────────────────────

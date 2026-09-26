@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import { SearchBar } from "@/components/web/search";
+import { ListingSearch } from "@/components/web/listing-search";
 import { ThemeToggle } from "@/components/motion/theme-toggle";
 import { DropdownMenuProfileIcons } from "@/app/(applier)/_components/dropdown/dropdown-profile";
 import NotificationCenter from "@/app/(applier)/_components/dropdown/dropdown-notification";
@@ -14,6 +14,7 @@ import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
 import { cn } from "@/lib/utils";
 import type { UserProfileResponse } from "@/types/api/user";
+import { CollaborationInboxIndicator } from "@/components/collaboration/inbox-indicator";
 
 const candidateLinks = [
   { name: "Home", href: "/home" },
@@ -31,17 +32,11 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
   const { data: session, status } = useSession();
   const isUserLoggedIn = status === "authenticated";
 
-  // Hide the navbar search bar when the current page already contains an in-page search bar
-  const hasInPageSearch =
-    pathname === "/home" ||
-    pathname === "/find-job" ||
-    pathname === "/job-tracker";
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
         {/* Left: Logo & Primary Candidate Links */}
-        <div className="flex items-center gap-6 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <Link
             href={
               isUserLoggedIn
@@ -50,10 +45,10 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
                   : "/home"
                 : "/"
             }
-            className="flex items-center transition-opacity hover:opacity-90"
+            className="flex items-center rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             aria-label="JobHub Home"
           >
-            <Logo />
+            <Logo className="[&>span]:hidden sm:[&>span]:inline" />
           </Link>
 
           {isUserLoggedIn && (
@@ -68,8 +63,9 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                      "rounded-lg px-2 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
                       isActive
                         ? "bg-muted text-foreground font-semibold"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -83,10 +79,9 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
           )}
         </div>
 
-        {/* Center: Compact Search Bar (only shown when page does not already have an in-page search bar) */}
-        {!hasInPageSearch && (
-          <div className="flex-1 max-w-md hidden sm:block">
-            <SearchBar />
+        {isUserLoggedIn && pathname !== "/find-job" && (
+          <div className="ml-auto min-w-0 sm:w-56 sm:flex-1 sm:max-w-xs">
+            <ListingSearch />
           </div>
         )}
 
@@ -95,6 +90,7 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
           {isUserLoggedIn ? (
             <div className="flex items-center gap-1">
               <JobTracker />
+              <CollaborationInboxIndicator />
               <MessageCenter />
               <NotificationCenter />
             </div>
@@ -112,7 +108,7 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
             <div className="flex items-center gap-2 ml-1">
               <Link
                 href="/sign-in"
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                className="rounded-lg px-2 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 Sign In
               </Link>
@@ -137,8 +133,8 @@ const NavigationBar = (props: NavigationBarProps) => {
       fallback={
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
           <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between gap-3 px-4 md:px-6">
-            <div className="flex items-center gap-6 shrink-0">
-              <Logo />
+            <div className="flex items-center gap-3 shrink-0">
+              <Logo className="[&>span]:hidden sm:[&>span]:inline" />
             </div>
           </div>
         </header>

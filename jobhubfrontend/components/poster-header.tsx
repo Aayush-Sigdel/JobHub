@@ -13,7 +13,8 @@ import {
   Layers,
   UserRound,
 } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutAndClearLocalData } from "@/lib/sign-out";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -205,7 +206,7 @@ export function PosterHeader({ profile }: PosterHeaderProps) {
             <DropdownMenuSeparator className="my-1.5 bg-border/70 h-px" />
 
             <DropdownMenuItem
-              onClick={() => signOut({ callbackUrl: "/sign-in" })}
+              onClick={() => signOutAndClearLocalData()}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive"
             >
               <LogOut className="w-4 h-4 text-destructive" />

@@ -1,0 +1,19 @@
+.form :is(button, input, select, textarea, summary, a):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+
+.form :is(input:not([type="checkbox"]), select, textarea) {
+  border-color: color-mix(in srgb, var(--foreground) 45%, var(--background));
+}
+
+.form :is(input, textarea)[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

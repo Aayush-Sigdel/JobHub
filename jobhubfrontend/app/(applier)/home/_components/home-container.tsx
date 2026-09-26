@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { UserProfileSidebar } from "./user-profile-sidebar";
 import { PersonalizedFeed } from "./personalized-feed";
 import { HomeOverview, type HomeApplicationError } from "./home-overview";
+import { HomeDiscover } from "./home-discover";
 import type { JobPostResponse, JobApplicationResponse } from "@/types/api/jobs";
 import type { UserProfileResponse } from "@/types/api/user";
 
@@ -43,6 +44,7 @@ export function HomeContainer({
         applicationCount={applications.length}
         applicationError={applicationError}
       />
+      <HomeDiscover onRemoteSelect={() => setActiveTab("remote")} />
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] items-start gap-10 lg:gap-10">
         {/* CENTER COLUMN: Personalized Feed, Match Filters & Spotlight */}
         <PersonalizedFeed

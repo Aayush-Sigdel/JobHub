@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
@@ -38,6 +40,8 @@ export default function SQLArenaClient({
   tabLockWarningLimit,
   requiredTaskTypes,
 }: Props) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const router = useRouter();
   const [selectedTaskId, setSelectedTaskId] = useState(
     initialTaskId || tasks[0]?.id,
@@ -63,11 +67,11 @@ export default function SQLArenaClient({
     if (!jobId || !task?.id) return;
     const taskId = task.id;
     const timer = window.setTimeout(() => {
-      const saved = loadJobAssessmentSubmission(jobId, "SQL", taskId);
+      const saved = loadJobAssessmentSubmission(userId, jobId, "SQL", taskId);
       if (saved) setResults((previous) => ({ ...previous, [taskId]: saved }));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [jobId, task?.id]);
+  }, [userId, jobId, task?.id]);
 
   function testSolution() {
     if (!task || result?.id || inFlight.current) return;
@@ -124,11 +128,11 @@ export default function SQLArenaClient({
         setResults((previous) => ({ ...previous, [task.id]: response }));
         if (jobId) {
           try {
-            saveJobAssessmentSubmission(jobId, response, {
+            saveJobAssessmentSubmission(userId, jobId, response, {
               taskId: task.id,
               taskType: "SQL",
             });
-            if (hasCompletedRequiredAssessments(jobId, requiredTaskTypes)) {
+            if (hasCompletedRequiredAssessments(userId, jobId, requiredTaskTypes)) {
               toast.success(
                 "All assessments are complete. Review and submit your application.",
               );
@@ -154,6 +158,7 @@ export default function SQLArenaClient({
 
   return (
     <AssessmentSession
+      userId={userId}
       key={`${jobId}:${task?.id}`}
       jobId={jobId}
       taskId={task?.id}

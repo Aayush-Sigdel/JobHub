@@ -1,7 +1,6 @@
 package com.example.jobhub.mapper
 
 import com.example.jobhub.dto.*
-import com.example.jobhub.dto.collaborator.CollaboratorMatchResponse
 import com.example.jobhub.model.*
 import org.springframework.stereotype.Component
 
@@ -36,24 +35,6 @@ class UserMapper {
         title = user.title,
         imageUrl = user.imageUrl,
         onboardingCompleted = user.isOnboardingCompleted
-    )
-
-    fun toCollaboratorMatchResponse(
-        user: User,
-        similarity: Double,
-        source: CollaboratorSource
-    ) = CollaboratorMatchResponse(
-        userId = user.id,
-        name = user.name,
-        email = user.email,
-        title = user.title,
-        bio = user.bio,
-        location = user.location,
-        imageUrl = user.imageUrl,
-        skills = user.skills.map { toSkillDto(it) },
-        similarity = similarity,
-        matchPercentage = Math.round(similarity * 100).toInt(),
-        source = source
     )
 
     fun toSkillDto(skill: Skill) = SkillDto(

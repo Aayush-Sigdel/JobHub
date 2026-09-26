@@ -1,5 +1,7 @@
 "use client";
 
+import { Hint } from "@/components/ui/tooltip";
+
 import * as React from "react";
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -34,7 +36,8 @@ const initialMessages: Message[] = [
     company: "Stripe",
     sender: "Sarah Lin · Tech Recruiting",
     subject: "Interview invitation: Senior Frontend Engineer",
-    preview: "We reviewed your portfolio and would like to schedule a 45-minute technical discussion.",
+    preview:
+      "We reviewed your portfolio and would like to schedule a 45-minute technical discussion.",
     time: "1h ago",
     unread: true,
     href: "/job-tracker",
@@ -44,7 +47,8 @@ const initialMessages: Message[] = [
     company: "Acme Cloud",
     sender: "David Miller · Engineering Lead",
     subject: "Application update: Full Stack Developer",
-    preview: "Your assessment scores were in the top 5%. When are you available for a brief catch-up?",
+    preview:
+      "Your assessment scores were in the top 5%. When are you available for a brief catch-up?",
     time: "4h ago",
     unread: true,
     href: "/job-tracker",
@@ -54,7 +58,8 @@ const initialMessages: Message[] = [
     company: "Linear",
     sender: "Talent Operations",
     subject: "Take-home challenge received",
-    preview: "Thank you for completing the frontend component challenge. Our team is reviewing it today.",
+    preview:
+      "Thank you for completing the frontend component challenge. Our team is reviewing it today.",
     time: "1d ago",
     unread: false,
     href: "/job-tracker",
@@ -66,7 +71,8 @@ export default function MessageCenter() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const unreadCount = messages.filter((m) => m.unread).length;
-  const filteredMessages = filter === "unread" ? messages.filter((m) => m.unread) : messages;
+  const filteredMessages =
+    filter === "unread" ? messages.filter((m) => m.unread) : messages;
 
   const markAllAsRead = () => {
     setMessages((prev) => prev.map((m) => ({ ...m, unread: false })));
@@ -74,18 +80,20 @@ export default function MessageCenter() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Messages"
-          className="relative flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-        >
-          <IconMessageDots size={18} stroke={1.75} />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
-          )}
-        </button>
-      </DropdownMenuTrigger>
+      <Hint content="Messages">
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Messages"
+            className="relative flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <IconMessageDots size={18} stroke={1.75} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
+            )}
+          </button>
+        </DropdownMenuTrigger>
+      </Hint>
 
       <DropdownMenuContent
         align="end"
@@ -101,7 +109,9 @@ export default function MessageCenter() {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-foreground">Messages</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                Messages
+              </h3>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
                   {unreadCount} new
@@ -129,7 +139,7 @@ export default function MessageCenter() {
                 "rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer",
                 filter === "all"
                   ? "bg-background text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               All
@@ -141,7 +151,7 @@ export default function MessageCenter() {
                 "rounded-md px-2.5 py-1 font-medium transition-colors cursor-pointer",
                 filter === "unread"
                   ? "bg-background text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               Unread ({unreadCount})

@@ -19,7 +19,7 @@ const mobileTabs = [
   { name: "Search", href: "/find-job", icon: IconSearch },
   { name: "Tracker", href: "/job-tracker", icon: IconBookmark },
   { name: "Tasks", href: "/task/program", icon: IconCode },
-  { name: "People", href: "/collaborators", icon: IconUsers },
+  { name: "Collab", href: "/collaborators", icon: IconUsers },
   { name: "Profile", href: "/candidate-profile", icon: IconUser },
 ];
 
@@ -36,7 +36,7 @@ export default function CandidateMobileNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-border bg-background/95 backdrop-blur-md"
+      className="fixed bottom-0 left-0 right-0 z-40 block lg:hidden border-t border-border bg-background/95 backdrop-blur-md"
     >
       <div className="flex h-14 items-center justify-around px-2">
         {mobileTabs.map((tab) => {
