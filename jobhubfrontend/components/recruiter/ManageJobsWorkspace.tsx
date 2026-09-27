@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -30,7 +31,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { JobPostForm } from "@/components/post-job/JobPostForm";
 import CandidateDetailDrawer from "@/components/recruiter/CandidateDetailDrawer";
-import KanbanView from "@/components/recruiter/KanbanView";
+import KanbanView, { type StagePages } from "@/components/recruiter/KanbanView";
+import CandidateHighlight from "./CandidateHighlight";
 import CandidateList from "@/components/recruiter/CandidateList";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import {
@@ -39,7 +41,9 @@ import {
   getRecruiterJobResultAction,
 } from "@/lib/actions/recruiter";
 import { deleteJobAction, updateJobAction } from "@/lib/actions/jobs";
-import { calculateSupportedOverallSimilarity } from "@/lib/semantic-match";
+import { filterCandidates } from "@/lib/candidate-listing";
+import { candidateStages } from "./candidate-review-utils";
+import listingStyles from "./candidate-listing.module.css";
 import { cn } from "@/lib/utils";
 import type { JobPostResponse } from "@/types/api/jobs";
 import type {
@@ -149,6 +153,12 @@ export default function ManageJobsWorkspace({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [candidateId, setCandidateId] = useState<string | null>(null);
+  const [candidatePage, setCandidatePage] = useState(1);
+  const [candidatePageSize, setCandidatePageSize] = useState(10);
+  const [candidateStagePages, setCandidateStagePages] = useState<StagePages>(
+    {},
+  );
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [leaveTarget, setLeaveTarget] = useState<{ id: string | null } | null>(
     null,
@@ -156,6 +166,22 @@ export default function ManageJobsWorkspace({
   const [formPending, setFormPending] = useState(false);
   const [actionPending, startAction] = useTransition();
   const panel = useRef<HTMLDivElement>(null);
+  const resultsHeading = useRef<HTMLHeadingElement>(null);
+  const candidateSearchInput = useRef<HTMLInputElement>(null);
+  const reviewBackButton = useRef<HTMLButtonElement>(null);
+  const jobSearchInput = useRef<HTMLInputElement>(null);
+  const sidebarToggle = useRef<HTMLButtonElement>(null);
+  const workspaceTitle = useRef<HTMLHeadingElement>(null);
+  const sidebarWasOpen = useRef(false);
+  const sidebarFocusTarget = useRef<"toggle" | "title">("toggle");
+  const reviewReturn = useRef({
+    id: "",
+    action: "review",
+    scrollTop: 0,
+    boardLeft: 0,
+    stage: "APPLIED",
+    restore: false,
+  });
   const isForm = mode === "create" || mode === "edit";
   const selectedJob = jobs.find((job) => job.id === selectedId);
   const currentData = data?.id === selectedId ? data : null;
@@ -217,9 +243,49 @@ export default function ManageJobsWorkspace({
     };
   }, [isForm, taskAttempt]);
 
-  useEffect(() => {
-    panel.current?.scrollTo({ top: 0 });
+  useLayoutEffect(() => {
+    const previous = reviewReturn.current;
+    if (!candidateId && previous.restore) {
+      previous.restore = false;
+      const trigger = Array.from(
+        panel.current?.querySelectorAll<HTMLElement>(
+          "[data-candidate-review]",
+        ) || [],
+      ).find(
+        (element) =>
+          element.dataset.candidateReview === previous.id &&
+          element.dataset.reviewAction === previous.action,
+      );
+      (trigger || resultsHeading.current)?.focus({ preventScroll: true });
+      panel.current?.scrollTo({ top: trigger ? previous.scrollTop : 0 });
+      const board = panel.current?.querySelector<HTMLElement>(
+        "[data-candidate-board]",
+      );
+      if (board) board.scrollLeft = previous.boardLeft;
+      if (
+        board &&
+        trigger &&
+        trigger.closest<HTMLElement>("[data-candidate-stage]")?.dataset
+          .candidateStage !== previous.stage
+      ) {
+        trigger.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+    } else {
+      panel.current?.scrollTo({ top: 0 });
+      if (candidateId) reviewBackButton.current?.focus({ preventScroll: true });
+    }
   }, [selectedId, mode, tab, candidateId]);
+
+  useLayoutEffect(() => {
+    if (sidebarOpen) jobSearchInput.current?.focus();
+    else if (sidebarWasOpen.current) {
+      (sidebarFocusTarget.current === "title"
+        ? workspaceTitle.current
+        : sidebarToggle.current
+      )?.focus();
+    }
+    sidebarWasOpen.current = sidebarOpen;
+  }, [sidebarOpen]);
 
   const sortedJobs = useMemo(
     () =>
@@ -235,30 +301,108 @@ export default function ManageJobsWorkspace({
       .toLowerCase()
       .includes(jobSearch.toLowerCase().trim()),
   );
-  const candidates = useMemo(() => {
-    const list = (currentData?.candidates || []).filter((candidate) => {
-      const match = calculateSupportedOverallSimilarity(candidate);
-      const applied = candidate.appliedAt ? Date.parse(candidate.appliedAt) : 0;
-      return (
-        `${candidate.name} ${candidate.email} ${candidate.title || ""}`
-          .toLowerCase()
-          .includes(candidateSearch.toLowerCase().trim()) &&
-        (status === "ALL" || (candidate.status || "APPLIED") === status) &&
-        (!minMatch || (match !== null && match * 100 >= Number(minMatch))) &&
-        (!fromDate || applied >= new Date(`${fromDate}T00:00:00`).getTime()) &&
-        (!toDate || applied <= new Date(`${toDate}T23:59:59.999`).getTime())
-      );
-    });
-    return list.sort((a, b) =>
-      sort === "name"
-        ? a.name.localeCompare(b.name)
-        : sort === "newest"
-          ? (Date.parse(b.appliedAt || "") || 0) -
-            (Date.parse(a.appliedAt || "") || 0)
-          : (calculateSupportedOverallSimilarity(b) ?? -1) -
-            (calculateSupportedOverallSimilarity(a) ?? -1),
-    );
-  }, [currentData, candidateSearch, status, sort, minMatch, fromDate, toDate]);
+  const candidates = useMemo(
+    () =>
+      filterCandidates(currentData?.candidates || [], {
+        search: candidateSearch,
+        status,
+        sort,
+        minMatch,
+        fromDate,
+        toDate,
+      }),
+    [currentData, candidateSearch, status, sort, minMatch, fromDate, toDate],
+  );
+
+  function updateCandidateFilter(
+    setValue: (value: string) => void,
+    value: string,
+  ) {
+    setValue(value);
+    setCandidatePage(1);
+    setCandidateStagePages({});
+  }
+
+  function clearCandidateFilters() {
+    setCandidateSearch("");
+    setStatus("ALL");
+    setMinMatch("");
+    setFromDate("");
+    setToDate("");
+    setCandidatePage(1);
+    setCandidateStagePages({});
+  }
+
+  function openCandidate(candidate: CandidateDashboardResponse) {
+    const id = candidate.applicationId || candidate.candidateId;
+    reviewReturn.current = {
+      id,
+      action:
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement.dataset.reviewAction || "review"
+          : "review",
+      scrollTop: panel.current?.scrollTop || 0,
+      boardLeft:
+        panel.current?.querySelector<HTMLElement>("[data-candidate-board]")
+          ?.scrollLeft || 0,
+      stage: candidate.status || "APPLIED",
+      restore: false,
+    };
+    setCandidateId(id);
+  }
+
+  function closeCandidate() {
+    reviewReturn.current.restore = true;
+    setCandidateId(null);
+  }
+
+  const activeFilters = [
+    ...(candidateSearch.trim()
+      ? [
+          {
+            label: `Search: ${candidateSearch.trim()}`,
+            clear: () => updateCandidateFilter(setCandidateSearch, ""),
+          },
+        ]
+      : []),
+    ...(status !== "ALL"
+      ? [
+          {
+            label:
+              candidateStages.find((stage) => stage.id === status)?.label ||
+              readable(status),
+            clear: () => updateCandidateFilter(setStatus, "ALL"),
+          },
+        ]
+      : []),
+    ...(minMatch
+      ? [
+          {
+            label: `${minMatch}%+ match`,
+            clear: () => updateCandidateFilter(setMinMatch, ""),
+          },
+        ]
+      : []),
+    ...(fromDate
+      ? [
+          {
+            label: `From ${dateLabel(`${fromDate}T00:00:00`)}`,
+            clear: () => updateCandidateFilter(setFromDate, ""),
+          },
+        ]
+      : []),
+    ...(toDate
+      ? [
+          {
+            label: `Through ${dateLabel(`${toDate}T00:00:00`)}`,
+            clear: () => updateCandidateFilter(setToDate, ""),
+          },
+        ]
+      : []),
+  ];
+  const advancedFilterCount = [minMatch, fromDate, toDate].filter(
+    Boolean,
+  ).length;
 
   function syncUrl(id: string | null, nextTab: Tab) {
     const url = new URL(window.location.href);
@@ -275,6 +419,10 @@ export default function ManageJobsWorkspace({
     setMode(id ? "view" : "start");
     setTab("details");
     setCandidateId(null);
+    setCandidatePage(1);
+    setCandidateStagePages({});
+    setFiltersOpen(false);
+    sidebarFocusTarget.current = "title";
     setSidebarOpen(false);
     setDeleteConfirm(false);
     setLeaveTarget(null);
@@ -290,6 +438,8 @@ export default function ManageJobsWorkspace({
     if (formPending || actionPending) return;
     if (isForm) {
       setLeaveTarget({ id });
+      sidebarFocusTarget.current = "title";
+      setSidebarOpen(false);
       return;
     }
     selectJob(id);
@@ -375,49 +525,81 @@ export default function ManageJobsWorkspace({
   };
 
   return (
-    <div className="flex h-[calc(100dvh-6rem)] min-h-96 overflow-hidden rounded-2xl border border-border bg-card lg:h-[calc(100dvh-6.5rem)]">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-96 overflow-hidden bg-background lg:h-[calc(100dvh-6.5rem)]">
       <aside
-        aria-label="Job history"
+        aria-label="Job listings"
         className={cn(
-          "flex w-full shrink-0 flex-col bg-muted/40 md:w-64 md:border-r md:border-border lg:w-72",
+          "flex w-full shrink-0 flex-col bg-background md:w-64 md:border-r md:border-border lg:w-72",
           sidebarOpen ? "flex" : "hidden md:flex",
         )}
       >
-        <div className="flex items-center justify-between px-5 pb-3 pt-5">
-          <span className="text-sm font-semibold">Your workspace</span>
+        <div className="flex items-center justify-between px-5 pb-4 pt-5">
+          <div>
+            <h2 className="text-sm font-semibold">Your jobs</h2>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Choose a role to manage applicants
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 md:hidden"
-            aria-label="Close job history"
-            onClick={() => setSidebarOpen(false)}
+            className="size-11 md:hidden focus-visible:ring-foreground"
+            aria-label="Close job listings"
+            onClick={() => {
+              sidebarFocusTarget.current = "toggle";
+              setSidebarOpen(false);
+            }}
           >
-            <IconX className="size-4" />
+            <IconX aria-hidden="true" className="size-4" />
           </Button>
         </div>
         <div className="px-3">
           <Button
             onClick={() => navigate(null)}
             disabled={formPending || actionPending}
-            className="h-11 w-full justify-start gap-3 rounded-xl bg-primary px-3 text-primary-foreground shadow-none"
+            className="h-11 w-full justify-start gap-3 rounded-md bg-primary px-3 text-primary-foreground shadow-none focus-visible:ring-foreground"
           >
-            <IconPlus className="size-5" />
+            <IconPlus aria-hidden="true" className="size-5" />
             New job
           </Button>
           <div className="relative mt-4">
-            <IconSearch className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" />
+            <IconSearch
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-3.5 size-4 text-muted-foreground"
+            />
             <Input
-              aria-label="Search job history"
-              placeholder="Search jobs"
+              ref={jobSearchInput}
+              aria-label="Search jobs by title, company or location"
+              placeholder="Search your jobs"
               value={jobSearch}
               onChange={(event) => setJobSearch(event.target.value)}
-              className="h-9 border-transparent bg-transparent pl-9 shadow-none focus-visible:bg-background"
+              className="h-11 rounded-md border-foreground/40 bg-background pl-9 pr-11 shadow-none focus-visible:ring-foreground"
             />
+            {jobSearch && (
+              <button
+                type="button"
+                aria-label="Clear job search"
+                onClick={() => {
+                  setJobSearch("");
+                  jobSearchInput.current?.focus();
+                }}
+                className="absolute top-0 right-0 flex size-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-foreground"
+              >
+                <IconX aria-hidden="true" className="size-4" />
+              </button>
+            )}
           </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-5">
-          <p className="mb-2 px-3 text-xs font-medium text-muted-foreground">
-            {jobSearch ? "Search results" : "Recent jobs"}
+          <p
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="mb-2 px-3 text-xs font-medium text-muted-foreground"
+          >
+            {jobSearch
+              ? `${visibleJobs.length} of ${jobs.length} jobs found`
+              : "Recent jobs · Newest first"}
           </p>
           {error && (
             <div role="alert" className="px-3 py-4 text-sm">
@@ -433,11 +615,25 @@ export default function ManageJobsWorkspace({
             </div>
           )}
           {!error && visibleJobs.length === 0 && (
-            <p className="px-3 py-4 text-sm leading-relaxed text-muted-foreground">
-              {jobSearch
-                ? "No jobs match your search."
-                : "Your published jobs will appear here."}
-            </p>
+            <div className="px-3 py-4 text-sm leading-relaxed text-muted-foreground">
+              <p>
+                {jobSearch
+                  ? "No jobs match your search."
+                  : "Your published jobs will appear here."}
+              </p>
+              {jobSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJobSearch("");
+                    jobSearchInput.current?.focus();
+                  }}
+                  className="mt-2 min-h-11 rounded text-sm font-medium text-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-foreground"
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
           )}
           <div className="space-y-1">
             {visibleJobs.map((item) => (
@@ -448,27 +644,52 @@ export default function ManageJobsWorkspace({
                 disabled={formPending || actionPending}
                 onClick={() => navigate(item.id)}
                 className={cn(
-                  "group w-full rounded-xl px-3 py-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+                  "group w-full rounded-md px-3 py-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-foreground disabled:opacity-50",
                   selectedId === item.id
-                    ? "bg-muted text-foreground"
+                    ? "bg-primary/15 text-foreground"
                     : "hover:bg-muted/70",
                 )}
               >
-                <span className="block truncate text-sm font-medium">
-                  {item.title}
-                </span>
-                <span className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span className="truncate">
-                    {active(item) ? "Live" : "Closed"} · {item.companyName}
+                <span className="flex items-start justify-between gap-2 text-sm font-medium">
+                  <span className="line-clamp-2 break-words">
+                    <CandidateHighlight text={item.title} query={jobSearch} />
                   </span>
+                  {selectedId === item.id && (
+                    <IconCheck
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0"
+                    />
+                  )}
+                </span>
+                <span className="mt-1 block truncate text-xs text-muted-foreground">
+                  <CandidateHighlight
+                    text={item.companyName}
+                    query={jobSearch}
+                  />
+                </span>
+                <span className="mt-2 flex items-center justify-between gap-2 text-xs">
                   <span
-                    className="shrink-0 tabular-nums"
-                    aria-label={`${item.totalApplicants || 0} candidates`}
+                    className={
+                      active(item) ? "text-foreground" : "text-muted-foreground"
+                    }
                   >
-                    {item.totalApplicants || 0}
-                    <IconUsers className="ml-1 inline size-3" />
+                    {active(item) ? "Live" : "Closed"}
+                  </span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {item.totalApplicants || 0} applicants
                   </span>
                 </span>
+                {jobSearch.trim() &&
+                  item.location
+                    ?.toLowerCase()
+                    .includes(jobSearch.trim().toLowerCase()) && (
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      <CandidateHighlight
+                        text={item.location}
+                        query={jobSearch}
+                      />
+                    </span>
+                  )}
               </button>
             ))}
           </div>
@@ -490,13 +711,18 @@ export default function ManageJobsWorkspace({
             <Button
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0 md:hidden"
+              ref={sidebarToggle}
+              className="size-11 shrink-0 md:hidden focus-visible:ring-foreground"
               onClick={() => setSidebarOpen(true)}
-              aria-label="Open job history"
+              aria-label="Open job listings"
             >
               <IconLayoutSidebar className="size-5" />
             </Button>
-            <h1 className="truncate text-sm font-semibold">
+            <h1
+              ref={workspaceTitle}
+              tabIndex={-1}
+              className="truncate text-sm font-semibold outline-offset-4"
+            >
               {mode === "start" || mode === "create"
                 ? "New job"
                 : selectedJob?.title || "Job details"}
@@ -560,7 +786,7 @@ export default function ManageJobsWorkspace({
           </div>
         )}
 
-        {mode === "view" && (
+        {mode === "view" && !(tab === "candidates" && selectedCandidate) && (
           <nav
             aria-label="Job views"
             className="flex shrink-0 gap-6 border-b border-border/70 px-5 sm:px-8"
@@ -572,9 +798,9 @@ export default function ManageJobsWorkspace({
                 aria-current={tab === value ? "page" : undefined}
                 onClick={() => switchTab(value)}
                 className={cn(
-                  "flex items-center gap-2 border-b-2 py-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex min-h-11 items-center gap-2 border-b-2 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-foreground",
                   tab === value
-                    ? "border-foreground font-semibold text-foreground"
+                    ? "border-primary font-semibold text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -807,14 +1033,18 @@ export default function ManageJobsWorkspace({
                   </dl>
                   <section className="mt-8">
                     <h3 className="text-base font-semibold">About the role</h3>
-                    <div className="mt-3"><JobMarkdown>{job.description}</JobMarkdown></div>
+                    <div className="mt-3">
+                      <JobMarkdown>{job.description}</JobMarkdown>
+                    </div>
                   </section>
                   {job.requirements && (
                     <section className="mt-8">
                       <h3 className="text-base font-semibold">
                         What we’re looking for
                       </h3>
-                      <div className="mt-3"><JobMarkdown>{job.requirements}</JobMarkdown></div>
+                      <div className="mt-3">
+                        <JobMarkdown>{job.requirements}</JobMarkdown>
+                      </div>
                     </section>
                   )}
                   <section className="mt-8">
@@ -920,11 +1150,12 @@ export default function ManageJobsWorkspace({
               />
             ) : selectedCandidate ? (
               <>
-                <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-5 py-2">
+                <div className="flex shrink-0 items-center justify-between px-5 py-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setCandidateId(null)}
+                    onClick={closeCandidate}
+                    ref={reviewBackButton}
                   >
                     <IconArrowLeft className="size-4" />
                     All candidates
@@ -939,7 +1170,9 @@ export default function ManageJobsWorkspace({
                   jobId={selectedId!}
                   open
                   embedded
-                  onOpenChange={() => setCandidateId(null)}
+                  onOpenChange={(open) => {
+                    if (!open) closeCandidate();
+                  }}
                   onStatusChange={(nextStatus) => {
                     setData((previous) =>
                       previous
@@ -958,206 +1191,336 @@ export default function ManageJobsWorkspace({
                 />
               </>
             ) : (
-              <div className="px-5 py-6 sm:px-8">
+              <div className={`${listingStyles.listing} px-4 py-5 sm:px-7`}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold">
-                    Candidates{" "}
-                    <span className="ml-2 inline-flex min-w-6 items-center justify-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                      {currentData.candidates.length}
-                    </span>
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div
-                      role="group"
-                      aria-label="Candidate view"
-                      className="flex gap-1 rounded-lg border border-border p-1"
+                  <div>
+                    <h2
+                      ref={resultsHeading}
+                      tabIndex={-1}
+                      className="w-fit text-lg font-semibold outline-offset-4"
                     >
-                      {(["list", "kanban"] as const).map((view) => {
-                        const Icon =
-                          view === "list" ? IconList : IconLayoutKanban;
-                        return (
-                          <button
-                            key={view}
-                            type="button"
-                            aria-pressed={candidateView === view}
-                            onClick={() => {
-                              setCandidateView(view);
-                              if (view === "kanban") setStatus("ALL");
-                            }}
-                            className={cn(
-                              "flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-foreground",
-                              candidateView === view
-                                ? "bg-muted text-foreground"
-                                : "text-muted-foreground hover:bg-muted/50",
-                            )}
-                          >
-                            <Icon className="size-4" />
-                            {view === "list" ? "List" : "Kanban"}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                      Sort by
-                      <select
-                        aria-label="Sort candidates"
-                        className={control}
-                        value={sort}
-                        onChange={(e) => setSort(e.target.value)}
-                      >
-                        <option value="match">Best match</option>
-                        <option value="newest">Newest</option>
-                        <option value="name">Name</option>
-                      </select>
-                    </label>
+                      Candidates
+                    </h2>
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      aria-atomic="true"
+                      className="mt-1 text-sm text-muted-foreground"
+                    >
+                      {candidates.length} of {currentData.candidates.length}{" "}
+                      applications
+                      {activeFilters.length > 0
+                        ? " match your filters"
+                        : " for this job"}
+                    </p>
+                  </div>
+                  <div
+                    role="group"
+                    aria-label="Candidate view"
+                    className="flex gap-1 rounded-md bg-muted/40 p-1"
+                  >
+                    {(["list", "kanban"] as const).map((view) => {
+                      const Icon =
+                        view === "list" ? IconList : IconLayoutKanban;
+                      return (
+                        <button
+                          key={view}
+                          type="button"
+                          aria-pressed={candidateView === view}
+                          aria-controls="workspace-candidate-results"
+                          onClick={() => {
+                            setCandidateView(view);
+                            if (view === "kanban")
+                              updateCandidateFilter(setStatus, "ALL");
+                          }}
+                          className={cn(
+                            "flex min-h-11 items-center gap-2 rounded-sm px-3 text-sm font-medium sm:min-h-9",
+                            candidateView === view
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-muted",
+                          )}
+                        >
+                          <Icon aria-hidden="true" className="size-4" />
+                          {view === "list" ? "List" : "Kanban"}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                  <div className="relative flex-1 sm:max-w-lg">
-                    <IconSearch className="pointer-events-none absolute top-3 left-3 size-4 text-muted-foreground" />
-                    <Input
-                      aria-label="Search candidates"
-                      placeholder="Search by name, email, or title"
-                      className="h-10 rounded-lg border border-border bg-background pl-9 shadow-none"
-                      value={candidateSearch}
-                      onChange={(e) => setCandidateSearch(e.target.value)}
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <div className="relative basis-full sm:min-w-56 sm:flex-1 sm:basis-auto">
+                    <IconSearch
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-3.5 left-3 size-4 text-muted-foreground"
                     />
+                    <Input
+                      ref={candidateSearchInput}
+                      aria-label="Search candidates by name, email, title or skill"
+                      aria-controls="workspace-candidate-results"
+                      placeholder="Search name, email, title or skill"
+                      className="h-11 rounded-md bg-background pl-9 pr-11 shadow-none"
+                      value={candidateSearch}
+                      onChange={(e) =>
+                        updateCandidateFilter(
+                          setCandidateSearch,
+                          e.target.value,
+                        )
+                      }
+                    />
+                    {candidateSearch && (
+                      <button
+                        type="button"
+                        aria-label="Clear candidate search"
+                        onClick={() => {
+                          updateCandidateFilter(setCandidateSearch, "");
+                          candidateSearchInput.current?.focus();
+                        }}
+                        className="absolute top-0 right-0 flex size-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                      >
+                        <IconX aria-hidden="true" className="size-4" />
+                      </button>
+                    )}
                   </div>
                   {candidateView === "list" && (
                     <select
                       aria-label="Filter candidate status"
-                      className={cn(control, "h-10")}
+                      aria-controls="workspace-candidate-results"
+                      className={cn(
+                        control,
+                        "h-11 min-w-0 flex-1 rounded-md sm:flex-none",
+                      )}
                       value={status}
-                      onChange={(e) => setStatus(e.target.value)}
+                      onChange={(e) =>
+                        updateCandidateFilter(setStatus, e.target.value)
+                      }
                     >
                       <option value="ALL">All stages</option>
-                      {[
-                        "APPLIED",
-                        "IN_REVIEW",
-                        "SHORTLISTED",
-                        "ACCEPTED",
-                        "REJECTED",
-                      ].map((value) => (
-                        <option key={value} value={value}>
-                          {readable(value)}
+                      {candidateStages.map((stage) => (
+                        <option key={stage.id} value={stage.id}>
+                          {stage.label}
                         </option>
                       ))}
                     </select>
                   )}
-                </div>
-                <details className="group/filters mt-3 text-sm">
-                  <summary className="flex min-h-9 w-fit cursor-pointer list-none items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-                    <IconAdjustmentsHorizontal className="size-3.5" />
+                  <select
+                    aria-label="Sort candidates"
+                    className={cn(
+                      control,
+                      "h-11 min-w-0 flex-1 rounded-md sm:flex-none",
+                    )}
+                    value={sort}
+                    onChange={(e) =>
+                      updateCandidateFilter(setSort, e.target.value)
+                    }
+                  >
+                    <option value="match">Best match first</option>
+                    <option value="newest">Newest first</option>
+                    <option value="name">Name A-Z</option>
+                  </select>
+                  <button
+                    type="button"
+                    aria-expanded={filtersOpen}
+                    aria-controls="workspace-candidate-filters"
+                    onClick={() => setFiltersOpen((open) => !open)}
+                    className={cn(
+                      "flex min-h-11 items-center gap-2 rounded-md border border-input px-3 text-sm font-medium",
+                      advancedFilterCount
+                        ? "bg-primary/15 text-foreground"
+                        : "hover:bg-muted/40",
+                    )}
+                  >
+                    <IconAdjustmentsHorizontal
+                      aria-hidden="true"
+                      className="size-4"
+                    />
                     Filters
-                    {(minMatch || fromDate || toDate) && (
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground">
-                        Active
+                    {advancedFilterCount > 0 && (
+                      <span className="flex size-5 items-center justify-center rounded-sm bg-primary text-xs text-primary-foreground">
+                        {advancedFilterCount}
                       </span>
                     )}
-                    <IconChevronDown className="size-3.5 transition-transform group-open/filters:rotate-180" />
-                  </summary>
-                  <div className="mt-3 flex flex-wrap gap-4 rounded-lg border border-border bg-muted/20 p-4">
-                    <label className="space-y-1 text-xs text-muted-foreground">
-                      <span className="block">Minimum match</span>
+                    <IconChevronDown
+                      aria-hidden="true"
+                      className={cn(
+                        "size-3.5 transition-transform",
+                        filtersOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </div>
+                <div id="workspace-candidate-filters" hidden={!filtersOpen}>
+                  <div className="mt-4 grid gap-4 border-y border-border py-4 sm:grid-cols-3">
+                    <label className="space-y-2 text-xs font-medium text-muted-foreground">
+                      <span className="block">Minimum job match</span>
                       <select
-                        className={control}
+                        className={cn(control, "h-11 w-full text-foreground")}
                         value={minMatch}
-                        onChange={(e) => setMinMatch(e.target.value)}
+                        onChange={(e) =>
+                          updateCandidateFilter(setMinMatch, e.target.value)
+                        }
                       >
                         <option value="">Any match</option>
-                        <option value="50">50%</option>
-                        <option value="75">75%</option>
-                        <option value="90">90%</option>
+                        <option value="50">50% or higher</option>
+                        <option value="75">75% or higher</option>
+                        <option value="90">90% or higher</option>
                       </select>
                     </label>
-                    <label className="space-y-1 text-xs text-muted-foreground">
+                    <label className="space-y-2 text-xs font-medium text-muted-foreground">
                       <span className="block">Applied from</span>
                       <input
-                        className={control}
+                        className={cn(
+                          control,
+                          "h-11 w-full min-w-0 text-foreground",
+                        )}
                         type="date"
                         value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
+                        max={toDate || undefined}
+                        onChange={(e) =>
+                          updateCandidateFilter(setFromDate, e.target.value)
+                        }
                       />
                     </label>
-                    <label className="space-y-1 text-xs text-muted-foreground">
+                    <label className="space-y-2 text-xs font-medium text-muted-foreground">
                       <span className="block">Applied through</span>
                       <input
-                        className={control}
+                        className={cn(
+                          control,
+                          "h-11 w-full min-w-0 text-foreground",
+                        )}
                         type="date"
                         value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
+                        min={fromDate || undefined}
+                        onChange={(e) =>
+                          updateCandidateFilter(setToDate, e.target.value)
+                        }
                       />
                     </label>
                   </div>
-                </details>
-                {candidateView === "kanban" && candidates.length > 0 ? (
-                  <div className="mt-5">
-                    <KanbanView
-                      candidates={candidates}
-                      onCandidateSelect={(candidate) =>
-                        setCandidateId(
-                          candidate.applicationId || candidate.candidateId,
-                        )
-                      }
-                      onStatusChange={(applicationId, nextStatus) => {
-                        setData((previous) =>
-                          previous?.id === selectedId
-                            ? {
-                                ...previous,
-                                candidates: previous.candidates.map(
-                                  (candidate) =>
-                                    candidate.applicationId === applicationId
-                                      ? { ...candidate, status: nextStatus }
-                                      : candidate,
-                                ),
-                              }
-                            : previous,
-                        );
-                      }}
-                    />
-                  </div>
-                ) : (
-                  candidates.length > 0 && (
-                    <CandidateList
-                      candidates={candidates}
-                      onSelect={(candidate) =>
-                        setCandidateId(
-                          candidate.applicationId || candidate.candidateId,
-                        )
-                      }
-                    />
-                  )
-                )}
-                {candidates.length === 0 && (
-                  <div className="py-16 text-center">
-                    <IconUsers className="mx-auto mb-4 size-7 text-muted-foreground" />
-                    <h3 className="font-semibold">
-                      {currentData.candidates.length
-                        ? "No candidates match these filters"
-                        : "Your next hire starts here"}
-                    </h3>
-                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                      {currentData.candidates.length
-                        ? "Try a different search or clear your filters."
-                        : "Applications for this job will appear here, ready to review."}
-                    </p>
-                    {currentData.candidates.length > 0 && (
-                      <Button
-                        className="mt-4"
-                        variant="outline"
-                        onClick={() => {
-                          setCandidateSearch("");
-                          setStatus("ALL");
-                          setMinMatch("");
-                          setFromDate("");
-                          setToDate("");
+                </div>
+                {activeFilters.length > 0 && (
+                  <div
+                    role="group"
+                    aria-label="Active candidate filters"
+                    className="mt-3 flex flex-wrap items-center gap-2"
+                  >
+                    {activeFilters.map((filter) => (
+                      <button
+                        key={filter.label}
+                        type="button"
+                        aria-label={`Remove filter: ${filter.label}`}
+                        onClick={(event) => {
+                          filter.clear();
+                          // The chip disappears; keep keyboard focus near the updated results.
+                          if (event.detail === 0)
+                            resultsHeading.current?.focus({
+                              preventScroll: true,
+                            });
                         }}
+                        className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-md bg-muted px-3 py-1 text-xs sm:min-h-8"
                       >
-                        Clear filters
-                      </Button>
-                    )}
+                        <span className="break-words [overflow-wrap:anywhere]">
+                          {filter.label}
+                        </span>
+                        <IconX
+                          aria-hidden="true"
+                          className="size-3.5 shrink-0"
+                        />
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearCandidateFilters();
+                        resultsHeading.current?.focus({ preventScroll: true });
+                      }}
+                      className="min-h-11 px-2 text-xs font-medium underline underline-offset-4 sm:min-h-8"
+                    >
+                      Clear all
+                    </button>
                   </div>
                 )}
+                <div id="workspace-candidate-results">
+                  {candidateView === "kanban" && candidates.length > 0 ? (
+                    <div className="mt-5">
+                      <KanbanView
+                        candidates={candidates}
+                        search={candidateSearch}
+                        showJobTitle={false}
+                        stagePages={candidateStagePages}
+                        onStagePageChange={(stage, page) =>
+                          setCandidateStagePages((current) => ({
+                            ...current,
+                            [stage]: page,
+                          }))
+                        }
+                        onCandidateSelect={openCandidate}
+                        onStatusChange={(applicationId, nextStatus) => {
+                          setData((previous) =>
+                            previous?.id === selectedId
+                              ? {
+                                  ...previous,
+                                  candidates: previous.candidates.map(
+                                    (candidate) =>
+                                      candidate.applicationId === applicationId
+                                        ? { ...candidate, status: nextStatus }
+                                        : candidate,
+                                  ),
+                                }
+                              : previous,
+                          );
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    candidates.length > 0 && (
+                      <CandidateList
+                        candidates={candidates}
+                        search={candidateSearch}
+                        page={candidatePage}
+                        pageSize={candidatePageSize}
+                        onPageChange={(page) => {
+                          setCandidatePage(page);
+                          resultsHeading.current?.focus();
+                          panel.current?.scrollTo({ top: 0 });
+                        }}
+                        onPageSizeChange={(size) => {
+                          setCandidatePageSize(size);
+                          setCandidatePage(1);
+                        }}
+                        onSelect={openCandidate}
+                      />
+                    )
+                  )}
+                  {candidates.length === 0 && (
+                    <div className="py-16 text-center">
+                      <IconUsers className="mx-auto mb-4 size-7 text-muted-foreground" />
+                      <h3 className="font-semibold">
+                        {currentData.candidates.length
+                          ? "No candidates match these filters"
+                          : "Your next hire starts here"}
+                      </h3>
+                      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                        {currentData.candidates.length
+                          ? "Try a different search or clear your filters."
+                          : "Applications for this job will appear here, ready to review."}
+                      </p>
+                      {currentData.candidates.length > 0 && (
+                        <Button
+                          className="mt-4"
+                          variant="outline"
+                          onClick={() => {
+                            clearCandidateFilters();
+                            resultsHeading.current?.focus({
+                              preventScroll: true,
+                            });
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
         </div>

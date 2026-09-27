@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import MarkdownEditor from "./MarkdownEditor";
 import DeadlinePicker from "./DeadlinePicker";
 import AssessmentPicker from "./AssessmentPicker";
+import styles from "./job-post-form.module.css";
 import JobMarkdown from "@/components/jobs/JobMarkdown";
 import { LocationPopover } from "@/app/(applier)/candidate-profile/_components/location-popover";
 import type { TaskLibraryOption } from "@/types/api/tasks";
@@ -636,7 +637,7 @@ export function JobPostForm({
   };
 
   if (embedded) {
-    const inputClass = "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-none outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    const inputClass = "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-none outline-none focus-visible:ring-2 focus-visible:ring-foreground";
     const field = (id: string, label: string, value: string, change: (value: string) => void, type = "text", placeholder?: string) => (
       <div className="space-y-2" key={id}>
         <Label htmlFor={id} className="text-xs font-medium">{label}</Label>
@@ -648,7 +649,7 @@ export function JobPostForm({
     const locationParts = location.split(",").map((part) => part.trim());
     const assessmentCount = [designTaskId, programmingTaskId, sqlTaskId].filter(Boolean).length;
     return (
-      <form className="@container/job-form mx-auto w-full max-w-6xl px-5 py-7 sm:px-8" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+      <form className={`${styles.form} @container/job-form mx-auto w-full max-w-6xl px-5 py-7 sm:px-8`} onSubmit={(event) => { event.preventDefault(); submit(); }}>
         <fieldset disabled={isPending} className="min-w-0">
           <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
             <div><h2 className="text-2xl font-semibold tracking-tight">{isEditing ? "Edit your listing" : "Create a job listing"}</h2><p className="mt-2 text-sm text-muted-foreground">Define the role, set expectations, and choose how candidates apply.</p></div>
@@ -656,13 +657,13 @@ export function JobPostForm({
           </header>
           <div className="grid items-start gap-6 @4xl/job-form:grid-cols-[minmax(0,1fr)_250px]">
             <div className="min-w-0 space-y-6">
-              <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
-                <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold"><IconBriefcase className="size-4 text-muted-foreground" />Role details</h3>
+              <section className="rounded-lg border border-border bg-background p-5 sm:p-6">
+                <h3 className="mb-5 flex items-center gap-3 text-base font-semibold"><span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground"><IconBriefcase aria-hidden="true" className="size-4" /></span>Role details</h3>
                 <div className="grid gap-5 sm:grid-cols-2">
                   {field("title", "Job title *", title, setTitle, "text", "e.g. Frontend developer")}
                   {field("companyName", "Company name *", companyName, setCompanyName, "text", "Your company")}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between"><Label htmlFor="location" className="text-xs font-medium">Location</Label>{location && <button type="button" className="rounded text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" onClick={() => setLocation("")}>Clear</button>}</div>
+                    <div className="flex items-center justify-between"><Label htmlFor="location" className="text-xs font-medium">Location</Label>{location && <button type="button" className="rounded text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-foreground" onClick={() => setLocation("")}>Clear</button>}</div>
                     <LocationPopover
                       profileLocation={location ? { city: locationParts[0], state: locationParts.length > 2 ? locationParts.slice(1, -1).join(", ") : "", country: locationParts.length > 1 ? locationParts.at(-1)! : "" } : null}
                       setProfileLocation={(value) => setLocation([value.city, value.state, value.country].filter(Boolean).join(", "))}
@@ -675,13 +676,13 @@ export function JobPostForm({
                   <div className="space-y-2"><Label htmlFor="experienceLevel" className="text-xs font-medium">Experience level</Label><select id="experienceLevel" className={inputClass} value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value as CreateJobPostRequest["experienceLevel"])}>{experienceLevels.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
                 </div>
               </section>
-              <section className="space-y-6 rounded-xl border border-border bg-background p-5 sm:p-6">
-                <div><h3 className="flex items-center gap-2 text-sm font-semibold"><IconFileDescription className="size-4 text-muted-foreground" />Describe the opportunity</h3><p className="mt-1.5 text-xs leading-5 text-muted-foreground">Use headings and lists to make the role easy to understand.</p></div>
+              <section className="space-y-6 rounded-lg border border-border bg-background p-5 sm:p-6">
+                <div><h3 className="flex items-center gap-3 text-base font-semibold"><span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground"><IconFileDescription aria-hidden="true" className="size-4" /></span>Describe the opportunity</h3><p className="mt-1.5 text-xs leading-5 text-muted-foreground">Use headings and lists to make the role easy to understand.</p></div>
                 <div className="space-y-2"><Label htmlFor="description" className="text-xs font-medium">Role description *</Label><MarkdownEditor id="description" value={description} onChange={(value) => { setDescription(value); if (errors.description) setErrors((previous) => ({ ...previous, description: "" })); }} placeholder="Describe the team, responsibilities, and what success looks like…" error={errors.description} disabled={isPending} />{errors.description && <p id="description-error" className="text-xs text-destructive">{errors.description}</p>}</div>
                 <div className="space-y-2"><Label htmlFor="requirements" className="text-xs font-medium">Requirements</Label><MarkdownEditor id="requirements" value={requirements} onChange={setRequirements} placeholder="List the skills and experience candidates need…" disabled={isPending} /></div>
               </section>
-              <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
-                <div className="mb-5 flex items-center justify-between gap-3"><h3 className="flex items-center gap-2 text-sm font-semibold"><IconCurrencyDollar className="size-4 text-muted-foreground" />Compensation & deadline</h3><span className="text-xs text-muted-foreground">Optional</span></div>
+              <section className="rounded-lg border border-border bg-background p-5 sm:p-6">
+                <div className="mb-5 flex items-center justify-between gap-3"><h3 className="flex items-center gap-3 text-base font-semibold"><span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground"><IconCurrencyDollar aria-hidden="true" className="size-4" /></span>Compensation & deadline</h3><span className="text-xs text-muted-foreground">Optional</span></div>
                 <div className="grid gap-5 sm:grid-cols-2">
                   {field("salaryMin", "Minimum salary", salaryMin, setSalaryMin, "number", "e.g. 50000")}
                   {field("salaryMax", "Maximum salary", salaryMax, setSalaryMax, "number", "e.g. 80000")}
@@ -689,14 +690,14 @@ export function JobPostForm({
                   <div className="space-y-2"><Label htmlFor="deadline" className="text-xs font-medium">Application deadline</Label><DeadlinePicker value={deadline} onChange={(value) => { setDeadline(value); setErrors((previous) => ({ ...previous, deadline: "" })); }} disabled={isPending} error={errors.deadline} />{errors.deadline && <p id="deadline-error" className="text-xs text-destructive">{errors.deadline}</p>}</div>
                 </div>
               </section>
-              <section className="rounded-xl border border-border bg-background p-5 sm:p-6">
+              <section className="rounded-lg border border-border bg-background p-5 sm:p-6">
                 <AssessmentPicker value={{ designTaskId, programmingTaskId, sqlTaskId }} onChange={(value) => { setDesignTaskId(value.designTaskId); setProgrammingTaskId(value.programmingTaskId); setSqlTaskId(value.sqlTaskId); }} library={{ designTasks, programmingTasks, sqlTasks }} disabled={isPending} />
-                <div className="mt-5 border-t border-border pt-5"><label className="flex cursor-pointer items-start gap-3 text-sm"><input className="mt-0.5 size-4 shrink-0 accent-foreground" type="checkbox" checked={tabLock} onChange={(e) => setTabLock(e.target.checked)} /><span><span className="block text-xs font-medium">Track tab switching</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">Record when candidates leave the assessment tab.</span></span></label>{tabLock && <div className="mt-4 max-w-xs">{field("tabLock", "Tab-switch warning limit", tabLockWarningLimit, setTabLockWarningLimit, "number")}</div>}</div>
+                <div className="mt-5 border-t border-border pt-5"><label className="flex cursor-pointer items-start gap-3 text-sm"><input className="mt-0.5 size-4 shrink-0 accent-primary" type="checkbox" checked={tabLock} onChange={(e) => setTabLock(e.target.checked)} /><span><span className="block text-xs font-medium">Track tab switching</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">Record when candidates leave the assessment tab.</span></span></label>{tabLock && <div className="mt-4 max-w-xs">{field("tabLock", "Tab-switch warning limit", tabLockWarningLimit, setTabLockWarningLimit, "number")}</div>}</div>
               </section>
             </div>
             <aside className="sticky top-6 hidden space-y-5 @4xl/job-form:block">
-              <div className="rounded-xl border border-border bg-muted/20 p-5">
-                <p className="text-xs font-medium text-muted-foreground">Your listing</p>
+              <div className="rounded-lg border border-border bg-primary/5 p-5">
+                <p className="text-sm font-semibold">Your listing</p>
                 <h3 className="mt-4 break-words text-lg font-semibold tracking-tight">{title.trim() || "Job title"}</h3>
                 <p className="mt-1 break-words text-sm text-muted-foreground">{companyName.trim() || "Company name"}</p>
                 <dl className="mt-5 space-y-4 border-t border-border pt-4 text-xs">
@@ -706,12 +707,12 @@ export function JobPostForm({
                   <div><dt className="text-muted-foreground">Applications close</dt><dd className="mt-1 font-medium">{deadline && !Number.isNaN(Date.parse(deadline)) ? new Date(deadline).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Open until filled"}</dd></div>
                 </dl>
               </div>
-              <div className="px-1"><p className="text-xs font-medium">Ready to publish</p><ul className="mt-3 space-y-3">{[{ label: "Job title", complete: Boolean(title.trim()) }, { label: "Company name", complete: Boolean(companyName.trim()) }, { label: "Role description", complete: description.trim().length >= 20 }].map((item) => <li key={item.label} className="flex items-center gap-2 text-xs text-muted-foreground"><span className={`flex size-4 items-center justify-center rounded-full border ${item.complete ? "border-foreground bg-foreground text-background" : "border-border"}`}>{item.complete && <IconCheck className="size-3" />}</span>{item.label}</li>)}</ul></div>
+              <div className="px-1"><p className="text-xs font-medium">{isEditing ? "Ready to save" : "Ready to publish"}</p><ul className="mt-3 space-y-3">{[{ label: "Job title", complete: Boolean(title.trim()) }, { label: "Company name", complete: Boolean(companyName.trim()) }, { label: "Role description", complete: description.trim().length >= 20 }].map((item) => <li key={item.label} className="flex items-center gap-2 text-xs text-muted-foreground"><span className={`flex size-4 items-center justify-center rounded-full border ${item.complete ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{item.complete && <IconCheck className="size-3" />}</span>{item.label}</li>)}</ul></div>
             </aside>
           </div>
           <footer className="sticky bottom-0 mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-border bg-background py-4">
             <span className="text-xs text-muted-foreground">{isEditing ? "Changes apply after saving." : lastSavedTime ? "Draft saved on this device" : "* Required fields"}</span>
-            <div className="flex gap-2"><Button type="button" variant="ghost" className="rounded-lg" onClick={onCancel}>Cancel</Button><Button type="submit" className="rounded-lg bg-primary text-primary-foreground">{isPending ? "Saving…" : isEditing ? "Save changes" : "Publish job"}<IconArrowRight className="size-4" /></Button></div>
+            <div className="flex gap-2"><Button type="button" variant="ghost" className="min-h-11 rounded-md" onClick={onCancel}>Cancel</Button><Button type="submit" className="min-h-11 rounded-md bg-primary px-5 text-primary-foreground">{isPending ? "Saving…" : isEditing ? "Save changes" : "Publish job"}<IconArrowRight className="size-4" /></Button></div>
           </footer>
         </fieldset>
       </form>

@@ -1,10 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { IconLoader2, IconChartBar } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { getCandidateSnapshotsAction } from "@/lib/actions/recruiter";
-import { getSimilaritySources } from "@/lib/semantic-match";
+import {
+  getSimilarityContributions,
+  getSimilaritySources,
+} from "@/lib/semantic-match";
 import type { CandidateDashboardResponse } from "@/types/api/recruiter";
 import { candidateMatchLabel } from "./candidate-review-utils";
 import CandidateEvidenceReport from "./CandidateEvidenceReport";
@@ -19,6 +22,7 @@ export default function CandidateMatchTimeline({
   const sources = getSimilaritySources(candidate).sort(
     (a, b) => b.value - a.value,
   );
+  const contributions = getSimilarityContributions(candidate);
   const query = useQuery({
     queryKey: [
       "recruiter",
@@ -32,53 +36,101 @@ export default function CandidateMatchTimeline({
     retry: false,
   });
   return (
-    <section
-      className="overflow-hidden rounded-xl border border-border"
-      aria-label="Candidate job match"
-    >
-      <header className="flex flex-wrap items-start justify-between gap-5 bg-muted/20 p-5 sm:p-6">
+    <section className="min-w-0 space-y-8" aria-label="Candidate job match">
+      <header className="flex flex-wrap items-end justify-between gap-5">
         <div className="min-w-0">
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
-            <IconChartBar className="size-4 text-muted-foreground" />
-            Job match
-          </h3>
-          <p className="mt-1.5 break-words text-xs text-muted-foreground">
-            {candidate.jobTitle || "Match to this role"}
+          <h3 className="text-base font-semibold">Match to the role</h3>
+          <p className="mt-2 break-words text-sm text-muted-foreground">
+            {candidate.jobTitle || "Selected role"}
           </p>
-          {sources.length > 0 && (
-            <div
-              className="mt-4 flex flex-wrap gap-x-4 gap-y-2"
-              aria-label="Match by source"
-            >
-              {sources.map((source) => (
-                <div
-                  key={source.key}
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <span className="text-muted-foreground">{source.label}</span>
-                  <span className="font-semibold tabular-nums">
-                    {Math.round(source.value * 100)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-        <div className="shrink-0 text-right">
+        <div>
           <p className="text-xs text-muted-foreground">Overall match</p>
           <p
-            className={`mt-1 font-semibold tracking-tight tabular-nums ${sources.length ? "text-4xl" : "text-lg"}`}
+            className={`mt-1 w-fit font-semibold tracking-tight tabular-nums ${sources.length ? "bg-primary px-2 py-1 text-4xl text-primary-foreground" : "text-lg"}`}
           >
             {candidateMatchLabel(candidate)}
           </p>
         </div>
       </header>
+      {sources.length ? (
+        <div className="space-y-3">
+          <div
+            role="region"
+            aria-label="Match score breakdown"
+            tabIndex={0}
+            className="overflow-x-auto"
+          >
+            <table className="w-full min-w-[360px] text-left text-sm">
+              <caption className="sr-only">
+                Available sources and their contribution to the overall match
+              </caption>
+              <thead>
+                <tr className="text-xs text-muted-foreground">
+                  <th scope="col" className="pb-3 font-medium">
+                    Source
+                  </th>
+                  <th scope="col" className="pb-3 text-right font-medium">
+                    Match
+                  </th>
+                  <th scope="col" className="pb-3 pl-4 text-right font-medium">
+                    Weight
+                  </th>
+                  <th scope="col" className="pb-3 pl-4 text-right font-medium">
+                    Contribution
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.map((source) => {
+                  const contribution = contributions.find(
+                    (item) => item.key === source.key,
+                  )!;
+                  return (
+                    <tr key={source.key}>
+                      <th scope="row" className="py-3 pr-4 font-medium">
+                        {source.label}
+                      </th>
+                      <td className="py-3 text-right tabular-nums">
+                        {Math.round(source.value * 100)}%
+                      </td>
+                      <td className="py-3 pl-4 text-right tabular-nums text-muted-foreground">
+                        {(contribution.normalizedWeight * 100).toLocaleString(
+                          undefined,
+                          { maximumFractionDigits: 1 },
+                        )}
+                        %
+                      </td>
+                      <td className="py-3 pl-4 text-right font-medium tabular-nums">
+                        {contribution.points.toLocaleString(undefined, {
+                          maximumFractionDigits: 1,
+                        })}{" "}
+                        pts
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="max-w-prose text-xs leading-5 text-muted-foreground">
+            Overall match uses the scored sources listed here. Each contributes
+            its match score × its weight. Weights adjust to total 100% when a
+            source is missing. Contributions are rounded for display.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm leading-6 text-muted-foreground">
+          No source scores are available for this application. Connected profile
+          evidence, when available, is shown below.
+        </p>
+      )}
       {!jobId || jobId === "all" ? (
-        <p className="p-5 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Open an application for a specific job to view its snapshots.
         </p>
       ) : query.isPending ? (
-        <div role="status" className="space-y-4 border-t border-border p-5">
+        <div role="status" className="space-y-4">
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <IconLoader2 className="size-4 motion-safe:animate-spin" />
             Loading candidate snapshots…
@@ -91,7 +143,7 @@ export default function CandidateMatchTimeline({
           ))}
         </div>
       ) : query.isError ? (
-        <div role="alert" className="border-t border-border p-5">
+        <div role="alert" className="space-y-3">
           <p className="text-sm text-muted-foreground">
             The snapshots couldn’t be loaded. Your candidate details are still
             available.
@@ -111,7 +163,7 @@ export default function CandidateMatchTimeline({
           socialLinks={candidate.socialLinks}
         />
       ) : (
-        <p className="border-t border-border p-5 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           No connected-profile snapshots are available for this candidate yet.
         </p>
       )}

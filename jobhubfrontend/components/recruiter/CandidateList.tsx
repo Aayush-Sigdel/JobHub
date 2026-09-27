@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  IconArrowUpRight,
+  IconArrowRight,
   IconCalendar,
   IconCheck,
-  IconFileText,
   IconMapPin,
 } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +19,7 @@ import {
   reviewDate,
 } from "./candidate-review-utils";
 import CandidatePagination from "./CandidatePagination";
+import CandidateHighlight from "./CandidateHighlight";
 
 const stageStyles: Record<ApplicationStatus, string> = {
   APPLIED: "border-border bg-muted/50 text-muted-foreground",
@@ -39,7 +39,7 @@ function Stage({ status }: { status: ApplicationStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center rounded-md border px-2 py-1 text-[11px] font-medium",
+        "inline-flex w-fit items-center rounded-md border px-2 py-1 text-xs font-medium",
         stageStyles[status],
       )}
     >
@@ -51,19 +51,27 @@ function Stage({ status }: { status: ApplicationStatus }) {
 export default function CandidateList({
   candidates,
   onSelect,
+  search = "",
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
 }: {
   candidates: CandidateDashboardResponse[];
+  search?: string;
   onSelect: (candidate: CandidateDashboardResponse) => void;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const pagination = useMemo(
     () => paginateCandidates(candidates, page, pageSize),
     [candidates, page, pageSize],
   );
 
   return (
-    <div className="@container/candidate-list mt-5 overflow-hidden rounded-xl border border-border bg-background">
+    <div className="@container/candidate-list mt-4 min-w-0 border-t border-border bg-background">
       <div
         aria-hidden="true"
         className={cn(
@@ -88,20 +96,22 @@ export default function CandidateList({
           const status = candidate.status || "APPLIED";
           const skills = candidate.skills ?? [];
           return (
-            <li key={candidate.applicationId || candidate.candidateId}>
-              <button
-                type="button"
-                aria-label={`Review ${candidate.name}'s application`}
-                onClick={() => onSelect(candidate)}
+            <li
+              key={
+                candidate.applicationId ||
+                `${candidate.jobId}:${candidate.candidateId}`
+              }
+            >
+              <div
                 className={cn(
-                  "group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-5 px-4 py-5 text-left outline-none transition-colors hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 @4xl/candidate-list:gap-5",
+                  "group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-4 px-3 py-4 text-left transition-colors hover:bg-muted/40 focus-within:bg-primary/10 sm:px-5 @4xl/candidate-list:gap-5",
                   columns,
                 )}
               >
                 <span className="order-1 flex min-w-0 items-start gap-3">
-                  <Avatar className="size-11 shrink-0 rounded-xl border border-border/60">
+                  <Avatar className="size-10 shrink-0 rounded-md">
                     <AvatarImage src={candidate.imageUrl} alt="" />
-                    <AvatarFallback className="rounded-xl bg-muted text-sm font-medium">
+                    <AvatarFallback className="rounded-md bg-muted text-sm font-medium">
                       {candidate.name
                         .split(/\s+/)
                         .filter(Boolean)
@@ -112,13 +122,40 @@ export default function CandidateList({
                     </AvatarFallback>
                   </Avatar>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
-                      {candidate.name}
+                    <button
+                      type="button"
+                      data-candidate-review={
+                        candidate.applicationId || candidate.candidateId
+                      }
+                      data-review-action="name"
+                      aria-label={`Review ${candidate.name}'s application${candidate.jobTitle ? ` for ${candidate.jobTitle}` : ""}`}
+                      onClick={() => onSelect(candidate)}
+                      className="min-h-9 rounded text-left text-sm font-semibold underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                    >
+                      <CandidateHighlight
+                        text={candidate.name}
+                        query={search}
+                      />
+                    </button>
+                    <span className="mt-0.5 block break-words text-sm text-muted-foreground">
+                      <CandidateHighlight
+                        text={candidate.title || candidate.email || "Applicant"}
+                        query={search}
+                      />
                     </span>
-                    <span className="mt-1 block truncate text-xs text-muted-foreground">
-                      {candidate.title || candidate.email || "Applicant"}
-                    </span>
-                    <span className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground">
+                    {candidate.title &&
+                      search.trim() &&
+                      candidate.email
+                        ?.toLowerCase()
+                        .includes(search.trim().toLowerCase()) && (
+                        <span className="mt-1 block break-all text-xs text-muted-foreground">
+                          <CandidateHighlight
+                            text={candidate.email}
+                            query={search}
+                          />
+                        </span>
+                      )}
+                    <span className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
                       {candidate.location && (
                         <span className="inline-flex min-w-0 items-center gap-1">
                           <IconMapPin className="size-3 shrink-0" />
@@ -133,26 +170,38 @@ export default function CandidateList({
                       </span>
                     </span>
                     {skills.length > 0 && (
-                      <span className="mt-3 flex flex-wrap gap-1.5">
-                        {skills.slice(0, 3).map((skill) => (
-                          <span
-                            key={skill.id}
-                            className="max-w-full truncate rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
-                          >
-                            {skill.name}
-                          </span>
-                        ))}
+                      <span className="mt-2 flex flex-wrap gap-1.5">
+                        {[...skills]
+                          .sort((a, b) => {
+                            const query = search.trim().toLowerCase();
+                            return (
+                              Number(
+                                Boolean(query) &&
+                                  b.name.toLowerCase().includes(query),
+                              ) -
+                              Number(
+                                Boolean(query) &&
+                                  a.name.toLowerCase().includes(query),
+                              )
+                            );
+                          })
+                          .slice(0, 3)
+                          .map((skill) => (
+                            <span
+                              key={skill.id}
+                              className="max-w-full truncate rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                            >
+                              <CandidateHighlight
+                                text={skill.name}
+                                query={search}
+                              />
+                            </span>
+                          ))}
                         {skills.length > 3 && (
-                          <span className="self-center text-[11px] text-muted-foreground">
+                          <span className="self-center text-xs text-muted-foreground">
                             +{skills.length - 3}
                           </span>
                         )}
-                      </span>
-                    )}
-                    {candidate.coverNote?.trim() && (
-                      <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <IconFileText className="size-3" />
-                        Cover letter included
                       </span>
                     )}
                     <span className="mt-2 block @4xl/candidate-list:hidden">
@@ -183,7 +232,7 @@ export default function CandidateList({
                             key={label}
                             title={`${label}: ${data.passed ? "passed" : "not passed"}`}
                             className={cn(
-                              "rounded border px-1.5 py-0.5 text-[10px]",
+                              "rounded border px-1.5 py-0.5 text-xs",
                               data.passed
                                 ? "border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
                                 : "border-amber-500/20 text-amber-800 dark:text-amber-400",
@@ -202,7 +251,7 @@ export default function CandidateList({
                       <span className="block text-xs text-muted-foreground">
                         No submissions
                       </span>
-                      <span className="mt-1 block text-[11px] text-muted-foreground">
+                      <span className="mt-1 block text-xs text-muted-foreground">
                         Assessments
                       </span>
                     </>
@@ -217,7 +266,7 @@ export default function CandidateList({
                   <span className="text-xl font-semibold tracking-tight tabular-nums">
                     {match === null ? "N/A" : `${Math.round(match * 100)}%`}
                   </span>
-                  <span className="mt-0.5 text-[11px] text-muted-foreground @4xl/candidate-list:hidden">
+                  <span className="mt-0.5 text-xs text-muted-foreground">
                     job match
                   </span>
                   {match !== null && (
@@ -226,18 +275,27 @@ export default function CandidateList({
                       className="mt-2 h-1 w-14 overflow-hidden rounded-full bg-muted"
                     >
                       <span
-                        className="block h-full rounded-full bg-foreground/60"
+                        className="block h-full rounded-full bg-primary"
                         style={{ width: `${match * 100}%` }}
                       />
                     </span>
                   )}
                 </span>
 
-                <span className="order-4 inline-flex items-center justify-center gap-1.5 self-end rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium transition-colors group-hover:border-foreground/20 group-hover:bg-muted group-focus-visible:bg-muted @4xl/candidate-list:order-5 @4xl/candidate-list:self-center">
+                <button
+                  type="button"
+                  data-candidate-review={
+                    candidate.applicationId || candidate.candidateId
+                  }
+                  data-review-action="review"
+                  aria-label={`Review ${candidate.name}'s application${candidate.jobTitle ? ` for ${candidate.jobTitle}` : ""}`}
+                  onClick={() => onSelect(candidate)}
+                  className="order-4 inline-flex min-h-11 items-center justify-center gap-1.5 self-end rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground @4xl/candidate-list:order-5 @4xl/candidate-list:self-center"
+                >
                   Review
-                  <IconArrowUpRight className="size-3.5" />
-                </span>
-              </button>
+                  <IconArrowRight aria-hidden="true" className="size-3.5" />
+                </button>
+              </div>
             </li>
           );
         })}
@@ -249,11 +307,8 @@ export default function CandidateList({
         total={candidates.length}
         start={pagination.start}
         end={pagination.end}
-        onPageChange={setPage}
-        onPageSizeChange={(nextPageSize) => {
-          setPageSize(nextPageSize);
-          setPage(1);
-        }}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     </div>
   );

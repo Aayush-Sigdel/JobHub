@@ -23,10 +23,9 @@ import type {
 } from "@/types/api/collaboration";
 import { toast } from "sonner";
 
-export const panelClass =
-  "rounded-2xl border border-border bg-card p-5 shadow-xs";
+export const panelClass = "rounded-lg border border-border bg-background p-5";
 export const selectClass =
-  "h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-foreground";
 export function label(value: string) {
   return value
     .toLowerCase()

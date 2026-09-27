@@ -429,3 +429,31 @@ test("acceptance reports closed recruitment, full teams, and occupied or removed
     /no longer/,
   );
 });
+
+test("Jackson's owner flag enables project management without overwriting the owner profile", () => {
+  const project = { id: "p1", ownerId: "me", ownerName: "Owner", roles: [] };
+  const detail = projectFromDetail({
+    project,
+    owner: true,
+    members: [],
+    pendingCount: 0,
+    myMembership: null,
+  });
+  assert.equal(detail.isOwner, true);
+  assert.equal(detail.owner, undefined);
+  assert.equal(
+    projectFromDetail({ project, owner: false, members: [], pendingCount: 0 })
+      .isOwner,
+    false,
+  );
+  assert.equal(
+    projectFromDetail({
+      project,
+      isOwner: false,
+      owner: true,
+      members: [],
+      pendingCount: 0,
+    }).isOwner,
+    false,
+  );
+});

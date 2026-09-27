@@ -1,3 +1,17 @@
+import type { UserProfileResponse } from "./user";
+
+export type CollaborationCandidateProfile = Pick<
+  UserProfileResponse,
+  | "id"
+  | "name"
+  | "title"
+  | "bio"
+  | "location"
+  | "skills"
+  | "experiences"
+  | "educations"
+>;
+
 export type ProjectStatus =
   | "RECRUITING"
   | "IN_PROGRESS"
@@ -99,7 +113,9 @@ export interface ProjectDetailResponse {
   members: TeamMember[];
   pendingCount: number;
   myMembership: MembershipResponse | null;
-  isOwner: boolean;
+  // Jackson serializes Kotlin's isOwner getter as "owner" without the Kotlin module.
+  owner?: boolean;
+  isOwner?: boolean;
 }
 export interface ProjectSuggestionResponse {
   project: Project;
@@ -137,12 +153,14 @@ export interface Suggestions {
     candidates: (TeamMember & {
       bio?: string | null;
       location?: string | null;
-      skills: { name: string }[];
+      skills: { name: string; level?: string }[];
       matchPercentage: number;
       explanation: MatchExplanation;
     })[];
   }[];
 }
+export type CandidateSuggestion =
+  Suggestions["suggestions"][number]["candidates"][number];
 export interface SuggestionFilters {
   poolSize?: number;
   shortlistSize?: number;

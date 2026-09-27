@@ -6,6 +6,9 @@ import { resolve, dirname } from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { projectFromDetail } from "../lib/collaboration.ts";
 
 const require = createRequire(import.meta.url);
 const root = resolve(import.meta.dirname, "..");
@@ -24,6 +27,28 @@ function render(file, component, props = {}, state = {}) {
       },
     }).outputText;
     new Function("require", "exports", source)((id) => {
+      if (id.endsWith(".module.css")) return {};
+      if (id === "react-markdown")
+        return { __esModule: true, default: Markdown };
+      if (id === "remark-gfm") return { __esModule: true, default: remarkGfm };
+      if (id === "@/components/post-job/MarkdownEditor")
+        return function MockMarkdownEditor({
+          id,
+          label,
+          value,
+          onChange,
+          required,
+          disabled,
+        }) {
+          return React.createElement("textarea", {
+            id,
+            "aria-label": label,
+            value,
+            required,
+            disabled,
+            onChange: (event) => onChange(event.target.value),
+          });
+        };
       if (id === "react")
         return {
           ...React,
@@ -46,16 +71,20 @@ function render(file, component, props = {}, state = {}) {
         };
       if (id === "@tanstack/react-query")
         return {
-          useQuery: ({ queryKey }) => {
-            const kind = queryKey.includes("project-memberships")
-              ? "ownerMemberships"
-              : queryKey.includes("owner-inbox")
-                ? "ownerInbox"
-                : queryKey.includes("project")
-                  ? "detail"
-                  : queryKey.includes("suggestions")
-                    ? "suggestions"
-                    : "projects";
+          useQuery: (options) => {
+            state.onQuery?.(options);
+            const { queryKey } = options;
+            const kind = queryKey.includes("candidate-profile")
+              ? "candidateProfile"
+              : queryKey.includes("project-memberships")
+                ? "ownerMemberships"
+                : queryKey.includes("owner-inbox")
+                  ? "ownerInbox"
+                  : queryKey.includes("project")
+                    ? "detail"
+                    : queryKey.includes("suggestions")
+                      ? "suggestions"
+                      : "projects";
             return { data: [], refetch() {}, ...state[kind] };
           },
         };
@@ -250,10 +279,10 @@ test("project owners see management navigation but visitors do not", () => {
       { detail: { data: { ...project, isOwner } } },
     );
     if (isOwner) {
-      assert.match(html, /Find teammates/);
+      assert.match(html, /Recommended candidates/);
       assert.doesNotMatch(html, /Delete project|Request to join/);
     } else {
-      assert.doesNotMatch(html, /Find teammates|Settings/);
+      assert.doesNotMatch(html, /Recommended candidates|Settings/);
       assert.match(html, /Request to join/);
     }
   }
@@ -282,12 +311,15 @@ test("legacy People links redirect to owned projects", () => {
   );
 });
 
-test("the team includes the owner's real name and You even with no memberships", () => {
+test("the Team section includes the owner's real name and You even with no memberships", () => {
   const html = render(
     "components/collaboration/project-detail.tsx",
     "ProjectDetail",
     { id: "p1" },
-    { detail: { data: { ...project, ownerName: "Asha Sharma" } } },
+    {
+      params: "section=team",
+      detail: { data: { ...project, ownerName: "Asha Sharma" } },
+    },
   );
   const team = html.match(/aria-label="Project team"[\s\S]*?<\/section>/)?.[0];
   assert.ok(team);
@@ -412,4 +444,394 @@ test("request loading failures are not presented as an empty inbox", () => {
   assert.match(html, /role="alert"/);
   assert.match(html, /Study companion/);
   assert.doesNotMatch(html, /No requests to review/);
+});
+
+const candidateRoles = [
+  { id: "design", title: "Designer", requiredSkills: [], filled: false },
+  { id: "dev", title: "Developer", requiredSkills: [], filled: false },
+];
+const suggestions = {
+  projectId: "p1",
+  projectTitle: project.title,
+  openSeats: 2,
+  poolSize: 2,
+  suggestions: candidateRoles.map((role, index) => ({
+    roleId: role.id,
+    roleTitle: role.title,
+    requiredSkills: [],
+    candidates: [
+      {
+        userId: `new-${index}`,
+        name: index === 0 ? "New designer" : "New developer",
+        skills: [{ name: "TypeScript" }],
+        matchPercentage: 85,
+        explanation: {
+          summary: "Covers team needs",
+          coveredSkills: ["TypeScript"],
+          missingSkills: [],
+        },
+      },
+    ],
+  })),
+};
+
+test("owners can discover and invite non-applicants even when applicant loading fails", () => {
+  for (const ownerMemberships of [
+    { data: [] },
+    { isPending: true },
+    { error: new Error("Applicants unavailable") },
+  ]) {
+    const queries = [];
+    const html = render(
+      "components/collaboration/project-detail.tsx",
+      "ProjectDetail",
+      { id: "p1" },
+      {
+        params: "section=suggestions",
+        detail: { data: { ...project, roles: candidateRoles } },
+        ownerMemberships,
+        suggestions: { data: suggestions },
+        onQuery: (query) => queries.push(query),
+      },
+    );
+    assert.match(html, /Recommended candidates/);
+    assert.match(html, /even before they apply/);
+    assert.match(html, /New designer/);
+    assert.match(html, /New developer/);
+    assert.match(html, /Invite New designer as Designer/);
+    assert.match(html, /href="\/preview\/new-0"/);
+    assert.match(html, /Why this match/);
+    assert.doesNotMatch(html, /Applicants unavailable/);
+    assert.equal(
+      queries.find((q) => q.queryKey.includes("suggestions")).enabled,
+      true,
+    );
+  }
+});
+
+test("role filtering preserves backend shortlist context", () => {
+  const html = render(
+    "components/collaboration/recommended-candidates.tsx",
+    "RecommendedCandidates",
+    {
+      project: { ...project, roles: candidateRoles },
+      memberships: [],
+    },
+    { suggestions: { data: suggestions }, tabs: { all: "dev" } },
+  );
+  assert.match(html, /New developer/);
+  assert.doesNotMatch(html, /New designer/);
+  assert.match(html, /earlier role’s top pick/);
+});
+
+test("no open roles offers editing without making a suggestions request", () => {
+  const queries = [];
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectTeamTools",
+    { project },
+    {
+      onQuery: (q) => queries.push(q),
+    },
+  );
+  assert.match(html, /Add an open role/);
+  assert.match(html, /href="\/collaborators\/projects\/p1\/edit"/);
+  assert.equal(
+    queries.find((q) => q.queryKey.includes("suggestions")).enabled,
+    false,
+  );
+});
+
+test("empty recommendation lists and API failures show different recovery actions", () => {
+  const props = {
+    project: { ...project, roles: candidateRoles },
+    memberships: [],
+  };
+  const empty = render(
+    "components/collaboration/recommended-candidates.tsx",
+    "RecommendedCandidates",
+    props,
+    {
+      suggestions: {
+        data: {
+          ...suggestions,
+          suggestions: suggestions.suggestions.map((role) => ({
+            ...role,
+            candidates: [],
+          })),
+        },
+      },
+    },
+  );
+  assert.equal((empty.match(/No recommended candidates yet/g) ?? []).length, 1);
+  assert.match(empty, /Edit roles/);
+  const failed = render(
+    "components/collaboration/recommended-candidates.tsx",
+    "RecommendedCandidates",
+    props,
+    {
+      suggestions: { error: new Error("Matching unavailable") },
+    },
+  );
+  assert.match(failed, /role="alert"/);
+  assert.match(failed, /Matching unavailable/);
+  assert.doesNotMatch(failed, /No recommended candidates yet/);
+});
+
+test("recommendations are inaccessible to visitors even via a direct section link", () => {
+  const queries = [];
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectDetail",
+    { id: "p1" },
+    {
+      params: "section=suggestions",
+      detail: { data: { ...project, isOwner: false, roles: candidateRoles } },
+      onQuery: (q) => queries.push(q),
+    },
+  );
+  assert.doesNotMatch(html, /Recommended candidates|Invite to team/);
+  assert.ok(!queries.some((q) => q.queryKey.includes("suggestions")));
+});
+
+test("owned project cards offer a direct recommendations shortcut", () => {
+  const html = render(
+    "components/collaboration/project-list.tsx",
+    "ProjectList",
+    { view: "mine" },
+    {
+      projects: { data: [project] },
+    },
+  );
+  assert.match(
+    html,
+    /href="\/collaborators\/projects\/p1\?section=suggestions"/,
+  );
+  assert.match(html, /Recommended candidates/);
+});
+
+const detailProps = {
+  project: { ...project, roles: candidateRoles },
+  person: suggestions.suggestions[0].candidates[0],
+  roleId: "design",
+  roleTitle: "Designer",
+  onClose() {},
+  onInvite() {},
+};
+test("candidate details show backend profile information and all skill levels", () => {
+  const html = render(
+    "components/collaboration/candidate-details.tsx",
+    "CandidateDetails",
+    detailProps,
+    {
+      candidateProfile: {
+        data: {
+          id: "new-0",
+          name: "Taylor",
+          title: "Product designer",
+          location: "Kathmandu",
+          bio: "Designing learning tools",
+          skills: [{ name: "Figma", level: "EXPERT" }],
+          experiences: [
+            {
+              id: "exp",
+              title: "Designer",
+              company: "Learning Studio",
+              currentRole: true,
+              description: "Built accessible interfaces",
+            },
+          ],
+          educations: [
+            {
+              id: "edu",
+              institution: "Design School",
+              degree: "Bachelor",
+              fieldOfStudy: "Design",
+            },
+          ],
+        },
+      },
+    },
+  );
+  for (const text of [
+    "Taylor",
+    "Product designer",
+    "Kathmandu",
+    "Designing learning tools",
+    "Figma",
+    "Expert",
+    "Learning Studio",
+    "Built accessible interfaces",
+    "Design School",
+    "Matched skills",
+    "Invite as",
+  ])
+    assert.match(html, new RegExp(text));
+  assert.match(html, /target="_blank"/);
+});
+test("candidate details distinguish missing profile fields from loading and errors", () => {
+  const empty = render(
+    "components/collaboration/candidate-details.tsx",
+    "CandidateDetails",
+    detailProps,
+    {
+      candidateProfile: {
+        data: { skills: [], experiences: [], educations: [] },
+      },
+    },
+  );
+  assert.match(empty, /No bio added/);
+  assert.match(empty, /No skills added/);
+  assert.match(empty, /No experience added/);
+  assert.match(empty, /No education added/);
+  for (const state of [
+    { isPending: true },
+    { error: new Error("Profile unavailable") },
+  ]) {
+    const html = render(
+      "components/collaboration/candidate-details.tsx",
+      "CandidateDetails",
+      detailProps,
+      { candidateProfile: { data: undefined, ...state } },
+    );
+    assert.doesNotMatch(html, /No experience added|No education added/);
+    assert.match(html, /Covers team needs/);
+    assert.match(html, state.error ? /Profile unavailable/ : /Loading/);
+  }
+});
+test("candidate details prevent inviting an existing member or a filled role", () => {
+  const pending = render(
+    "components/collaboration/candidate-details.tsx",
+    "CandidateDetails",
+    { ...detailProps, membership: { ...membership, status: "INVITED" } },
+  );
+  assert.match(pending, /Invitation pending/);
+  assert.doesNotMatch(pending, /Invite as/);
+  const filled = render(
+    "components/collaboration/candidate-details.tsx",
+    "CandidateDetails",
+    {
+      ...detailProps,
+      project: {
+        ...project,
+        roles: candidateRoles.map((role) => ({ ...role, filled: true })),
+      },
+    },
+  );
+  assert.match(filled, /This role is no longer available/);
+  assert.match(filled, /disabled=""[^>]*>Invite as/);
+});
+
+test("owner Overview links to recommendations without duplicating the candidate or team sections", () => {
+  const { isOwner, ...backendProject } = project;
+  void isOwner;
+  const data = projectFromDetail({
+    project: { ...backendProject, roles: candidateRoles },
+    owner: true,
+    members: [],
+    pendingCount: 0,
+    myMembership: null,
+  });
+  const queries = [];
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectDetail",
+    { id: "p1" },
+    {
+      detail: { data },
+      suggestions: { data: suggestions },
+      onQuery: ({ queryKey }) => queries.push(queryKey),
+    },
+  );
+  assert.match(html, /Your project/);
+  assert.match(html, /Edit project/);
+  assert.match(html, /Recommended candidates/);
+  assert.doesNotMatch(
+    html,
+    /New designer|Invite New designer as Designer|aria-label="Project team"/,
+  );
+  assert.ok(!queries.some((key) => key.includes("suggestions")));
+});
+
+test("project descriptions, goals and role descriptions render safe Markdown", () => {
+  const html = render(
+    "components/collaboration/project-detail.tsx",
+    "ProjectDetail",
+    { id: "p1" },
+    {
+      detail: {
+        data: {
+          ...project,
+          description:
+            "## What we build\n\nA **learning app**.\n\n[Unsafe](javascript:alert(1))\n\n<script>alert(1)</script>",
+          goals: "- Ship a prototype\n- Test with learners",
+          roles: [
+            {
+              id: "designer",
+              title: "Designer",
+              requiredSkills: [],
+              description: "Design **accessible** screens and `components`.",
+            },
+          ],
+        },
+      },
+    },
+  );
+  assert.match(html, /<h2>What we build<\/h2>/);
+  assert.match(html, /<strong>learning app<\/strong>/);
+  assert.match(html, /<li>Ship a prototype<\/li>/);
+  assert.match(html, /<strong>accessible<\/strong>/);
+  assert.match(html, /<code>components<\/code>/);
+  assert.doesNotMatch(html, /<script|href="javascript:/);
+});
+
+test("project-card excerpts parse formatting without extra headings or links", () => {
+  const html = render(
+    "components/collaboration/project-list.tsx",
+    "ProjectList",
+    { view: "browse" },
+    {
+      projects: {
+        data: [
+          {
+            ...project,
+            description:
+              "# Build together\n\nLearn **React** with [our team](https://example.test/team).",
+          },
+        ],
+      },
+    },
+  );
+  assert.match(html, /<strong>React<\/strong>/);
+  assert.doesNotMatch(
+    html,
+    /# Build together|\*\*React\*\*|href="https:\/\/example.test\/team"|<h1/,
+  );
+});
+
+test("project create and edit forms expose labeled Markdown fields and retain existing content", () => {
+  const html = render(
+    "components/collaboration/project-form.tsx",
+    "ProjectForm",
+    {
+      project: {
+        ...project,
+        description: "## Existing description",
+        goals: "- Existing goal",
+        roles: [
+          {
+            id: "designer",
+            title: "Designer",
+            description: "**Role requirements**",
+            requiredSkills: [],
+          },
+        ],
+      },
+    },
+  );
+  assert.match(html, /aria-label="Project description"/);
+  assert.match(html, /aria-label="Project goals"/);
+  assert.match(html, /aria-label="Role 1 description"/);
+  assert.match(html, /## Existing description/);
+  assert.match(html, /\*\*Role requirements\*\*/);
 });

@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Loader2,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import MarkdownEditor from "@/components/post-job/MarkdownEditor";
 import { isRoleFilled, validateProject } from "@/lib/collaboration";
 import { saveProject } from "@/lib/actions/collaboration";
 import {
@@ -21,7 +28,7 @@ import type {
   WorkplaceType,
 } from "@/types/api/collaboration";
 import { Hint, FieldHint } from "@/components/ui/tooltip";
-import { label, panelClass, selectClass } from "./shared";
+import { label, selectClass } from "./shared";
 
 export function ProjectForm({ project }: { project?: Project }) {
   const router = useRouter();
@@ -96,7 +103,9 @@ export function ProjectForm({ project }: { project?: Project }) {
     try {
       const saved = await unwrap(saveProject(cleaned, project?.id));
       await refresh();
-      router.push(`/collaborators/projects/${saved.id || project?.id}`);
+      router.push(
+        `/collaborators/projects/${saved.id || project?.id}${project ? "" : "?section=suggestions"}`,
+      );
     } catch (e) {
       setError((e as Error).message);
       setUnavailable(e instanceof CollaborationError && e.status === 503);
@@ -112,7 +121,7 @@ export function ProjectForm({ project }: { project?: Project }) {
             ? `/collaborators/projects/${project.id}`
             : "/collaborators/explore"
         }
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex min-h-11 items-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
         Back to {project ? "project" : "collaboration"}
@@ -122,10 +131,18 @@ export function ProjectForm({ project }: { project?: Project }) {
           {project ? "Edit project" : "Create project"}
         </h1>
       </header>
-      <form onSubmit={submit} className="space-y-5">
-        <fieldset disabled={busy} className="space-y-5">
-          <section className={`${panelClass} space-y-5`}>
-            <h2 className="font-semibold">Project details</h2>
+      <form
+        onSubmit={submit}
+        className="space-y-6 [&_input]:h-11 [&_input]:rounded-md"
+      >
+        <fieldset disabled={busy} className="min-w-0 space-y-8">
+          <section className="min-w-0 space-y-5 border-t border-border pt-6">
+            <h2 className="flex items-center gap-3 text-base font-semibold">
+              <span className="flex size-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                <FileText aria-hidden="true" className="size-4" />
+              </span>
+              Project details
+            </h2>
             <label className="block space-y-2 text-sm">
               <span>Project title</span>
               <Input
@@ -135,29 +152,38 @@ export function ProjectForm({ project }: { project?: Project }) {
                 placeholder="What do you want to build?"
               />
             </label>
-            <label className="block space-y-2 text-sm">
-              <span>Description</span>
-              <Textarea
+            <div className="space-y-2 text-sm">
+              <label htmlFor="project-description" className="font-medium">
+                Description
+              </label>
+              <MarkdownEditor
+                id="project-description"
+                label="Project description"
                 required
-                rows={5}
+                disabled={busy}
                 value={input.description}
-                onChange={(e) =>
-                  setInput({ ...input, description: e.target.value })
+                onChange={(description) =>
+                  setInput((current) => ({ ...current, description }))
                 }
-                placeholder="What are you building?"
+                placeholder="Describe what you are building and how teammates can contribute."
               />
-            </label>
-            <label className="block space-y-2 text-sm">
-              <span>Goals (optional)</span>
-              <Textarea
-                rows={3}
+            </div>
+            <div className="space-y-2 text-sm">
+              <label htmlFor="project-goals" className="font-medium">
+                Goals (optional)
+              </label>
+              <MarkdownEditor
+                id="project-goals"
+                label="Project goals"
+                height={180}
+                disabled={busy}
                 value={input.goals ?? ""}
-                onChange={(event) =>
-                  setInput({ ...input, goals: event.target.value })
+                onChange={(goals) =>
+                  setInput((current) => ({ ...current, goals }))
                 }
                 placeholder="What would you like the team to achieve?"
               />
-            </label>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm">
                 <span>Team size, including you</span>
@@ -247,10 +273,15 @@ export function ProjectForm({ project }: { project?: Project }) {
               </label>
             </div>
           </section>
-          <section className={`${panelClass} space-y-5`}>
+          <section className="min-w-0 space-y-5 border-t border-border pt-6">
             <div>
-              <div className="flex items-center gap-1">
-                <h2 className="font-semibold">Open roles</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="flex items-center gap-3 text-base font-semibold">
+                  <span className="flex size-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                    <Users aria-hidden="true" className="size-4" />
+                  </span>
+                  Open roles
+                </h2>
                 <FieldHint
                   label="About project roles"
                   content="Each role is one teammate seat. Required skills help find matches; filled role titles cannot be changed."
@@ -270,7 +301,7 @@ export function ProjectForm({ project }: { project?: Project }) {
               return (
                 <fieldset
                   key={role.id || index}
-                  className="space-y-4 rounded-xl border border-border p-4"
+                  className="min-w-0 space-y-4 rounded-md border border-border p-4 sm:p-5"
                 >
                   <legend className="px-1 text-xs font-semibold">
                     Role {index + 1}
@@ -308,7 +339,7 @@ export function ProjectForm({ project }: { project?: Project }) {
                         variant="ghost"
                         size="icon"
                         aria-disabled={!!filled || input.roles.length <= 1}
-                        className="aria-disabled:opacity-50"
+                        className="size-11 shrink-0 rounded-md aria-disabled:opacity-50"
                         aria-label={`Remove role ${index + 1}`}
                         onClick={() => {
                           if (filled || input.roles.length <= 1) return;
@@ -322,16 +353,25 @@ export function ProjectForm({ project }: { project?: Project }) {
                       </Button>
                     </Hint>
                   </div>
-                  <label className="block space-y-2 text-sm">
-                    <span>Role description (optional)</span>
-                    <Textarea
-                      rows={2}
+                  <div className="space-y-2 text-sm">
+                    <label
+                      htmlFor={`project-role-description-${role.id || index}`}
+                      className="font-medium"
+                    >
+                      Role description (optional)
+                    </label>
+                    <MarkdownEditor
+                      id={`project-role-description-${role.id || index}`}
+                      label={`Role ${index + 1} description`}
+                      height={180}
+                      disabled={busy}
                       value={role.description || ""}
-                      onChange={(e) =>
-                        updateRole(index, { description: e.target.value })
+                      onChange={(description) =>
+                        updateRole(index, { description })
                       }
+                      placeholder="Describe this teammate’s responsibilities."
                     />
-                  </label>
+                  </div>
                   {role.requiredSkills.map((skill, skillIndex) => (
                     <div
                       key={skillIndex}
@@ -451,8 +491,8 @@ export function ProjectForm({ project }: { project?: Project }) {
             )}
           </div>
         )}
-        <div className="flex justify-end gap-3">
-          <Button asChild variant="outline">
+        <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-border bg-background py-4">
+          <Button asChild variant="outline" className="min-h-11 rounded-md">
             <Link
               href={
                 project
@@ -463,13 +503,17 @@ export function ProjectForm({ project }: { project?: Project }) {
               Cancel
             </Link>
           </Button>
-          <Button disabled={busy} type="submit">
+          <Button
+            disabled={busy}
+            type="submit"
+            className="min-h-11 rounded-md px-5"
+          >
             {busy && <Loader2 className="size-4 animate-spin" />}
             {unavailable
               ? "Retry saving project"
               : project
                 ? "Save changes"
-                : "Create project"}
+                : "Create & find candidates"}
           </Button>
         </div>
       </form>

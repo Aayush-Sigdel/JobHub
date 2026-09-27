@@ -3,7 +3,10 @@
 import { fetchWithAuth, ServiceApiError } from "@/lib/service-api";
 import { loadRecruiterJob } from "@/lib/recruiter-job-loader";
 import { revalidatePath } from "next/cache";
-import type { ApplicationStatus } from "@/types/api/jobs";
+import type {
+  ApplicationStatus,
+  JobPostDetailResponse,
+} from "@/types/api/jobs";
 import type { TaskLibraryOption } from "@/types/api/tasks";
 import type {
   CandidateDashboardResponse,
@@ -12,6 +15,23 @@ import type {
 
 export async function getRecruiterJobAction(jobId: string) {
   return loadRecruiterJob(jobId, fetchWithAuth);
+}
+
+export async function getCandidateAssessmentQuestionsAction(jobId: string) {
+  // Check recruiter ownership before reading the job's attached assessments.
+  await getRecruiterJobAction(jobId);
+  const detail = await fetchWithAuth<JobPostDetailResponse>(
+    `/jobs/${encodeURIComponent(jobId)}`,
+    { cache: "no-store" },
+  );
+  if (detail.job?.id !== jobId) {
+    throw new Error("Assessment questions could not be loaded.");
+  }
+  return {
+    designTask: detail.designTask,
+    programmingTask: detail.programmingTask,
+    sqlTask: detail.sqlTask,
+  };
 }
 
 export async function getRecruiterJobResultAction(jobId: string) {
