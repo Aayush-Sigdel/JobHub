@@ -96,10 +96,19 @@ class TeamMatchService {
         val taken = mutableSetOf<UUID>()
         val selectedVectors = teamVectors.toMutableList()
         var currentResidual = residual(projectVector, teamVectors)
+        val shortlists = arrayOfNulls<RoleShortlist>(openRoles.size)
+        val remaining = openRoles.indices.toMutableSet()
 
-        return openRoles.map { role ->
+        // Fill the role with the strongest top pick first. Walking roles in list order let whichever
+        // role happened to come first claim a candidate who fits a later role far better.
+        while (remaining.isNotEmpty()) {
             val available = pool.filter { it.userId !in taken }
-            val ranked = rankForRole(currentResidual, role, available, selectedVectors, shortlistSize)
+            val (index, ranked) = remaining
+                .map { it to rankForRole(currentResidual, openRoles[it], available, selectedVectors, shortlistSize) }
+                .maxBy { (_, ranked) -> ranked.firstOrNull()?.score ?: Double.NEGATIVE_INFINITY }
+
+            remaining -= index
+            shortlists[index] = RoleShortlist(openRoles[index], ranked)
 
             ranked.firstOrNull()?.let { top ->
                 byId[top.userId]?.let { picked ->
@@ -108,9 +117,9 @@ class TeamMatchService {
                     currentResidual = residual(currentResidual, listOf(picked.vector))
                 }
             }
-
-            RoleShortlist(role, ranked)
         }
+
+        return shortlists.map { requireNotNull(it) }
     }
 
     fun score(
