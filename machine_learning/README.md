@@ -13,7 +13,7 @@ text_embedding/
 ├── model/               # Model architecture
 ├── analyze_lengths.py   # Dataset token-length audit
 ├── config.py            # Shared model/preprocessing defaults
-├── dataset.py           # Dataset, dynamic collator, grouped sampler
+├── dataset.py           # Dataset and batch tokenizer/collator
 ├── train.py             # Training, validation, and checkpointing
 └── tests/
 ```
