@@ -11,6 +11,21 @@ export default async function CollaborationLayout({
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) redirect("/sign-in?callbackUrl=%2Fcollaborators");
-  await requireUserRole(false);
-  return <CollaborationShell>{children}</CollaborationShell>;
+  const { profile } = await requireUserRole(false);
+  return (
+    <CollaborationShell
+      profile={
+        profile
+          ? {
+              name: profile.name,
+              email: profile.email,
+              imageUrl: profile.imageUrl,
+              title: profile.title,
+            }
+          : null
+      }
+    >
+      {children}
+    </CollaborationShell>
+  );
 }

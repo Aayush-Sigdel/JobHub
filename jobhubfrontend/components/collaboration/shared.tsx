@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FolderKanban, Loader2, RefreshCw } from "lucide-react";
+import {
+  ChevronDown,
+  FolderKanban,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -78,20 +85,24 @@ export function EmptyState({
   title,
   description,
   children,
+  icon,
 }: {
   title: string;
   description: string;
   children?: React.ReactNode;
+  icon?: React.ReactNode;
 }) {
   return (
     <div
       className={`${panelClass} flex min-h-64 flex-col items-center justify-center py-12 text-center`}
     >
       <span className="mb-4 rounded-2xl bg-muted p-4">
-        <FolderKanban
-          className="size-6 text-muted-foreground"
-          aria-hidden="true"
-        />
+        {icon ?? (
+          <FolderKanban
+            className="size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
+        )}
       </span>
       <h3 className="font-semibold">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
@@ -108,18 +119,20 @@ export function EmptyState({
 export function Person({
   person,
   isYou = false,
+  prominent = false,
 }: {
   person: TeamMember;
   isYou?: boolean;
+  prominent?: boolean;
 }) {
   return (
     <Link
       href={isYou ? "/candidate-profile" : `/preview/${person.userId}`}
       className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <Avatar className="size-10">
+      <Avatar className={cn("size-10", prominent && "size-12")}>
         <AvatarImage src={person.imageUrl ?? undefined} alt="" />
-        <AvatarFallback>
+        <AvatarFallback className="bg-primary/10 font-semibold text-foreground">
           {(person.name || "?")
             .split(/\s+/)
             .slice(0, 2)
@@ -128,7 +141,12 @@ export function Person({
         </AvatarFallback>
       </Avatar>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold hover:underline">
+        <span
+          className={cn(
+            "block truncate text-sm font-semibold hover:underline",
+            prominent && "text-base tracking-tight",
+          )}
+        >
           {person.name || "View profile"}
           {isYou && (
             <span className="ml-2 text-xs font-normal text-muted-foreground">
@@ -136,7 +154,12 @@ export function Person({
             </span>
           )}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span
+          className={cn(
+            "block truncate text-xs text-muted-foreground",
+            prominent && "mt-1 text-sm",
+          )}
+        >
           {person.roleTitle || person.title || "Candidate"}
         </span>
       </span>
@@ -149,12 +172,19 @@ export function Explanation({
   explanation: MatchExplanation;
 }) {
   return (
-    <details className="text-sm">
-      <summary className="cursor-pointer rounded-md text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
+    <details className="group/match rounded-lg border border-border/60 bg-muted/25 text-sm open:bg-muted/40">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+        <Sparkles className="size-3.5" aria-hidden="true" />
         Why this match
+        <ChevronDown
+          className="ml-auto size-3.5 transition-transform group-open/match:rotate-180 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
       </summary>
-      <div className="mt-3 space-y-3 rounded-xl bg-muted/40 p-3">
-        <p className="text-sm text-muted-foreground">{explanation.summary}</p>
+      <div className="space-y-3 px-3 pb-4 leading-relaxed">
+        <p className="break-words text-sm text-muted-foreground">
+          {explanation.summary}
+        </p>
         {explanation.coveredSkills.length > 0 && (
           <p className="text-xs">
             <span className="font-medium">Matched skills: </span>
@@ -216,6 +246,7 @@ export function MembershipButtons({
         ({ action, label: title }) => (
           <Button
             key={action}
+            className="min-h-11 rounded-lg px-4"
             disabled={busy || (action === "ACCEPT" && !canAccept)}
             variant={action === "ACCEPT" ? "default" : "outline"}
             onClick={() => act(action)}

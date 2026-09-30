@@ -59,6 +59,7 @@ function harness() {
   new Function("require", "exports", source)((id) => {
     if (id === "react")
       return {
+        useId: () => "recommendation-filters",
         useState: (initial) => {
           const index = cursor++;
           if (!(index in state)) state[index] = initial;
@@ -119,7 +120,11 @@ function harness() {
     if (id === "next/link") return "Link";
     if (id === "./candidate-details")
       return { CandidateDetails: "CandidateDetails" };
-    if (id === "./shared" || id.startsWith("@/components/ui/"))
+    if (
+      id === "./shared" ||
+      id === "./candidate-ui" ||
+      id.startsWith("@/components/ui/")
+    )
       return new Proxy(
         {},
         { get: (_, key) => (key === "label" ? (s) => s : key) },
@@ -233,7 +238,8 @@ test("location filtering applies trimmed input and clears back to anywhere", asy
   nodes(tree)
     .find(
       (node) =>
-        node.type === "Button" && node.props.children === "Clear location",
+        node.type === "Button" &&
+        node.props["aria-label"] === "Clear location filter: Kathmandu",
     )
     .props.onClick();
   h.render();

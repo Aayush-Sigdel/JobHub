@@ -6,7 +6,7 @@
 }
 
 .workspace :is(input:not([type="checkbox"]), textarea, select) {
-  border-color: color-mix(in srgb, var(--foreground) 45%, var(--background));
+  border-color: var(--input);
 }
 
 .workspace :is(input, textarea)[aria-invalid="true"] {

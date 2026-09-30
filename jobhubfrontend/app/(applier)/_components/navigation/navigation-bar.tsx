@@ -8,13 +8,11 @@ import { useSession } from "next-auth/react";
 import { ListingSearch } from "@/components/web/listing-search";
 import { ThemeToggle } from "@/components/motion/theme-toggle";
 import { DropdownMenuProfileIcons } from "@/app/(applier)/_components/dropdown/dropdown-profile";
-import NotificationCenter from "@/app/(applier)/_components/dropdown/dropdown-notification";
 import Logo from "./logo";
-import MessageCenter from "../dropdown/dropdown-message";
 import JobTracker from "../dropdown/dropdown-job-tracker";
+import { CollaborationInboxIndicator } from "@/components/collaboration/inbox-indicator";
 import { cn } from "@/lib/utils";
 import type { UserProfileResponse } from "@/types/api/user";
-import { CollaborationInboxIndicator } from "@/components/collaboration/inbox-indicator";
 
 const candidateLinks = [
   { name: "Home", href: "/home" },
@@ -85,17 +83,14 @@ const NavigationBarContent = ({ profile }: NavigationBarProps) => {
           </div>
         )}
 
-        {/* Right: Actions, Theme, & Profile / Auth */}
+        {/* Theme and account controls */}
         <div className="flex shrink-0 items-center gap-1.5">
-          {isUserLoggedIn ? (
+          {isUserLoggedIn && (
             <div className="flex items-center gap-1">
               <JobTracker />
               <CollaborationInboxIndicator />
-              <MessageCenter />
-              <NotificationCenter />
             </div>
-          ) : null}
-
+          )}
           <div className="mx-1.5 h-4 w-px bg-border hidden sm:block" />
 
           <ThemeToggle variant="circle" />

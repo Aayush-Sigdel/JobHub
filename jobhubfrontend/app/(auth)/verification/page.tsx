@@ -1,5 +1,7 @@
 "use client";
 
+import { WaterLoadingScreen } from "@/components/ui/water-loading-screen";
+
 import React, { useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import JobHubLogo from "@/components/brand/JobHubLogo";
@@ -236,11 +238,7 @@ function VerificationForm() {
 export default function VerificationPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-dvh w-full bg-card flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
-        </div>
-      }
+      fallback={<WaterLoadingScreen contained />}
     >
       <VerificationForm />
     </Suspense>

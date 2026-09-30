@@ -196,6 +196,38 @@ test("navigation groups recommendations under Explore and removes People", () =>
   assert.match(html, /Requests/);
   assert.doesNotMatch(html, /<aside/);
 });
+test("collaboration has its own navigation, content landmark and return to jobs", () => {
+  const html = render(
+    "components/collaboration/collaboration-shell.tsx",
+    "CollaborationShell",
+    {
+      children: React.createElement("p", null, "Project workspace"),
+      profile: {
+        name: "Asha Sharma",
+        email: "asha@example.test",
+        title: "Frontend engineer",
+      },
+    },
+    { path: "/collaborators/my-projects" },
+  );
+  assert.match(html, /<header/);
+  assert.match(html, /aria-label="JobHub collaboration home"/);
+  assert.match(html, /href="\/find-job" aria-label="Back to jobs"/);
+  assert.match(html, /aria-label="Open profile menu for Asha Sharma"/);
+  assert.match(html, /asha@example.test/);
+  assert.match(html, /href="\/candidate-profile"/);
+  assert.match(html, /href="\/candidate-profile#collaboration-visibility"/);
+  assert.match(html, /Appearance/);
+  assert.match(html, /Sign out/);
+  assert.match(html, /href="#collaboration-content"/);
+  assert.match(
+    html,
+    /<main id="collaboration-content"[^>]*><p>Project workspace<\/p><\/main>/,
+  );
+  assert.match(html, /href="\/collaborators\/my-projects" aria-current="page"/);
+  assert.match(html, /aria-label="Create project"/);
+  assert.doesNotMatch(html, /Find Jobs|Track Applications|applicant-content/);
+});
 test("project discovery has useful empty and error states", () => {
   const empty = render(
     "components/collaboration/project-list.tsx",
@@ -218,9 +250,8 @@ test("Joined lists active memberships without inventing project details", () => 
   const html = render(
     "components/collaboration/project-list.tsx",
     "ProjectList",
-    { view: "mine" },
+    { view: "mine", initialMineTab: "joined" },
     {
-      tabs: { owned: "joined" },
       memberships: {
         data: [
           membership,
@@ -237,6 +268,58 @@ test("Joined lists active memberships without inventing project details", () => 
   assert.match(html, /Joined team/);
   assert.match(html, /href="\/collaborators\/projects\/joined-project"/);
   assert.doesNotMatch(html, /Closed team|open seats/);
+});
+test("Explore shows collaboration activity and links to the joined workspace", () => {
+  const html = render(
+    "components/collaboration/collaboration-explore.tsx",
+    "CollaborationExplore",
+    {
+      profile: {
+        name: "Asha Sharma",
+        title: "Developer",
+        skills: [{ name: "TypeScript" }],
+        discoverable: true,
+      },
+    },
+    {
+      ownedProjects: { data: [project] },
+      memberships: { data: [membership] },
+      ownerRequests: {
+        data: {
+          memberships: [
+            { ...membership, id: "new-request", status: "REQUESTED" },
+          ],
+          failedProjects: [],
+        },
+      },
+    },
+  );
+  assert.match(html, /Welcome back, Asha/);
+  assert.match(html, /id="project-feed"/);
+  assert.match(html, /href="\/collaborators\/my-projects\?tab=joined"/);
+  assert.match(html, /Your collaboration profile and activity/);
+  assert.match(html, /TypeScript/);
+  assert.match(html, /Project owners can discover your profile/);
+  assert.match(html, /Recent activity/);
+  assert.doesNotMatch(html, /unavailable/);
+});
+test("Explore does not turn unavailable activity into zero counts", () => {
+  const html = render(
+    "components/collaboration/collaboration-explore.tsx",
+    "CollaborationExplore",
+    { profile: null },
+    {
+      ownedProjects: { data: undefined, error: new Error("Unavailable") },
+      memberships: { data: undefined, error: new Error("Unavailable") },
+      ownerRequests: { data: undefined, error: new Error("Unavailable") },
+    },
+  );
+  assert.equal(
+    (html.match(/<span class="sr-only"> unavailable<\/span>/g) ?? []).length,
+    3,
+  );
+  assert.match(html, /Activity is temporarily unavailable/);
+  assert.match(html, /id="project-feed"/);
 });
 test("invitations, sent requests, and history show distinct membership states", () => {
   const data = [
@@ -304,7 +387,7 @@ test("full teams and closed recruitment get a relevant teammate empty state", ()
 test("legacy People links redirect to owned projects", () => {
   assert.match(
     readFileSync(
-      resolve(root, "app/(applier)/collaborators/people/page.tsx"),
+      resolve(root, "app/(collaboration)/collaborators/people/page.tsx"),
       "utf8",
     ),
     /redirect\("\/collaborators\/my-projects"\)/,
@@ -664,7 +747,7 @@ test("candidate details show backend profile information and all skill levels", 
     "Built accessible interfaces",
     "Design School",
     "Matched skills",
-    "Invite as",
+    "Invite to team",
   ])
     assert.match(html, new RegExp(text));
   assert.match(html, /target="_blank"/);
@@ -706,7 +789,7 @@ test("candidate details prevent inviting an existing member or a filled role", (
     { ...detailProps, membership: { ...membership, status: "INVITED" } },
   );
   assert.match(pending, /Invitation pending/);
-  assert.doesNotMatch(pending, /Invite as/);
+  assert.doesNotMatch(pending, /Invite to team/);
   const filled = render(
     "components/collaboration/candidate-details.tsx",
     "CandidateDetails",
@@ -719,7 +802,10 @@ test("candidate details prevent inviting an existing member or a filled role", (
     },
   );
   assert.match(filled, /This role is no longer available/);
-  assert.match(filled, /disabled=""[^>]*>Invite as/);
+  assert.match(
+    filled,
+    /<button[^>]*disabled=""[^>]*aria-label="Invite New designer as Designer"/,
+  );
 });
 
 test("owner Overview links to recommendations without duplicating the candidate or team sections", () => {

@@ -6,7 +6,10 @@ export const metadata = { title: "Requests | JobHub Collaboration" };
 export default function CollaborationInboxPage() {
   return (
     <>
-      <CollaborationPageHeading title="Requests" />
+      <CollaborationPageHeading
+        title="Requests"
+        description="Meet your next teammate. Review invitations, respond to requests, and see where things stand."
+      />
       <CollaborationInbox />
     </>
   );
