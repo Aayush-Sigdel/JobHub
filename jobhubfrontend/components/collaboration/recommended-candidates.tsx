@@ -1,9 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Sparkles } from "lucide-react";
+import {
+  ArrowUpRight,
+  BriefcaseBusiness,
+  MapPin,
+  RefreshCw,
+  Search,
+  Sparkles,
+  UserPlus,
+  X,
+} from "lucide-react";
+import {
+  CandidateListSkeleton,
+  CandidateMatch,
+  CandidateSkills,
+} from "./candidate-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldHint } from "@/components/ui/tooltip";
@@ -27,11 +41,9 @@ import {
   ErrorState,
   Explanation,
   label,
-  LoadingState,
   MessageDialog,
   panelClass,
   Person,
-  selectClass,
   StatusBadge,
 } from "./shared";
 import { toast } from "sonner";
@@ -45,6 +57,7 @@ export function RecommendedCandidates({
   memberships: Membership[];
 }) {
   const { userId, enabled } = useCollaborationIdentity();
+  const filterId = useId();
   const [draft, setDraft] = useState<SuggestionFilters>({
     poolSize: 200,
     shortlistSize: 10,
@@ -107,12 +120,14 @@ export function RecommendedCandidates({
     setFilters({ ...filters, location: "" });
   }
   return (
-    <section aria-label="Recommended candidates" className="space-y-5">
-      <div className="space-y-4">
+    <section aria-label="Recommended candidates" className="min-w-0 space-y-7">
+      <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-bold">
-              <Sparkles className="size-5" />
+            <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
+              <span className="mr-1 flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+                <Sparkles className="size-5" aria-hidden="true" />
+              </span>
               Recommended candidates
               <FieldHint
                 label="About candidate recommendations"
@@ -125,72 +140,129 @@ export function RecommendedCandidates({
           </div>
           <Button
             variant="outline"
+            className="h-11 rounded-lg px-4"
             disabled={suggestions.isFetching}
             onClick={() => suggestions.refetch()}
           >
             <RefreshCw
-              className={`size-4 ${suggestions.isFetching ? "animate-spin" : ""}`}
+              className={`size-4 ${suggestions.isFetching ? "motion-safe:animate-spin" : ""}`}
             />
             Refresh
           </Button>
         </div>
+        {shortlists.length > 1 && (
+          <div
+            role="group"
+            aria-label="Filter candidates by role"
+            className="flex flex-wrap gap-x-5 gap-y-1 border-b border-border"
+          >
+            {[
+              {
+                id: "all",
+                title: "All roles",
+                count: shortlists.reduce(
+                  (total, role) => total + role.candidates.length,
+                  0,
+                ),
+              },
+              ...shortlists
+                .filter((role) => role.roleId !== null)
+                .map((role) => ({
+                  id: role.roleId!,
+                  title: role.roleTitle,
+                  count: role.candidates.length,
+                })),
+            ].map((role) => {
+              const activeRole = shortlists.some(
+                (item) => item.roleId === selectedRole,
+              )
+                ? selectedRole
+                : "all";
+              const active = activeRole === role.id;
+              return (
+                <button
+                  key={role.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSelectedRole(role.id)}
+                  className={`flex min-h-12 max-w-full items-center gap-2 border-b-2 px-1 py-3 text-left text-sm transition-colors motion-reduce:transition-none ${active ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
+                >
+                  <span className="min-w-0 break-words">{role.title}</span>
+                  <span
+                    className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] tabular-nums ${active ? "bg-primary/20 text-foreground" : "bg-muted text-muted-foreground"}`}
+                  >
+                    {role.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         <form
-          className="flex flex-wrap items-end gap-3"
+          className="grid max-w-xl min-w-0 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
           onSubmit={(event) => {
             event.preventDefault();
             setFilters({ ...draft, location: draft.location?.trim() });
           }}
         >
-          {shortlists.length > 1 && (
-            <label className="space-y-2 text-sm">
-              <span>Role</span>
-              <select
-                className={selectClass}
-                value={
-                  shortlists.some((role) => role.roleId === selectedRole)
-                    ? selectedRole
-                    : "all"
-                }
-                onChange={(event) => setSelectedRole(event.target.value)}
-              >
-                <option value="all">All open roles</option>
-                {shortlists.map((role) => (
-                  <option
-                    key={role.roleId ?? role.roleTitle}
-                    value={role.roleId ?? "all"}
-                  >
-                    {role.roleTitle}
-                  </option>
-                ))}
-              </select>
+          <div className="min-w-0 space-y-2">
+            <label
+              htmlFor={`${filterId}-location`}
+              className="block text-xs font-medium text-muted-foreground"
+            >
+              Candidate location
             </label>
-          )}
-          <label className="space-y-2 text-sm">
-            <span>Candidate location</span>
-            <Input
-              placeholder="Anywhere"
-              value={draft.location ?? ""}
-              onChange={(event) =>
-                setDraft({ ...draft, location: event.target.value })
-              }
-            />
-          </label>
+            <div className="relative">
+              <MapPin
+                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                id={`${filterId}-location`}
+                placeholder="City, region, or anywhere"
+                className="h-11 rounded-lg border-border bg-background pl-10 pr-3 text-sm focus-visible:ring-0"
+                value={draft.location ?? ""}
+                onChange={(event) =>
+                  setDraft({ ...draft, location: event.target.value })
+                }
+              />
+            </div>
+          </div>
           <Button
             type="submit"
-            variant="outline"
+            className="h-11 rounded-lg px-4"
             disabled={suggestions.isFetching}
           >
-            Apply location
+            <Search className="size-4" aria-hidden="true" /> Apply location
           </Button>
-          {!!filters.location && (
-            <Button type="button" variant="ghost" onClick={clearLocation}>
-              Clear location
-            </Button>
-          )}
         </form>
+        <div className="flex min-h-6 flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+          <p role="status" aria-live="polite">
+            {suggestions.isPending
+              ? "Finding people for your team…"
+              : suggestions.error
+                ? "Recommendations unavailable"
+                : `${visibleRoles.reduce((count, { role }) => count + role.candidates.length, 0)} recommendations across ${visibleRoles.length} ${visibleRoles.length === 1 ? "role" : "roles"}`}
+          </p>
+          {filters.location ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 max-w-full gap-2 rounded-lg text-xs"
+              onClick={clearLocation}
+              aria-label={`Clear location filter: ${filters.location}`}
+            >
+              <MapPin className="size-3.5" aria-hidden="true" />
+              <span className="truncate">{filters.location}</span>
+              <X className="size-3.5" aria-hidden="true" />
+            </Button>
+          ) : (
+            <span>Sorted by role match</span>
+          )}
+        </div>
       </div>
       {suggestions.isPending ? (
-        <LoadingState />
+        <CandidateListSkeleton />
       ) : suggestions.error instanceof CollaborationError &&
         suggestions.error.status === 409 ? (
         <div className={`${panelClass} space-y-3`}>
@@ -236,18 +308,31 @@ export function RecommendedCandidates({
               visibleRoles.map(({ role, index }) => (
                 <section
                   key={role.roleId ?? role.roleTitle}
-                  className="grid gap-4 lg:grid-cols-[220px_1fr]"
+                  className="grid min-w-0 gap-5 border-t border-border/70 pt-6 lg:grid-cols-[180px_minmax(0,1fr)] xl:gap-8"
                 >
-                  <div className="space-y-3 lg:sticky lg:top-24 lg:self-start">
-                    <span className="text-xs text-muted-foreground">
+                  <div className="min-w-0 space-y-3 lg:sticky lg:top-24 lg:self-start">
+                    <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <BriefcaseBusiness
+                        className="size-3.5"
+                        aria-hidden="true"
+                      />{" "}
                       Open role {index + 1}
                     </span>
-                    <h3 className="font-semibold">{role.roleTitle}</h3>
+                    <h3 className="break-words text-lg font-semibold leading-snug tracking-tight">
+                      {role.roleTitle}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {role.candidates.length}{" "}
+                      {role.candidates.length === 1
+                        ? "candidate"
+                        : "candidates"}{" "}
+                      shortlisted
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
                       {role.requiredSkills.map((skill) => (
                         <span
                           key={skill.name}
-                          className="rounded-md border border-border px-2 py-1 text-xs"
+                          className="max-w-full break-words rounded-md bg-muted px-2 py-1 text-xs leading-relaxed text-muted-foreground"
                         >
                           {skill.name} · {label(skill.minLevel)}
                         </span>
@@ -260,7 +345,7 @@ export function RecommendedCandidates({
                       </p>
                     )}
                   </div>
-                  <div className="space-y-3">
+                  <div className="min-w-0 space-y-4">
                     {role.candidates.length ? (
                       role.candidates.map((person, rank) => {
                         const membership = memberships.find(
@@ -269,53 +354,45 @@ export function RecommendedCandidates({
                         return (
                           <article
                             key={person.userId}
-                            className={`${panelClass} space-y-4`}
+                            className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-5 transition-[border-color,box-shadow] duration-200 hover:border-foreground/20 hover:shadow-sm motion-reduce:transition-none sm:p-6"
                           >
                             <div className="flex items-start justify-between gap-3">
-                              <Person person={person} />
-                              <div
-                                className="shrink-0 text-right"
-                                aria-label={`${person.matchPercentage}% match, rank ${rank + 1}`}
-                              >
-                                <p className="text-lg font-bold tabular-nums">
-                                  {person.matchPercentage}% match
-                                </p>
-                                <p className="text-xs text-muted-foreground">
+                              <Person person={person} prominent />
+                              <div className="shrink-0 space-y-1.5 text-center">
+                                <CandidateMatch
+                                  percentage={person.matchPercentage}
+                                />
+                                <p className="text-[10px] text-muted-foreground">
                                   Rank {rank + 1}
                                 </p>
                               </div>
                             </div>
                             {person.location && (
-                              <p className="text-xs text-muted-foreground">
-                                {person.location}
+                              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <MapPin
+                                  className="size-3.5 shrink-0"
+                                  aria-hidden="true"
+                                />
+                                <span className="min-w-0 break-words">
+                                  {person.location}
+                                </span>
                               </p>
                             )}
                             {person.bio && (
-                              <p className="line-clamp-3 text-sm text-muted-foreground">
+                              <p className="line-clamp-3 break-words text-sm leading-relaxed text-muted-foreground">
                                 {person.bio}
                               </p>
                             )}
-                            <div className="flex flex-wrap gap-1.5">
-                              {person.skills.slice(0, 5).map((skill) => (
-                                <span
-                                  key={skill.name}
-                                  className="rounded-md border border-border px-2 py-1 text-xs"
-                                >
-                                  {skill.name}
-                                  {skill.level && ` · ${label(skill.level)}`}
-                                </span>
-                              ))}
-                              {person.skills.length > 5 && (
-                                <span className="px-2 py-1 text-xs text-muted-foreground">
-                                  +{person.skills.length - 5} more
-                                </span>
-                              )}
-                            </div>
+                            <CandidateSkills
+                              skills={person.skills}
+                              matched={person.explanation.coveredSkills}
+                              limit={5}
+                            />
                             <Explanation explanation={person.explanation} />
-                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                               <Button
                                 variant="ghost"
-                                size="sm"
+                                className="h-11 rounded-lg px-2 text-muted-foreground hover:text-foreground"
                                 aria-label={`View details for ${person.name}`}
                                 onClick={() =>
                                   setDetails({
@@ -325,12 +402,17 @@ export function RecommendedCandidates({
                                   })
                                 }
                               >
-                                View details
+                                View details{" "}
+                                <ArrowUpRight
+                                  className="size-4"
+                                  aria-hidden="true"
+                                />
                               </Button>
                               {membership ? (
                                 <StatusBadge status={membership.status} />
                               ) : (
                                 <Button
+                                  className="h-11 rounded-lg px-4"
                                   disabled={
                                     project.status !== "RECRUITING" ||
                                     project.activeMemberCount >=
@@ -349,6 +431,10 @@ export function RecommendedCandidates({
                                     })
                                   }
                                 >
+                                  <UserPlus
+                                    className="size-4"
+                                    aria-hidden="true"
+                                  />{" "}
                                   Invite to team
                                 </Button>
                               )}

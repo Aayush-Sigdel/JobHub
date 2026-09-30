@@ -1,5 +1,7 @@
 "use client";
 
+import { WaterLoadingScreen } from "@/components/ui/water-loading-screen";
+
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import JobHubLogo from "@/components/brand/JobHubLogo";
@@ -372,11 +374,7 @@ function SignInContent() {
 export default function SignInPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-dvh w-full bg-card flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
-        </div>
-      }
+      fallback={<WaterLoadingScreen contained />}
     >
       <SignInContent />
     </Suspense>

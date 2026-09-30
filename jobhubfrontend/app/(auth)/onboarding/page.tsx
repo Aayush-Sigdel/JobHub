@@ -1,5 +1,7 @@
 "use client";
 
+import { WaterLoadingScreen } from "@/components/ui/water-loading-screen";
+
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -261,8 +263,6 @@ function OnboardingContent() {
         level: "INTERMEDIATE",
       }));
 
-      const contactNumbers = contactNumber.trim() ? [contactNumber.trim()] : undefined;
-
       // 1. Update user profile with real bio and full name from signup
       await updateProfileAction({
         name: fullName.trim() || initialName || session?.user?.name || undefined,
@@ -270,8 +270,8 @@ function OnboardingContent() {
         bio: bio.trim() || undefined,
         location: profileLocation ? `${profileLocation.city}, ${profileLocation.country}` : undefined,
         skills: formattedSkills.length > 0 ? formattedSkills : undefined,
-        socialLinks: formattedSocialLinks.length > 0 ? formattedSocialLinks : undefined,
-        contactNumbers: contactNumbers,
+        ...(formattedSocialLinks.length > 0 && { socialLinks: formattedSocialLinks }),
+        ...(contactNumber.trim() && { contactNumbers: [contactNumber.trim()] }),
       });
 
       // 2. Mark onboarding completed in database
@@ -1064,11 +1064,7 @@ function OnboardingContent() {
 export default function OnboardingPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-dvh w-full bg-card flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
-        </div>
-      }
+      fallback={<WaterLoadingScreen contained />}
     >
       <OnboardingContent />
     </Suspense>

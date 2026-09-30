@@ -1,0 +1,96 @@
+.screen {
+  display: grid;
+  min-height: 100dvh;
+  width: 100%;
+  place-items: center;
+  overflow: hidden;
+  padding: 2rem 1.5rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.contained {
+  min-height: 65dvh;
+  flex: 1;
+}
+
+.orb {
+  position: relative;
+  isolation: isolate;
+  width: 3rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--card) 82%, var(--brand) 18%);
+}
+
+/* The level rises independently of the two rolling water surfaces. This is
+   indeterminate activity, so it never invents a completion percentage. */
+.water {
+  position: absolute;
+  inset: 0;
+  transform: translateY(76%);
+  animation: fill 5.5s cubic-bezier(0.45, 0, 0.25, 1) infinite alternate;
+}
+
+.waveBack,
+.waveFront {
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  border-radius: 43%;
+  background: var(--brand);
+  animation: roll 7s linear infinite;
+}
+
+.waveBack {
+  top: -5%;
+  border-radius: 42%;
+  opacity: 0.35;
+  animation-duration: 10s;
+  animation-direction: reverse;
+}
+
+.waveFront {
+  background: linear-gradient(
+    145deg,
+    var(--brand) 25%,
+    color-mix(in srgb, var(--brand) 78%, var(--foreground)) 100%
+  );
+}
+
+@keyframes fill {
+  from {
+    transform: translateY(76%);
+  }
+  to {
+    transform: translateY(12%);
+  }
+}
+
+@keyframes roll {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .water,
+  .waveBack,
+  .waveFront {
+    animation: none;
+  }
+
+  .water {
+    transform: translateY(48%);
+  }
+  .waveBack {
+    transform: rotate(25deg);
+  }
+  .waveFront {
+    transform: rotate(-15deg);
+  }
+}

@@ -119,7 +119,7 @@ export function ProjectTeamTools({
                       return (
                         <article key={member.id} className="space-y-3 p-5">
                           <div className="flex flex-wrap items-start justify-between gap-4">
-                            <Person person={member} />
+                            <Person person={member} prominent />
                             <MembershipButtons
                               membership={member}
                               isOwner
@@ -363,7 +363,7 @@ function ProjectContent({ project }: { project: Project }) {
     </section>
   );
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <Link
         href={
           project.isOwner || project.myMembership?.status === "ACTIVE"
@@ -452,7 +452,7 @@ function ProjectContent({ project }: { project: Project }) {
       </header>
       <nav
         aria-label="Project sections"
-        className="flex flex-wrap gap-1 border-b border-border pb-2"
+        className="flex gap-1 overflow-x-auto border-b border-border"
       >
         {tabs.map((tab) => (
           <Link
@@ -460,7 +460,7 @@ function ProjectContent({ project }: { project: Project }) {
             href={sectionHref(tab.key)}
             scroll={false}
             aria-current={section === tab.key ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center rounded-sm px-3 text-sm font-medium sm:min-h-9 ${section === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            className={`inline-flex min-h-12 shrink-0 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap transition-colors ${section === tab.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
           >
             {tab.title}
           </Link>
