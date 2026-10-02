@@ -11,10 +11,10 @@ text_embedding/
 ├── api/
 │   └── main.py          # FastAPI server
 ├── model/               # Model architecture
-├── analyze_lengths.py   # Dataset token-length audit
 ├── config.py            # Shared model/preprocessing defaults
 ├── dataset.py           # Dataset and batch tokenizer/collator
 ├── train.py             # Training, validation, and checkpointing
+├── checkpoints/         # Trained model output (checkpoints/retrained/best.pt)
 └── tests/
 ```
 
@@ -59,13 +59,13 @@ Enter directory
 cd text_embedding
 ```
 
-After training, start the FastAPI server:
+After training (`python train.py`, which writes `checkpoints/retrained/`), start the FastAPI server:
 
 ```bash
 uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-To serve a checkpoint elsewhere, set `EMBEDDING_MODEL_PATH=/path/to/best.pt`.
+By default the API loads `checkpoints/retrained/best.pt`. To serve a checkpoint elsewhere, set `EMBEDDING_MODEL_PATH=/path/to/best.pt`. Set `DEVICE=cpu` or `DEVICE=cuda` to override the auto-detected device.
 
 The API will be available at:
 
@@ -77,6 +77,8 @@ http://localhost:8001
 ---
 
 ## API Usage
+
+`GET /` and `GET /health` return a simple health check.
 
 ### Generate Embedding
 
@@ -132,5 +134,7 @@ curl -X POST http://localhost:8001/embed \
 - Pooling: Mean Pooling
 - Projection Layer: **768 → 256**
 - Output Embedding: **256-dimensional**
+- Max Input Length: **2048 tokens** (longer text is truncated)
 - Similarity Metric: Cosine Similarity
+- Training: `med2425/resume-job-fit-merged-v1`, labels No Fit / Potential Fit / Good Fit → 0 / 0.5 / 1.0, MSE loss on cosine similarity
 
