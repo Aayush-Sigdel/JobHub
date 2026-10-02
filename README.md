@@ -1,9 +1,8 @@
 # JobHub
 
-**A skills-first hiring and collaboration platform.** JobHub matches candidates to jobs using what they can actually do. It compares their profile and their public developer activity with each role using a custom-trained text-embedding model, and it checks skills with in-browser coding, SQL and design assessments. Candidates can also form project teams, with suggested members chosen for the skills the team is still missing.
+A skills-first hiring and collaboration platform. JobHub matches candidates to jobs using what they can actually do. It compares their profile and their public developer activity with each role using a custom-trained text-embedding model, and it checks skills with in-browser coding, SQL and design assessments. Candidates can also form project teams, with suggested members chosen for the skills the team is still missing.
 
-
-*This project was developed as part of Project III (Semester VI) and is complete. There are no plans for further development or updates.*
+_This project was developed as part of Project III (Semester VI) and is complete. There are no plans for further development or updates._
 
 ---
 
@@ -44,10 +43,10 @@ JobHub has two user types, **candidates** and **employers**, and a third space w
 
 Employers can attach three kinds of assessment to a job. All of them run in a monitored workspace that records tab and app switches against a warning limit.
 
-| Type | What the candidate does | How it is graded |
-| --- | --- | --- |
-| **Programming** | Solves a problem in **Java** or **Python** in a code editor | Runs against test cases inside isolated **Docker** sandboxes |
-| **SQL** | Writes queries against a described schema | Runs in a fresh in-memory **H2** database per submission and checks the result |
+| Type                  | What the candidate does                                                           | How it is graded                                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Programming**       | Solves a problem in **Java** or **Python** in a code editor                       | Runs against test cases inside isolated **Docker** sandboxes                                                            |
+| **SQL**               | Writes queries against a described schema                                         | Runs in a fresh in-memory **H2** database per submission and checks the result                                          |
 | **Design (HTML/CSS)** | Recreates a reference UI with live preview, slide-compare and difference overlays | Rendered with headless Chromium (**Playwright**) and compared pixel by pixel with the target against a required match % |
 
 ![Applying with required assessments](imgs/screenshot_20261002_181448-region.png)
@@ -91,7 +90,7 @@ Employers can attach three kinds of assessment to a job. All of them run in a mo
 
 Candidates can post a **project** they want to build, list the **roles** they need, and invite people or accept join requests.
 
-What sets this apart is **gap-based recommendations**. The job matcher ranks people by how much they *resemble* a role. The collaboration engine instead ranks people by how much of the team's **missing skills** they cover. It works out what the project needs that nobody on the team covers yet and recommends people for that. When someone joins, the gap changes and the recommendations update.
+What sets this apart is **gap-based recommendations**. The job matcher ranks people by how much they _resemble_ a role. The collaboration engine instead ranks people by how much of the team's **missing skills** they cover. It works out what the project needs that nobody on the team covers yet and recommends people for that. When someone joins, the gap changes and the recommendations update.
 
 <table>
   <tr>
@@ -108,17 +107,17 @@ What sets this apart is **gap-based recommendations**. The job matcher ranks peo
 
 ## How matching works
 
-1. **Embedding model.** A dual encoder built on **Longformer** (`allenai/longformer-base-4096`) with mean pooling and a 768 → 256 projection. It turns long resumes and job descriptions (up to 2048 tokens) into normalised 256-dimensional vectors. It was fine-tuned on resume/job pairs labelled *No Fit / Potential Fit / Good Fit* so that cosine similarity reflects job fit.
+1. **Embedding model.** A dual encoder built on **Longformer** (`allenai/longformer-base-4096`) with mean pooling and a 768 → 256 projection. It turns long resumes and job descriptions (up to 2048 tokens) into normalised 256-dimensional vectors. It was fine-tuned on resume/job pairs labelled _No Fit / Potential Fit / Good Fit_ so that cosine similarity reflects job fit.
 2. **Profile sources.** The backend embeds the candidate's JobHub profile and each connected platform separately and stores the vectors in PostgreSQL using **pgvector**.
 3. **Weighted score.** Each source is compared with the job embedding by cosine similarity, then combined using these weights:
 
-   | Source | Weight |
-   | --- | --- |
-   | JobHub profile | 50% |
-   | GitHub | 30% |
-   | Stack Overflow | 10% |
-   | Dev.to | 5% |
-   | ORCID | 5% |
+   | Source         | Weight |
+   | -------------- | ------ |
+   | JobHub profile | 50%    |
+   | GitHub         | 30%    |
+   | Stack Overflow | 10%    |
+   | Dev.to         | 5%     |
+   | ORCID          | 5%     |
 
    If a source isn't connected, the remaining weights are rescaled, so candidates aren't penalised for platforms they don't use. Both candidates and employers can see this breakdown.
 
@@ -128,28 +127,28 @@ What sets this apart is **gap-based recommendations**. The job matcher ranks peo
 
 ![System architecture](imgs/system-architecture.webp)
 
-| Component | Role |
-| --- | --- |
-| **Web app** (`jobhubfrontend/`) | Next.js and React UI for candidates, employers and collaboration. Talks to the API over REST with JWT auth. |
-| **API server** (`backend/`) | Spring Boot service for auth, jobs, applications, matching, assessments, collaboration, profile sync and email. |
-| **Embedding API** (`machine_learning/`) | FastAPI service that serves the trained Longformer dual encoder (`POST /embed`). |
-| **PostgreSQL + pgvector** | Main data store, including embedding vectors. |
-| **Redis** | Refresh tokens and email OTPs. |
-| **Sandboxes** | Docker (Java/Python code), H2 (SQL) and Playwright (design rendering) for grading assessments. |
-| **External platforms** | GitHub, Stack Overflow, Dev.to and ORCID APIs for profile sync; SMTP for email. |
+| Component                               | Role                                                                                                            |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Web app** (`jobhubfrontend/`)         | Next.js and React UI for candidates, employers and collaboration. Talks to the API over REST with JWT auth.     |
+| **API server** (`backend/`)             | Spring Boot service for auth, jobs, applications, matching, assessments, collaboration, profile sync and email. |
+| **Embedding API** (`machine_learning/`) | FastAPI service that serves the trained Longformer dual encoder (`POST /embed`).                                |
+| **PostgreSQL + pgvector**               | Main data store, including embedding vectors.                                                                   |
+| **Redis**                               | Refresh tokens and email OTPs.                                                                                  |
+| **Sandboxes**                           | Docker (Java/Python code), H2 (SQL) and Playwright (design rendering) for grading assessments.                  |
+| **External platforms**                  | GitHub, Stack Overflow, Dev.to and ORCID APIs for profile sync; SMTP for email.                                 |
 
 ---
 
 ## Tech stack
 
-| Layer | Technologies |
-| --- | --- |
-| Frontend | Next.js, React, TypeScript, Tailwind CSS, TanStack Query, NextAuth, CodeMirror |
-| Backend | Java 17, Kotlin, Spring Boot (Web MVC, Security, Data JPA, Redis, Mail), JWT, Hibernate Vector, springdoc OpenAPI |
-| Machine learning | Python, PyTorch, Hugging Face Transformers, FastAPI |
-| Data | PostgreSQL + pgvector, Redis |
-| Assessment sandboxes | Docker, H2, Playwright (Chromium) |
-| CI/CD | GitHub Actions (backend Docker image to GHCR) |
+| Layer                | Technologies                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Frontend             | Next.js, React, TypeScript, Tailwind CSS, TanStack Query, NextAuth, CodeMirror                                    |
+| Backend              | Java 17, Kotlin, Spring Boot (Web MVC, Security, Data JPA, Redis, Mail), JWT, Hibernate Vector, springdoc OpenAPI |
+| Machine learning     | Python, PyTorch, Hugging Face Transformers, FastAPI                                                               |
+| Data                 | PostgreSQL + pgvector, Redis                                                                                      |
+| Assessment sandboxes | Docker, H2, Playwright (Chromium)                                                                                 |
+| CI/CD                | GitHub Actions (backend Docker image to GHCR)                                                                     |
 
 ---
 
